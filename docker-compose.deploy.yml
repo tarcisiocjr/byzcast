@@ -1,0 +1,27 @@
+version: '3'
+services:
+ group_0_node_0:
+  build:
+   context: .
+   dockerfile: Dockerfile.deploy
+  ports:
+   - "11000:11000"
+   - "21000:21000"
+  environment:
+   - LOCAL_NODE_ID=0
+   - GLOBAL_NODE_ID=0
+   - GROUP_ID=0
+  network_mode: "host"
+
+ group_0_node_1:
+  build:
+   context: .
+   dockerfile: Dockerfile.deploy
+  ports:
+   - "11010:11010"
+   - "21010:21010"
+  environment:
+   - LOCAL_NODE_ID=0
+   - GLOBAL_NODE_ID=0
+   - GROUP_ID=0
+  network_mode: "host"
