@@ -1,37 +1,25 @@
-version: '2'
+version: '3'
 services:
- g0_proxy:
+ group_0_proxy_0:
   build:
-    context: .
-    dockerfile: Dockerfile.proxy
-  container_name: g0_proxy
+   context: .
+   dockerfile: Dockerfile.proxy
   environment:
-   - PEERID=7010
-   - GROUPID=0
-  networks:
-    - g0
-    - gall
+   - GROUP_ID=0
+  network_mode: "host"
 
-# g1_proxy:
-#  build:
-#    context: .
-#    dockerfile: Dockerfile.proxy
-#  container_name: g1_proxy
-#  environment:
-#   - PEERID=7020
-#   - GROUPID=1
-#  networks:
-#    - g1
-#    - gall
+ group_1_proxy_0:
+  build:
+   context: .
+   dockerfile: Dockerfile.proxy
+  environment:
+   - GROUP_ID=1
+  network_mode: "host"
 
-networks:
-  g0:
-   driver: macvlan
-#  g1:
-#   driver: macvlan
-  # g2:
-  #  driver: macvlan
-  # g3:
-  #  driver: macvlan
-  gall:
-    driver: macvlan
+ group_2_proxy_0:
+  build:
+   context: .
+   dockerfile: Dockerfile.proxy
+  environment:
+   - GROUP_ID=2
+  network_mode: "host"
