@@ -1,308 +1,145 @@
-version: '2'
+version: "3"
 services:
- g0_peer_0:
-  build:
-   context: .
-  container_name: g0_peer_0
-  ports:
-   - "11000:11000"
-   - "21000:21000"
-  environment:
-   - PEERID=0
-   - GPEERID=0
-   - GROUPID=0
-   - CROUPID=10000
-  networks:
-   g0:
-    aliases:
-      - peer_0
-   gall:
-    aliases:
-      - g_peer_0
- g0_peer_1:
-  build:
-   context: .
-  container_name: g0_peer_1
-  ports:
-   - "11010:11010"
-   - "21010:21010"
-  environment:
-   - PEERID=1
-   - GPEERID=1
-   - GROUPID=0
-   - CROUPID=10001
-  networks:
-   g0:
-    aliases:
-      - peer_1
-   gall:
-    aliases:
-      - g_peer_1
- g0_peer_2:
-  build:
-   context: .
-  container_name: g0_peer_2
-  ports:
-   - "11020:11020"
-   - "21020:21020"
-  environment:
-   - PEERID=2
-   - GPEERID=2
-   - GROUPID=0
-   - CROUPID=10002
-  networks:
-   g0:
-    aliases:
-      - peer_2
-   gall:
-    aliases:
-      - g_peer_2
- g0_peer_3:
-  build:
-   context: .
-  container_name: g0_peer_3
-  ports:
-   - "11030:11030"
-   - "21030:21030"
-  environment:
-   - PEERID=3
-   - GPEERID=3
-   - GROUPID=0
-   - CROUPID=10003
-  networks:
-   g0:
-    aliases:
-      - peer_3
-   gall:
-    aliases:
-      - g_peer_3
 
- g1_peer_0:
-  build:
-   context: .
-  container_name: g1_peer_0
-  ports:
-   - "11000:11000"
-   - "21040:21040"
-  environment:
-   - PEERID=0
-   - GPEERID=4
-   - GROUPID=1
-   - CROUPID=11000
-  networks:
-   g1:
-    aliases:
-      - peer_0
-   gall:
-    aliases:
-      - g_peer_4
- g1_peer_1:
-  build:
-   context: .
-  container_name: g1_peer_1
-  ports:
-   - "11010:11010"
-   - "21050:21050"
-  environment:
-   - PEERID=1
-   - GPEERID=5
-   - GROUPID=1
-   - CROUPID=11001
-  networks:
-   g1:
-    aliases:
-      - peer_1
-   gall:
-    aliases:
-      - g_peer_5
- g1_peer_2:
-  build:
-   context: .
-  container_name: g1_peer_2
-  ports:
-   - "11020:11020"
-   - "21060:21060"
-  environment:
-   - PEERID=2
-   - GPEERID=6
-   - GROUPID=1
-   - CROUPID=11002
-  networks:
-   g1:
-    aliases:
-      - peer_2
-   gall:
-    aliases:
-      - g_peer_6
- g1_peer_3:
-  build:
-   context: .
-  container_name: g1_peer_3
-  ports:
-   - "11030:11030"
-   - "21070:21070"
-  environment:
-   - PEERID=3
-   - GPEERID=7
-   - GROUPID=1
-   - CROUPID=11003
-  networks:
-   g1:
-    aliases:
-      - peer_3
-   gall:
-    aliases:
-      - g_peer_7
-
-
- # g2_peer_0:
- #  build:
- #   context: .
- #  container_name: g2_peer_0
- #  ports:
- #   - "11000:11000"
- #   - "21080:21080"
- #  environment:
- #   - PEERID=0
- #   - GPEERID=8
- #  networks:
- #   g2:
- #    aliases:
- #      - peer_0
- #   gall:
- #    aliases:
- #      - g_peer_8
- # g2_peer_1:
- #  build:
- #   context: .
- #  container_name: g2_peer_1
- #  ports:
- #   - "11010:11010"
- #   - "21090:21090"
- #  environment:
- #   - PEERID=1
- #   - GPEERID=9
- #  networks:
- #   g2:
- #    aliases:
- #      - peer_1
- #   gall:
- #    aliases:
- #      - g_peer_9
- # g2_peer_2:
- #  build:
- #   context: .
- #  container_name: g2_peer_2
- #  ports:
- #   - "11020:11020"
- #   - "21100:21100"
- #  environment:
- #   - PEERID=2
- #   - GPEERID=10
- #  networks:
- #   g2:
- #    aliases:
- #      - peer_2
- #   gall:
- #    aliases:
- #      - g_peer_10
- # g2_peer_3:
- #  build:
- #   context: .
- #  container_name: g2_peer_3
- #  ports:
- #   - "11030:11030"
- #   - "21110:21110"
- #  environment:
- #   - PEERID=3
- #   - GPEERID=11
- #  networks:
- #   g2:
- #    aliases:
- #      - peer_3
- #   gall:
- #    aliases:
- #      - g_peer_11
-
-
- # g3_peer_0:
- #  build:
- #   context: .
- #  container_name: g3_peer_0
- #  ports:
- #   - "11000:11000"
- #   - "21120:21120"
- #  environment:
- #   - PEERID=0
- #   - GPEERID=12
- #  networks:
- #   g3:
- #    aliases:
- #      - peer_0
- #   gall:
- #    aliases:
- #      - g_peer_12
- # g3_peer_1:
- #  build:
- #   context: .
- #  container_name: g3_peer_1
- #  ports:
- #   - "11010:11010"
- #   - "21130:21130"
- #  environment:
- #   - PEERID=1
- #   - GPEERID=13
- #  networks:
- #   g3:
- #    aliases:
- #      - peer_1
- #   gall:
- #    aliases:
- #      - g_peer_13
- # g3_peer_2:
- #  build:
- #   context: .
- #  container_name: g3_peer_2
- #  ports:
- #   - "11020:11020"
- #   - "21140:21140"
- #  environment:
- #   - PEERID=2
- #   - GPEERID=14
- #  networks:
- #   g3:
- #    aliases:
- #      - peer_2
- #   gall:
- #    aliases:
- #      - g_peer_14
- # g3_peer_3:
- #  build:
- #   context: .
- #  container_name: g3_peer_3
- #  ports:
- #   - "11030:11030"
- #   - "21150:21150"
- #  environment:
- #   - PEERID=3
- #   - GPEERID=15
- #  networks:
- #   g3:
- #    aliases:
- #      - peer_3
- #   gall:
- #    aliases:
- #      - g_peer_15
-
+  group_0_node_0:
+    build:
+     context: .
+    environment:
+     - GROUP_ID=0
+     - LOCAL_NODE_ID=0
+     - GLOBAL_NODE_ID=0
+     - DEV=1
+    networks:
+     - group_0_local_net
+     - group_global_net
+  group_0_node_1:
+    build:
+     context: .
+    environment:
+     - GROUP_ID=0
+     - LOCAL_NODE_ID=1
+     - GLOBAL_NODE_ID=1
+     - DEV=1
+    networks:
+     - group_0_local_net
+     - group_global_net
+  group_0_node_2:
+    build:
+     context: .
+    environment:
+     - GROUP_ID=0
+     - LOCAL_NODE_ID=2
+     - GLOBAL_NODE_ID=2
+     - DEV=1
+    networks:
+     - group_0_local_net
+     - group_global_net
+  group_0_node_3:
+    build:
+     context: .
+    environment:
+     - GROUP_ID=0
+     - LOCAL_NODE_ID=3
+     - GLOBAL_NODE_ID=3
+     - DEV=1
+    networks:
+     - group_0_local_net
+     - group_global_net
+  group_1_node_0:
+    build:
+     context: .
+    environment:
+     - GROUP_ID=1
+     - LOCAL_NODE_ID=0
+     - GLOBAL_NODE_ID=4
+     - DEV=1
+    networks:
+     - group_1_local_net
+     - group_global_net
+  group_1_node_1:
+    build:
+     context: .
+    environment:
+     - GROUP_ID=1
+     - LOCAL_NODE_ID=1
+     - GLOBAL_NODE_ID=5
+     - DEV=1
+    networks:
+     - group_1_local_net
+     - group_global_net
+  group_1_node_2:
+    build:
+     context: .
+    environment:
+     - GROUP_ID=1
+     - LOCAL_NODE_ID=2
+     - GLOBAL_NODE_ID=6
+     - DEV=1
+    networks:
+     - group_1_local_net
+     - group_global_net
+  group_1_node_3:
+    build:
+     context: .
+    environment:
+     - GROUP_ID=1
+     - LOCAL_NODE_ID=3
+     - GLOBAL_NODE_ID=7
+     - DEV=1
+    networks:
+     - group_1_local_net
+     - group_global_net
+  group_2_node_0:
+    build:
+     context: .
+    environment:
+     - GROUP_ID=2
+     - LOCAL_NODE_ID=0
+     - GLOBAL_NODE_ID=8
+     - DEV=1
+    networks:
+     - group_2_local_net
+     - group_global_net
+  group_2_node_1:
+    build:
+     context: .
+    environment:
+     - GROUP_ID=2
+     - LOCAL_NODE_ID=1
+     - GLOBAL_NODE_ID=9
+     - DEV=1
+    networks:
+     - group_2_local_net
+     - group_global_net
+  group_2_node_2:
+    build:
+     context: .
+    environment:
+     - GROUP_ID=2
+     - LOCAL_NODE_ID=2
+     - GLOBAL_NODE_ID=10
+     - DEV=1
+    networks:
+     - group_2_local_net
+     - group_global_net
+  group_2_node_3:
+    build:
+     context: .
+    environment:
+     - GROUP_ID=2
+     - LOCAL_NODE_ID=3
+     - GLOBAL_NODE_ID=11
+     - DEV=1
+    networks:
+     - group_2_local_net
+     - group_global_net
 
 networks:
-  g0:
-   driver: macvlan
-  g1:
-   driver: macvlan
-  # g2:
-  #  driver: macvlan
-  # g3:
-  #  driver: macvlan
-  gall:
+  group_0_local_net:
+    driver: macvlan
+  group_1_local_net:
+    driver: macvlan
+  group_2_local_net:
+    driver: macvlan
+  group_global_net:
     driver: macvlan
