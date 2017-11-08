@@ -25,6 +25,7 @@ import bftsmart.tom.MessageContext;
 import bftsmart.tom.ServiceProxy;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.json.simple.JSONValue;
 
 import java.io.*;
 
@@ -33,10 +34,14 @@ import java.io.*;
  */
 public class ServerGlobal extends Server {
 
+    // TODO remember to fix this ugly thing
     private static Integer serverGroupId;
     private static ServiceProxy proxyToLocal1;
     private static ServiceProxy proxyToLocal2;
     private static ServiceProxy proxyToLocal3;
+    private int oldConsensusId1 = 0;
+    private int oldConsensusId2 = 0;
+    private int oldConsensusId3 = 0;
 
     public static class ProxyToLocal {
         public ProxyToLocal(int serverGlobalId, String localConfigPath1, String localConfigPath2, String localConfigPath3) {
@@ -93,6 +98,7 @@ public class ServerGlobal extends Server {
         ByteArrayInputStream in = new ByteArrayInputStream(command);
         DataInputStream dis = new DataInputStream(in);
         int reqType;
+
         try {
             reqType = dis.readInt();
             if (reqType == RequestType.PUT) {
@@ -106,19 +112,47 @@ public class ServerGlobal extends Server {
 //                        System.out.println(arr.get(i));
 //                        if(i == serverGroupId){
 //                            System.out.println("Received key/value to forward: " + key + " / " + value);
+//                            System.out.println("Global Consensus ID: " + msgCtx.getConsensusId());
+
+                            // TODO fix this ugly thing
+//                            objValue.put("consensusId", new Integer(msgCtx.getConsensusId()));
                             ByteArrayOutputStream out = new ByteArrayOutputStream();
                             DataOutputStream dos = new DataOutputStream(out);
                             dos.writeInt(RequestType.PUT);
                             dos.writeUTF(key);
-                            dos.writeUTF(value);
+//                            dos.writeUTF(value);
                             if(arr.getInt(i) == 1) {
+                                org.json.simple.JSONArray consensusValue = new org.json.simple.JSONArray();
+                                consensusValue.add(oldConsensusId1);
+                                consensusValue.add(msgCtx.getConsensusId());
+                                objValue.put("consensusIds", consensusValue);
+
+                                String jsonValue = JSONValue.toJSONString(objValue);
+                                dos.writeUTF(jsonValue);
+                                oldConsensusId1 = msgCtx.getConsensusId();
                                 byte[] reply1 = proxyToLocal1.invokeOrdered(out.toByteArray());
                             }
                             if(arr.getInt(i) == 2) {
+                                org.json.simple.JSONArray consensusValue = new org.json.simple.JSONArray();
+                                consensusValue.add(oldConsensusId2);
+                                consensusValue.add(msgCtx.getConsensusId());
+                                objValue.put("consensusIds", consensusValue);
+
+                                String jsonValue = JSONValue.toJSONString(objValue);
+                                dos.writeUTF(jsonValue);
+                                oldConsensusId2 = msgCtx.getConsensusId();
                                 byte[] reply2 = proxyToLocal2.invokeOrdered(out.toByteArray());
                             }
                             if(arr.getInt(i) == 3) {
-                                byte[] reply3 = proxyToLocal3.invokeOrdered(out.toByteArray());
+                                org.json.simple.JSONArray consensusValue = new org.json.simple.JSONArray();
+                                consensusValue.add(oldConsensusId3);
+                                consensusValue.add(msgCtx.getConsensusId());
+                                objValue.put("consensusIds", consensusValue);
+
+                                String jsonValue = JSONValue.toJSONString(objValue);
+                                dos.writeUTF(jsonValue);
+                                oldConsensusId3 = msgCtx.getConsensusId();
+                                byte[] reply1 = proxyToLocal3.invokeOrdered(out.toByteArray());
                             }
                             out.close();
 //                        }

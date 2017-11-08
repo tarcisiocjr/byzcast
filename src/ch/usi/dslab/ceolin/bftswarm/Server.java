@@ -25,6 +25,9 @@ import bftsmart.tom.MessageContext;
 import bftsmart.tom.ServiceReplica;
 import bftsmart.tom.server.defaultservices.DefaultRecoverable;
 import bftsmart.tom.server.defaultservices.DefaultReplier;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.json.JSONString;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -43,6 +46,7 @@ import java.util.Map;
 public class Server extends DefaultRecoverable {
 
     private int id;
+    public int oldConsensusId = 0;
 
     Map<String, String> table;
 
@@ -93,13 +97,54 @@ public class Server extends DefaultRecoverable {
             if (reqType == RequestType.PUT) {
                 String key = dis.readUTF();
                 String value = dis.readUTF();
-//                System.out.println("Received" + key + " / " + value);
-                String oldValue = table.put(key, value);
-                byte[] resultBytes = null;
-                if (oldValue != null) {
-                    resultBytes = oldValue.getBytes();
+
+                // Quick test if we can check and compare the consensus id. It's crap code, I know.
+                // This is part of a attempt do check if the order received from the global group
+                // is correct. To do that we save the last consensus id received from the global group
+                // and compare with the last consensus id stored locally.
+                //
+                // The question that remains is: What we should do if the last consensus id won't match?
+                // What is the best way to request the lost message?
+                //
+                // TODO remember to fix this really ugly thing
+
+                // Check the received message if/from the global group in a array and compare
+                if (msgCtx.getSender() == 7000 || msgCtx.getSender() == 7001 || msgCtx.getSender() == 7002 || msgCtx.getSender() == 7003){
+                    JSONObject objValue = new JSONObject(value);
+                    JSONArray arr = objValue.getJSONArray("consensusIds");
+                    if (arr.getInt(0) == oldConsensusId) {
+                        System.out.println("Received from Global Group: " + key + " / " + value);
+                        System.out.println("Current Local Consensus ID: " + oldConsensusId);
+                        System.out.println("Last Global Consensus ID: " + arr.getInt(0));
+                        String oldValue = table.put(key, value);
+                        byte[] resultBytes = null;
+                        if (oldValue != null) {
+                            oldConsensusId = arr.getInt(1);
+                            resultBytes = oldValue.getBytes();
+                        }
+                        return resultBytes;
+                    } else {
+                        System.out.println("Something is wrong!: ");
+                        System.out.println("Received from Global Group: " + key + " / " + value);
+                        System.out.println("Current Local Consensus ID: " + oldConsensusId);
+                        System.out.println("Last Global Consensus ID: " + arr.getInt(0));
+                    }
+
+                // Not a forwarded message from global group.
+                } else {
+                    System.out.println("Received" + key + " / " + value);
+                    System.out.println("Local Consensus ID: " + msgCtx.getConsensusId());
+                    String oldValue = table.put(key, value);
+                    byte[] resultBytes = null;
+                    if (oldValue != null) {
+                        resultBytes = oldValue.getBytes();
+                    }
+                    return resultBytes;
                 }
-                return resultBytes;
+
+
+
+
             } else if (reqType == RequestType.REMOVE) {
                 String key = dis.readUTF();
                 String removedValue = table.remove(key);
@@ -117,6 +162,7 @@ public class Server extends DefaultRecoverable {
             e.printStackTrace();
             return null;
         }
+        return null;
     }
 
     //
