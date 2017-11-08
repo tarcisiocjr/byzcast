@@ -42,45 +42,48 @@ import java.util.Map;
  */
 public class Server extends DefaultRecoverable {
 
-    //path to bftsmart config home files
-    public final static String BFTSMART_CONFIG_LOCAL_FOLDER = "./config/";
-
     private int id;
-
 
     Map<String, String> table;
 
-
-    public Server(int id) {
+    public Server(int id, String configPath) {
         table = new TreeMap<>();
         this.id = id;
-        new ServiceReplica(this.id, this.BFTSMART_CONFIG_LOCAL_FOLDER, this, this, null, new DefaultReplier());
+        new ServiceReplica(this.id, configPath, this, this, null, new DefaultReplier());
     }
 
     public static void main(String[] args) {
         if (args.length < 2) {
-            System.out.println("Usage: Server <server id> <group id>");
+            System.out.println("Usage: Server <server id> <group id> <config path>");
             System.exit(0);
         }
 
-        //start a replica in local group
-        new Server(Integer.parseInt(args[0]));
+        String configPath = args[2];
 
-        //start a replica in global group
-        new Server(Integer.parseInt(args[0]));
-
+        //
+        // Start a replica in local group
+        //
+        new Server(Integer.parseInt(args[0]), configPath);
     }
 
+    //
+    // This abstract method delivers an array of commands that
+    // need be executed in a deterministic order.
+    //
     @Override
     public byte[][] appExecuteBatch(byte[][] command, MessageContext[] mcs) {
         byte[][] replies = new byte[command.length][];
         for (int i = 0; i < command.length; i++) {
             replies[i] = executeSingle(command[i], mcs[i]);
         }
-
         return replies;
     }
 
+    //
+    // executeSingle parses the request to identify if the operation type match to PUT or REMOVE
+    // and them applies the operation into the TreeMap.
+    // It's a good idea check all the info provided by the class MessageContext!
+    //
     private byte[] executeSingle(byte[] command, MessageContext msgCtx) {
         ByteArrayInputStream in = new ByteArrayInputStream(command);
         DataInputStream dis = new DataInputStream(in);
@@ -90,7 +93,7 @@ public class Server extends DefaultRecoverable {
             if (reqType == RequestType.PUT) {
                 String key = dis.readUTF();
                 String value = dis.readUTF();
-                System.out.println("Received key/value: " + key + " / " + value);
+//                System.out.println("Received" + key + " / " + value);
                 String oldValue = table.put(key, value);
                 byte[] resultBytes = null;
                 if (oldValue != null) {
@@ -116,6 +119,10 @@ public class Server extends DefaultRecoverable {
         }
     }
 
+    //
+    // Unordered requests (GET or SIZE) are handed by the abstract method appExecuteUnordered.
+    // This is really correct? A get request must be handed in this way?
+    //
     @Override
     public byte[] appExecuteUnordered(byte[] command, MessageContext msgCtx) {
         ByteArrayInputStream in = new ByteArrayInputStream(command);
@@ -151,23 +158,10 @@ public class Server extends DefaultRecoverable {
         }
     }
 
-    @Override
-    public void installSnapshot(byte[] state) {
-        ByteArrayInputStream bis = new ByteArrayInputStream(state);
-        try {
-            ObjectInput in = new ObjectInputStream(bis);
-            table = (Map<String, String>) in.readObject();
-            in.close();
-            bis.close();
-        } catch (ClassNotFoundException e) {
-            System.out.print("Coudn't find Map: " + e.getMessage());
-            e.printStackTrace();
-        } catch (IOException e) {
-            System.out.print("Exception installing the application state: " + e.getMessage());
-            e.printStackTrace();
-        }
-    }
-
+    //
+    // Since we are using DefaultRecoverable as a basic state management strategy,
+    // it is required to implement the abstract methods getSnapshot and installSnapshot.
+    //
     @Override
     public byte[] getSnapshot() {
         try {
@@ -183,6 +177,23 @@ public class Server extends DefaultRecoverable {
                     + "snapshot of the application state" + e.getMessage());
             e.printStackTrace();
             return new byte[0];
+        }
+    }
+
+    @Override
+    public void installSnapshot(byte[] state) {
+        ByteArrayInputStream bis = new ByteArrayInputStream(state);
+        try {
+            ObjectInput in = new ObjectInputStream(bis);
+            table = (Map<String, String>) in.readObject();
+            in.close();
+            bis.close();
+        } catch (ClassNotFoundException e) {
+            System.out.print("Coudn't find Map: " + e.getMessage());
+            e.printStackTrace();
+        } catch (IOException e) {
+            System.out.print("Exception installing the application state: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 }

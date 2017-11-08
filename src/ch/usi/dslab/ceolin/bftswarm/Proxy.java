@@ -40,16 +40,14 @@ import java.util.Set;
 
 public class Proxy implements Map<String, String> {
 
-    private static String configLocal = "config-local";
-    private static String configGlobal = "config-global";
     private static Integer proxyGroupId;
 
     private ServiceProxy clientProxyLocal = null;
     private ServiceProxy clientProxyGlobal = null;
 
-    public Proxy(int clientId, int groupId) {
-        clientProxyLocal = new ServiceProxy(clientId, configLocal);
-        clientProxyGlobal = new ServiceProxy(clientId, configGlobal);
+    public Proxy(int clientId, int groupId, String localConfigPath, String globalConfigPath) {
+        clientProxyLocal = new ServiceProxy(clientId, localConfigPath);
+        clientProxyGlobal = new ServiceProxy(clientId, globalConfigPath);
         proxyGroupId = groupId;
     }
 
@@ -109,8 +107,8 @@ public class Proxy implements Map<String, String> {
             if (arr.length() == 1) {
                 int targetGroupId = arr.getInt(0);
                 if (targetGroupId == proxyGroupId) {
-                    System.out.println("Local group: " + targetGroupId);
-                    System.out.println("Local group message: " + value);
+//                    System.out.println("Local group: " + targetGroupId);
+//                    System.out.println("Local group message: " + value);
                     dos.writeInt(RequestType.PUT);
                     dos.writeUTF(key);
                     dos.writeUTF(value);
@@ -122,8 +120,8 @@ public class Proxy implements Map<String, String> {
                     return null;
                 }
             } else {
-                    System.out.println("Global group: " + arr);
-                    System.out.println("Global group message: " + value);
+//                    System.out.println("Global group: " + arr);
+//                    System.out.println("Global group message: " + value);
                     dos.writeInt(RequestType.PUT);
                     dos.writeUTF(key);
                     dos.writeUTF(value);

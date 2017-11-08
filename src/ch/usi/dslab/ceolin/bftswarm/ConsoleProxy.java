@@ -34,11 +34,16 @@ public class ConsoleProxy {
 
     public static void main(String[] args) {
         if (args.length < 1) {
-            System.out.println("Usage: ConsoleProxy <proxy id> <group id>");
+//            System.out.println("Usage: ConsoleProxy <proxy id> <group id>");
+            System.out.println("Usage: ConsoleProxy <proxy id> <group id> <local config> <global config>");
             System.exit(0);
         }
 
-        Proxy client = new Proxy(Integer.parseInt(args[0]), Integer.parseInt(args[1]));
+        String localConfigPath = args[2];
+        String globalConfigPath = args[3];
+
+        Proxy client = new Proxy(Integer.parseInt(args[0]), Integer.parseInt(args[1]), localConfigPath, globalConfigPath);
+//        Proxy client = new Proxy(Integer.parseInt(args[0]), Integer.parseInt(args[1]));
         Console console = System.console();
 
         Scanner sc = new Scanner(System.in);

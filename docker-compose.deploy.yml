@@ -129,3 +129,89 @@ services:
    - LOCAL_NODE_ID=3
    - GLOBAL_NODE_ID=11
   network_mode: "host"
+
+#
+# GROUP 2
+#
+ group_2_node_0:
+  build:
+   context: .
+   dockerfile: Dockerfile.deploy
+  environment:
+   - GROUP_ID=2
+   - LOCAL_NODE_ID=0
+   - GLOBAL_NODE_ID=8
+  network_mode: "host"
+
+ group_2_node_1:
+  build:
+   context: .
+   dockerfile: Dockerfile.deploy
+  environment:
+   - GROUP_ID=2
+   - LOCAL_NODE_ID=1
+   - GLOBAL_NODE_ID=9
+  network_mode: "host"
+
+ group_2_node_2:
+  build:
+   context: .
+   dockerfile: Dockerfile.deploy
+  environment:
+   - GROUP_ID=2
+   - LOCAL_NODE_ID=2
+   - GLOBAL_NODE_ID=10
+  network_mode: "host"
+
+ group_2_node_3:
+  build:
+   context: .
+   dockerfile: Dockerfile.deploy
+  environment:
+   - GROUP_ID=2
+   - LOCAL_NODE_ID=3
+   - GLOBAL_NODE_ID=11
+  network_mode: "host"
+
+#
+# GROUP 3
+#
+ group_3_node_0:
+  build:
+   context: .
+   dockerfile: Dockerfile.deploy
+  environment:
+   - GROUP_ID=3
+   - LOCAL_NODE_ID=0
+   - GLOBAL_NODE_ID=12
+  network_mode: "host"
+
+ group_3_node_1:
+  build:
+   context: .
+   dockerfile: Dockerfile.deploy
+  environment:
+   - GROUP_ID=3
+   - LOCAL_NODE_ID=1
+   - GLOBAL_NODE_ID=13
+  network_mode: "host"
+
+ group_3_node_2:
+  build:
+   context: .
+   dockerfile: Dockerfile.deploy
+  environment:
+   - GROUP_ID=3
+   - LOCAL_NODE_ID=2
+   - GLOBAL_NODE_ID=14
+  network_mode: "host"
+
+ group_3_node_3:
+  build:
+   context: .
+   dockerfile: Dockerfile.deploy
+  environment:
+   - GROUP_ID=3
+   - LOCAL_NODE_ID=3
+   - GLOBAL_NODE_ID=15
+  network_mode: "host"

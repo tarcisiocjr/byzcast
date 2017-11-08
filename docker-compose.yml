@@ -10,7 +10,7 @@ services:
      - GLOBAL_NODE_ID=0
      - DEV=1
     networks:
-     - group_0_local_net
+#     - group_0_local_net
      - group_global_net
   group_0_node_1:
     build:
@@ -21,7 +21,7 @@ services:
      - GLOBAL_NODE_ID=1
      - DEV=1
     networks:
-     - group_0_local_net
+#     - group_0_local_net
      - group_global_net
   group_0_node_2:
     build:
@@ -32,7 +32,7 @@ services:
      - GLOBAL_NODE_ID=2
      - DEV=1
     networks:
-     - group_0_local_net
+#     - group_0_local_net
      - group_global_net
   group_0_node_3:
     build:
@@ -43,7 +43,7 @@ services:
      - GLOBAL_NODE_ID=3
      - DEV=1
     networks:
-     - group_0_local_net
+#     - group_0_local_net
      - group_global_net
   group_1_node_0:
     build:
@@ -54,7 +54,7 @@ services:
      - GLOBAL_NODE_ID=4
      - DEV=1
     networks:
-     - group_1_local_net
+#     - group_1_local_net
      - group_global_net
   group_1_node_1:
     build:
@@ -65,7 +65,7 @@ services:
      - GLOBAL_NODE_ID=5
      - DEV=1
     networks:
-     - group_1_local_net
+#     - group_1_local_net
      - group_global_net
   group_1_node_2:
     build:
@@ -76,7 +76,7 @@ services:
      - GLOBAL_NODE_ID=6
      - DEV=1
     networks:
-     - group_1_local_net
+#     - group_1_local_net
      - group_global_net
   group_1_node_3:
     build:
@@ -87,7 +87,7 @@ services:
      - GLOBAL_NODE_ID=7
      - DEV=1
     networks:
-     - group_1_local_net
+#     - group_1_local_net
      - group_global_net
   group_2_node_0:
     build:
@@ -98,7 +98,7 @@ services:
      - GLOBAL_NODE_ID=8
      - DEV=1
     networks:
-     - group_2_local_net
+#     - group_2_local_net
      - group_global_net
   group_2_node_1:
     build:
@@ -109,7 +109,7 @@ services:
      - GLOBAL_NODE_ID=9
      - DEV=1
     networks:
-     - group_2_local_net
+#     - group_2_local_net
      - group_global_net
   group_2_node_2:
     build:
@@ -120,7 +120,7 @@ services:
      - GLOBAL_NODE_ID=10
      - DEV=1
     networks:
-     - group_2_local_net
+#     - group_2_local_net
      - group_global_net
   group_2_node_3:
     build:
@@ -131,15 +131,71 @@ services:
      - GLOBAL_NODE_ID=11
      - DEV=1
     networks:
-     - group_2_local_net
+#     - group_2_local_net
+     - group_global_net
+  group_3_node_0:
+    build:
+     context: .
+    environment:
+     - GROUP_ID=3
+     - LOCAL_NODE_ID=0
+     - GLOBAL_NODE_ID=9
+     - DEV=1
+    networks:
+#     - group_3_local_net
+     - group_global_net
+  group_3_node_1:
+    build:
+     context: .
+    environment:
+     - GROUP_ID=3
+     - LOCAL_NODE_ID=1
+     - GLOBAL_NODE_ID=10
+     - DEV=1
+    networks:
+#     - group_3_local_net
+     - group_global_net
+  group_3_node_2:
+    build:
+     context: .
+    environment:
+     - GROUP_ID=3
+     - LOCAL_NODE_ID=2
+     - GLOBAL_NODE_ID=11
+     - DEV=1
+    networks:
+#     - group_3_local_net
+     - group_global_net
+  group_3_node_3:
+    build:
+     context: .
+    environment:
+     - GROUP_ID=3
+     - LOCAL_NODE_ID=3
+     - GLOBAL_NODE_ID=12
+     - DEV=1
+    networks:
+#     - group_3_local_net
+     - group_global_net
+  group_1_proxy_0:
+    hostname: proxy
+    build:
+     context: .
+     dockerfile: Dockerfile.proxy
+    environment:
+     - GROUP_ID=1
+     - DEV=1
+    networks:
      - group_global_net
 
 networks:
-  group_0_local_net:
-    driver: macvlan
-  group_1_local_net:
-    driver: macvlan
-  group_2_local_net:
-    driver: macvlan
+#  group_0_local_net:
+#    driver: macvlan
+#  group_1_local_net:
+#    driver: macvlan
+#  group_2_local_net:
+#    driver: macvlan
+#  group_3_local_net:
+#    driver: macvlan
   group_global_net:
     driver: macvlan

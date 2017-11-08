@@ -34,77 +34,95 @@ import java.io.*;
 public class ServerGlobal extends Server {
 
     private static Integer serverGroupId;
-    private static Integer serverLocalId;
-    private static Integer clientLocalId;
-    private static ServiceProxy clientTeste123;
+    private static ServiceProxy proxyToLocal1;
+    private static ServiceProxy proxyToLocal2;
+    private static ServiceProxy proxyToLocal3;
 
-    public static class Proxy {
-        public Proxy(int clientId, int groupId) {
-            if(clientId == 10000) {
-                System.out.println("Testing: " + clientId);
-                String configTeste123 = "config-local";
-                clientTeste123 = new ServiceProxy(clientId, configTeste123);
-            }
+    public static class ProxyToLocal {
+        public ProxyToLocal(int serverGlobalId, String localConfigPath1, String localConfigPath2, String localConfigPath3) {
+            int clientId = 7000 + serverGlobalId;
+            System.out.println("Connected to Local Replicas as ID: " + clientId);
+            proxyToLocal1 = new ServiceProxy(clientId, localConfigPath1);
+            proxyToLocal2 = new ServiceProxy(clientId, localConfigPath2);
+            proxyToLocal3 = new ServiceProxy(clientId, localConfigPath3);
         }
     }
 
-    public ServerGlobal(int serverGlobalId, int groupId, int localId, int cLocalId) {
-        super(serverGlobalId);
+    public ServerGlobal(int serverGlobalId, int groupId, String configPath) {
+        super(serverGlobalId, configPath);
         serverGroupId = groupId;
-        serverLocalId = localId;
-        clientLocalId = cLocalId;
     }
 
     public static void main(String[] args) {
-
         if (args.length < 2) {
-            System.out.println("Usage: ServerGlobal <server global id> <group global id> <server local id> <client local id>");
+            System.out.println("Usage: ServerGlobal <server id> <group id> <global config path> <local config path 1> <local config path 2> <local config path 3>");
             System.exit(0);
         }
 
+        String globalConfigPath = args[2];
+        String localConfigPath1 = args[3];
+        String localConfigPath2 = args[4];
+        String localConfigPath3 = args[5];
+
         // Start the client of the local group (ServiceProxy Class).
-        // Need be in this order. You can expect a bug if you start the ServerReplica fist.
-        new Proxy(Integer.parseInt(args[3]), Integer.parseInt(args[1]));
+        // Expect a bad behavior if you start the ServerReplica fist.
+        new ProxyToLocal(Integer.parseInt(args[0]), localConfigPath1, localConfigPath2, localConfigPath3);
 
         // Start the global server (ServiceReplica Class).
-        new ServerGlobal(Integer.parseInt(args[0]), Integer.parseInt(args[1]), Integer.parseInt(args[2]), Integer.parseInt(args[3]));
+        new ServerGlobal(Integer.parseInt(args[0]), Integer.parseInt(args[1]), globalConfigPath);
     }
 
     @Override
     public byte[][] appExecuteBatch(byte[][] command, MessageContext[] mcs) {
         byte[][] replies = new byte[command.length][];
         for (int i = 0; i < command.length; i++) {
-            replies[i] = executeLocal1(command[i], mcs[i]);
+            replies[i] = executeGlobal(command[i], mcs[i]);
         }
         return replies;
     }
 
-    public byte[] executeLocal1(byte[] command, MessageContext msgCtx) {
+    //
+    // executeSingle parses the request to identify if the operation type match to PUT or REMOVE
+    // and them applies the operation into the TreeMap.
+    // It's a good idea check all the info provided by the class MessageContext!
+    //
+    // msgCtx.getConsensusId()
+    // msgCtx.getLeader()
+    //
+    private byte[] executeGlobal(byte[] command, MessageContext msgCtx) {
         ByteArrayInputStream in = new ByteArrayInputStream(command);
         DataInputStream dis = new DataInputStream(in);
         int reqType;
         try {
             reqType = dis.readInt();
             if (reqType == RequestType.PUT) {
+
                 String key = dis.readUTF();
                 String value = dis.readUTF();
-                if(serverLocalId == 0){
                     JSONObject objValue = new JSONObject(value);
                     JSONArray arr = objValue.getJSONArray("targetGroup");
                     for (int i = 0; i < arr.length(); i++){
-                        if(i == serverGroupId){
-                            System.out.println("Received key/value to forward: " + key + " / " + value);
+
+//                        System.out.println(arr.get(i));
+//                        if(i == serverGroupId){
+//                            System.out.println("Received key/value to forward: " + key + " / " + value);
                             ByteArrayOutputStream out = new ByteArrayOutputStream();
                             DataOutputStream dos = new DataOutputStream(out);
                             dos.writeInt(RequestType.PUT);
                             dos.writeUTF(key);
                             dos.writeUTF(value);
-                            byte[] reply123 = clientTeste123.invokeOrdered(out.toByteArray());
+                            if(arr.getInt(i) == 1) {
+                                byte[] reply1 = proxyToLocal1.invokeOrdered(out.toByteArray());
+                            }
+                            if(arr.getInt(i) == 2) {
+                                byte[] reply2 = proxyToLocal2.invokeOrdered(out.toByteArray());
+                            }
+                            if(arr.getInt(i) == 3) {
+                                byte[] reply3 = proxyToLocal3.invokeOrdered(out.toByteArray());
+                            }
                             out.close();
-                        }
+//                        }
                     }
-                }
-//                System.out.println("Received key/value to forward: " + key + " / " + value);
                 return null;
             } else {
                 System.out.println("Unknown request type: " + reqType);
@@ -116,6 +134,4 @@ public class ServerGlobal extends Server {
             return null;
         }
     }
-
 }
-

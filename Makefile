@@ -5,23 +5,26 @@ all: build down up
 build:
 	ant
 
-clean:
-	ant clean
-
-up: 
+up:
 	docker-compose up -d --build --no-deps
-
-log:
-	docker-compose logs -f
 
 down:
 	docker-compose down --remove-orphans
 
+log:
+	docker-compose logs -f
+
 proxy:
-	docker-compose -f docker-compose.proxy.yml up -d --build --no-dep
+	docker-compose -f docker-compose.proxy.yml up -d --build --no-dep group_0_proxy_0
 
 console:
-	docker exec -it g0_proxy bash
+	docker exec -it bftswarm_group_0_proxy_0_1 bash
+
+dist:
+	rm -rf dist ; ant dist
+
+deploy:
+	rm -rf dist ; ant dist ; rsync -av --progress --exclude=".*" --exclude="/src/" --exclude="/tmp/" . dslab.inf.usi.ch:~/bftswarm/ --delete
 
 count:
 	@find src -name \*.java | xargs wc -l | sort -n
