@@ -83,3 +83,6 @@ fabric.properties
 .project
 .classpath
 .settings/
+
+#Maven binaries
+target/
