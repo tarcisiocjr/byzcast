@@ -1,0 +1,13 @@
+ch/usi/inf/dslab/bftamcast/kvs/Request.class
+ch/usi/inf/dslab/bftamcast/util/Stats.class
+ch/usi/inf/dslab/bftamcast/client/Client.class
+ch/usi/inf/dslab/bftamcast/RequestIf.class
+ch/usi/inf/dslab/bftamcast/server/Server.class
+ch/usi/inf/dslab/bftamcast/client/Proxy.class
+ch/usi/inf/dslab/bftamcast/kvs/RequestType.class
+ch/usi/inf/dslab/bftamcast/server/PGAMcastReplier.class
+ch/usi/inf/dslab/bftamcast/client/ConsoleClient.class
+ch/usi/inf/dslab/bftamcast/server/PGAMcastReplier$1.class
+ch/usi/inf/dslab/bftamcast/server/ServerGlobal.class
+ch/usi/inf/dslab/bftamcast/ProxyIf.class
+ch/usi/inf/dslab/bftamcast/client/ClientThread.class
