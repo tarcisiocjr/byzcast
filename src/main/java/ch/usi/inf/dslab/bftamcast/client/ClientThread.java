@@ -55,7 +55,7 @@ public class ClientThread implements Runnable {
         req.setValue(randomString(size).getBytes());
         while (elapsed / 1e9 < runTime) {
             try {
-                req.setDestination(r.nextInt(100) > globalPerc || numOfGroups == 1 ? local : all);
+                req.setDestination(r.nextInt(100) >= globalPerc || numOfGroups == 1 ? local : all);
                 req.setKey(r.nextInt(Integer.MAX_VALUE));
                 req.setType(req.getDestination().length > 1 ? RequestType.SIZE : RequestType.PUT);
                 response = proxy.atomicMulticast(req);
