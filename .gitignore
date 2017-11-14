@@ -87,3 +87,5 @@ fabric.properties
 
 #Maven binaries
 target/
+
+*Stats*.txt
