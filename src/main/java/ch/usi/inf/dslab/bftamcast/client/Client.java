@@ -2,6 +2,8 @@ package ch.usi.inf.dslab.bftamcast.client;
 
 import ch.usi.inf.dslab.bftamcast.util.CLIParser;
 
+import java.util.Random;
+
 /**
  * @author Paulo Coelho - paulo.coelho@usi.ch
  */
@@ -9,11 +11,12 @@ public class Client {
 
     public static void main(String[] args) throws InterruptedException {
         CLIParser p = CLIParser.getClientParser(args);
+        Random r = new Random();
         int totalTime = p.getDuration();
         int valueSize = p.getMsgSize();
         int clientCount = p.getClientCount();
         int idGroup = p.getGroup();
-        int id = p.getId();
+        int id = p.getId() == 0 ? r.nextInt(Integer.MAX_VALUE) : p.getId();
         int perc = p.getGlobalPercent();
         String globalConfigPath = p.getGlobalConfig();
         String[] localConfigPaths = p.getLocalConfigs();
@@ -21,8 +24,8 @@ public class Client {
         Thread[] clientThreads = new Thread[clientCount];
 
         for (int i = 0; i < clientCount; i++) {
-            System.out.println("Starting client " + i);
-            Thread.sleep(300);
+            System.out.println("Starting client " + (id + i));
+            Thread.sleep(r.nextInt(600));
             clients[i] = new ClientThread(id + i, idGroup, globalConfigPath, localConfigPaths, true, totalTime, valueSize, perc);
             clientThreads[i] = new Thread(clients[i]);
             clientThreads[i].start();

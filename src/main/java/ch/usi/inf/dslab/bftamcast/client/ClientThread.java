@@ -49,14 +49,14 @@ public class ClientThread implements Runnable {
         byte[] response;
         int[] all = new int[numOfGroups], local = new int[]{groupId};
 
-        for(int i = 0; i < numOfGroups; i++)
+        for (int i = 0; i < numOfGroups; i++)
             all[i] = i;
 
         req.setValue(randomString(size).getBytes());
         while (elapsed / 1e9 < runTime) {
             try {
-                req.setDestination(r.nextInt() % 100 > globalPerc || numOfGroups == 1 ? local : all);
-                req.setKey(r.nextInt());
+                req.setDestination(r.nextInt(100) > globalPerc || numOfGroups == 1 ? local : all);
+                req.setKey(r.nextInt(Integer.MAX_VALUE));
                 req.setType(req.getDestination().length > 1 ? RequestType.SIZE : RequestType.PUT);
                 response = proxy.atomicMulticast(req);
                 if (response == null && req.getType() == RequestType.SIZE) {
@@ -73,7 +73,7 @@ public class ClientThread implements Runnable {
 
                 usLat = now;
                 if (verbose && elapsed - delta >= 2 * 1e9) {
-                    System.out.println("Client " + clientId + " ops/second:" + localStats.getPartialCount() / ((float) (elapsed - delta) / 1e9));
+                    System.out.println("Client " + clientId + " ops/second:" + (localStats.getPartialCount() + globalStats.getPartialCount()) / ((float) (elapsed - delta) / 1e9));
                     delta = elapsed;
                 }
 
@@ -81,8 +81,11 @@ public class ClientThread implements Runnable {
                 e.printStackTrace();
             }
         }
-        localStats.persist("localStats-client-" + clientId + ".txt", 15);
-        globalStats.persist("globalStats-client-" + clientId + ".txt", 15);
+        if (localStats.getCount() > 0)
+            localStats.persist("localStats-client-" + clientId + ".txt", 15);
+
+        if (globalStats.getCount() > 0)
+            globalStats.persist("globalStats-client-" + clientId + ".txt", 15);
 
         System.out.println("LOCAL STATS:" + localStats);
         System.out.println("\nGLOBAL STATS:" + globalStats);

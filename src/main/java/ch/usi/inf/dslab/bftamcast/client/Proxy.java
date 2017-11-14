@@ -9,7 +9,7 @@ import ch.usi.inf.dslab.bftamcast.RequestIf;
  */
 public class Proxy implements ProxyIf {
 
-    private static int proxyId;
+    private int proxyId;
 
     private ServiceProxy[] localClients;
     private ServiceProxy globalClient;
