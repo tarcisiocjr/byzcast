@@ -16,25 +16,23 @@ public class ClientThread implements Runnable {
     private int clientId;
     private int groupId;
     private int numOfGroups;
-    private String[] localConfigs;
-    private String globalConfig;
     private boolean verbose;
     private int runTime;
     private int size;
+    private int globalPerc;
     private Random random;
     private Stats localStats, globalStats;
     private ProxyIf proxy;
 
 
-    public ClientThread(int clientId, int groupId, String globalConfig, String[] localConfigs, boolean verbose, int runTime, int valueSize) {
+    public ClientThread(int clientId, int groupId, String globalConfig, String[] localConfigs, boolean verbose, int runTime, int valueSize, int globalPerc) {
         this.clientId = clientId;
         this.groupId = groupId;
-        this.numOfGroups = localConfigs == null ? 1 : localConfigs.length;
-        this.localConfigs = localConfigs;
-        this.globalConfig = globalConfig;
+        this.numOfGroups = (localConfigs == null || localConfigs.length == 0) ? 1 : localConfigs.length;
         this.verbose = verbose;
         this.runTime = runTime;
         this.size = valueSize;
+        this.globalPerc = globalPerc;
         this.random = new Random();
         this.localStats = new Stats();
         this.globalStats = new Stats();
@@ -49,11 +47,15 @@ public class ClientThread implements Runnable {
         long startTime = System.nanoTime(), now;
         long elapsed = 0, delta = 0, usLat = startTime;
         byte[] response;
+        int[] all = new int[numOfGroups], local = new int[]{groupId};
+
+        for(int i = 0; i < numOfGroups; i++)
+            all[i] = i;
 
         req.setValue(randomString(size).getBytes());
         while (elapsed / 1e9 < runTime) {
             try {
-                req.setDestination(r.nextInt() % 2 == 0 || numOfGroups == 1 ? new int[]{groupId} : new int[]{groupId, (groupId + 1) % numOfGroups});
+                req.setDestination(r.nextInt() % 100 > globalPerc || numOfGroups == 1 ? local : all);
                 req.setKey(r.nextInt());
                 req.setType(req.getDestination().length > 1 ? RequestType.SIZE : RequestType.PUT);
                 response = proxy.atomicMulticast(req);
@@ -79,8 +81,8 @@ public class ClientThread implements Runnable {
                 e.printStackTrace();
             }
         }
-        localStats.persist("localStats-client-" + clientId + ".txt", 5);
-        globalStats.persist("globalStats-client-" + clientId + ".txt", 5);
+        localStats.persist("localStats-client-" + clientId + ".txt", 15);
+        globalStats.persist("globalStats-client-" + clientId + ".txt", 15);
 
         System.out.println("LOCAL STATS:" + localStats);
         System.out.println("\nGLOBAL STATS:" + globalStats);

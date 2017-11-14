@@ -3,6 +3,7 @@ package ch.usi.inf.dslab.bftamcast.server;
 import bftsmart.tom.MessageContext;
 import bftsmart.tom.ServiceReplica;
 import bftsmart.tom.server.defaultservices.DefaultRecoverable;
+import ch.usi.inf.dslab.bftamcast.util.CLIParser;
 
 import java.io.*;
 
@@ -16,7 +17,6 @@ public class Server extends DefaultRecoverable /*implements FIFOExecutable*/ {
     private int id, groupId, nextTS;
 
     public Server(int id, int group, String configPath) {
-
         this.id = id;
         this.groupId = group;
         this.nextTS = 0;
@@ -34,12 +34,8 @@ public class Server extends DefaultRecoverable /*implements FIFOExecutable*/ {
     }
 
     public static void main(String[] args) {
-        if (args.length < 2) {
-            System.out.println("Usage: Server <server id> <group id> <config path>");
-            System.exit(-1);
-        }
-
-        new Server(Integer.parseInt(args[0]), Integer.parseInt(args[1]), args[2]);
+        CLIParser p = CLIParser.getLocalServerParser(args);
+        new Server(p.getId(), p.getGroup(), p.getLocalConfig());
     }
 
 

@@ -27,6 +27,7 @@ import bftsmart.tom.ServiceReplica;
 import bftsmart.tom.server.defaultservices.DefaultRecoverable;
 import bftsmart.tom.server.defaultservices.DefaultReplier;
 import ch.usi.inf.dslab.bftamcast.kvs.Request;
+import ch.usi.inf.dslab.bftamcast.util.CLIParser;
 
 import java.io.*;
 import java.util.Arrays;
@@ -66,13 +67,8 @@ public class ServerGlobal extends DefaultRecoverable {
     }
 
     public static void main(String[] args) {
-        if (args.length < 4) {
-            System.out.println("Usage: ServerGlobal <server id> <global config path> <local config path 1> <local config path 2> ... <local config path N>");
-            System.exit(0);
-        }
-
-        // Start the global server (ServiceReplica Class).
-        new ServerGlobal(Integer.parseInt(args[0]), args[1], Arrays.copyOfRange(args, 2, args.length));
+        CLIParser p = CLIParser.getGlobalServerParser(args);
+        new ServerGlobal(p.getId(), p.getGlobalConfig(), p.getLocalConfigs());
     }
 
     @Override
