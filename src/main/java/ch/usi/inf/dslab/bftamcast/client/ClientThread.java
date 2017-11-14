@@ -82,12 +82,12 @@ public class ClientThread implements Runnable {
             }
         }
         if (localStats.getCount() > 0) {
-            localStats.persist("localStats-client-" + clientId + ".txt", 15);
+            localStats.persist("localStats-client-g" + groupId + "-" + clientId + ".txt", 15);
             System.out.println("LOCAL STATS:" + localStats);
         }
 
         if (globalStats.getCount() > 0) {
-            globalStats.persist("globalStats-client-" + clientId + ".txt", 15);
+            globalStats.persist("globalStats-client-g" + groupId + "-" + clientId + ".txt", 15);
             System.out.println("\nGLOBAL STATS:" + globalStats);
         }
 
