@@ -30,6 +30,45 @@ public class Request implements RequestIf, Serializable {
         this.seqNumber = seqNumber;
     }
 
+    public static byte[] ArrayToBytes(Request[] reqs) {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+
+        try {
+            ObjectOutputStream dos = new ObjectOutputStream(out);
+            dos.writeInt(reqs.length);
+            for (Request r :
+                    reqs) {
+                dos.writeObject(r);
+            }
+            dos.close();
+            out.close();
+        } catch (IOException e) {
+            System.err.println("Unable to convert RequestIf to bytes");
+            e.printStackTrace();
+            return null;
+        }
+        return out.toByteArray();
+    }
+
+    public static Request[] ArrayfromBytes(byte[] b) {
+        ByteArrayInputStream in = new ByteArrayInputStream(b);
+        Request[] reqs = null;
+        int size;
+
+        try {
+            ObjectInputStream dis = new ObjectInputStream(in);
+            size = dis.readInt();
+            reqs = new Request[size];
+            for (int i = 0; i < reqs.length; i++) reqs[i] = (Request) dis.readObject();
+
+
+        } catch (IOException | ClassNotFoundException e) {
+            System.err.println("Unable to convert bytes to Request");
+            e.printStackTrace();
+        }
+        return reqs;
+    }
+
     public RequestType getType() {
         return type;
     }
@@ -121,7 +160,7 @@ public class Request implements RequestIf, Serializable {
     @Override
     public String toString() {
         StringBuffer buf = new StringBuffer();
-        buf.append("RequestIf '" + this.type + "', key " + this.key + " to groups ( ");
+        buf.append("RequestIf '" + this.type + "', key " + this.key + ", seq. number" + this.seqNumber + " to groups ( ");
         for (int dest : this.destination)
             buf.append(dest + " ");
         buf.append(')');

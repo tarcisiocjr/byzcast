@@ -8,7 +8,7 @@ import bftsmart.tom.server.Replier;
 import ch.usi.inf.dslab.bftamcast.kvs.Request;
 import ch.usi.inf.dslab.bftamcast.kvs.RequestType;
 
-import java.io.*;
+import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.SortedMap;
@@ -30,12 +30,14 @@ public class AMcastBatchReplier implements Replier, FIFOExecutable, Serializable
     private Request req;
     private Map<Integer, byte[]> table;
     private SortedMap<Integer, Vector<TOMMessage>> globalReplies;
+    private Map<Integer, Request> executedReq;
     private int group;
 
     public AMcastBatchReplier(int group) {
         replyLock = new ReentrantLock();
         contextSet = replyLock.newCondition();
         globalReplies = new TreeMap<>();
+        executedReq = new TreeMap<>();
         table = new TreeMap<>();
         req = new Request();
         this.group = group;
@@ -58,35 +60,32 @@ public class AMcastBatchReplier implements Replier, FIFOExecutable, Serializable
             rc.getServerCommunicationSystem().send(new int[]{request.getSender()}, request.reply);
         } else {
             int n = rc.getStaticConfiguration().getN();
-            byte[] response;
 
             Vector<TOMMessage> msgs = saveReply(request, req.getSeqNumber());
             if (msgs.size() < n) {
-//                System.out.println("Msg " + req.getSeqNumber() + ": " + msgs.size() + " global replicas so far, waiting for " + n + "...");
                 return;
             }
 
+            for (TOMMessage msg : msgs) {
+                req.fromBytes(msg.reply.getContent());
 
-            try {
-                ByteArrayInputStream bis = new ByteArrayInputStream(req.getValue());
-                ObjectInputStream ois = new ObjectInputStream(bis);
-                ByteArrayOutputStream bos = new ByteArrayOutputStream();
-                ObjectOutputStream oos = new ObjectOutputStream(bos);
-                Request[] reqs = (Request[]) ois.readObject();
-                for (int i = 0; i < reqs.length; i++)
-                    reqs[i] = execute(reqs[i]);
-
-                oos.writeObject(reqs);
-                oos.close();
-                bos.close();
-                req.setValue(bos.toByteArray());
-                response = req.toBytes();//executeSingle(request.getContent(), null, true, true);
-                for (TOMMessage msg : msgs) {
-                    msg.reply.setContent(response);
-                    rc.getServerCommunicationSystem().send(new int[]{msg.getSender()}, msg.reply);
+                Request[] reqs = Request.ArrayfromBytes(req.getValue());
+                //System.out.println("Sender " + msg.getSender() + ": batch #" + req.getSeqNumber() + " of size " + reqs.length);
+                for (int i = 0; i < reqs.length; i++) {
+                    //System.out.println("Processing request " + reqs[i]);
+                    Request temp = executedReq.get(reqs[i].getSeqNumber());
+                    if (temp != null) {
+                        //System.out.println("Using saved request");
+                        reqs[i] = temp;
+                    } else {
+                        reqs[i] = execute(reqs[i]);
+                        executedReq.put(reqs[i].getSeqNumber(), reqs[i]);
+                    }
                 }
-            } catch (IOException | ClassNotFoundException e) {
-                e.printStackTrace();
+
+                req.setValue(Request.ArrayToBytes(reqs));
+                msg.reply.setContent(req.toBytes());
+                rc.getServerCommunicationSystem().send(new int[]{msg.getSender()}, msg.reply);
             }
         }
     }
@@ -148,7 +147,7 @@ public class AMcastBatchReplier implements Replier, FIFOExecutable, Serializable
         }
 
         if (!toMe) {
-            System.out.println("Message not addressed to my group.");
+            //System.out.println("Message not addressed to my group.");
             req.setType(RequestType.NOP);
             req.setValue(null);
         } else {
