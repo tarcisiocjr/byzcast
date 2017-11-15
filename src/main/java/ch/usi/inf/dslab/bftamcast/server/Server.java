@@ -13,14 +13,15 @@ import java.io.*;
  */
 public class Server extends DefaultRecoverable /*implements FIFOExecutable*/ {
 
-    private PGAMcastReplier replier;
+    //private PGAMcastReplier replier;
+    private AMcastBatchReplier replier;
     private int id, groupId, nextTS;
 
     public Server(int id, int group, String configPath) {
         this.id = id;
         this.groupId = group;
         this.nextTS = 0;
-        replier = new PGAMcastReplier(groupId);
+        replier = new AMcastBatchReplier(groupId);
 
         try {
             Thread.sleep(this.groupId * 4000 + this.id * 1000);
@@ -68,7 +69,7 @@ public class Server extends DefaultRecoverable /*implements FIFOExecutable*/ {
         ByteArrayInputStream bis = new ByteArrayInputStream(state);
         try {
             ObjectInput in = new ObjectInputStream(bis);
-            replier = (PGAMcastReplier) in.readObject();
+            replier = (AMcastBatchReplier) in.readObject();
             id = in.readInt();
             groupId = in.readInt();
             nextTS = in.readInt();

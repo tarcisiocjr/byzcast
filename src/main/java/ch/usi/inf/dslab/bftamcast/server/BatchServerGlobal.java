@@ -27,29 +27,31 @@ import bftsmart.tom.ServiceReplica;
 import bftsmart.tom.server.defaultservices.DefaultRecoverable;
 import bftsmart.tom.server.defaultservices.DefaultReplier;
 import ch.usi.inf.dslab.bftamcast.kvs.Request;
+import ch.usi.inf.dslab.bftamcast.kvs.RequestType;
 import ch.usi.inf.dslab.bftamcast.util.CLIParser;
 
 import java.io.*;
-import java.util.Arrays;
 
 /**
  * @author Tarcisio Ceolin - tarcisio.ceolin.junior@usi.ch
  * @author Paulo Coelho - paulo.coelho@usi.ch
  */
-public class ServerGlobal extends DefaultRecoverable {
+public class BatchServerGlobal extends DefaultRecoverable {
+    private final int[] allDest;
     private int id;
     private int seqNumber;
     private ServiceProxy[] proxiesToLocal;
     private Thread[] invokeThreads;
     private byte[][] invokeReplies;
 
-    public ServerGlobal(int serverGlobalId, String configPath, String[] localConfigPaths) {
+    private BatchServerGlobal(int serverGlobalId, String configPath, String[] localConfigPaths) {
         int clientId = 70000 + serverGlobalId;
 
         id = serverGlobalId;
         proxiesToLocal = new ServiceProxy[localConfigPaths.length];
         invokeThreads = new Thread[localConfigPaths.length];
         invokeReplies = new byte[localConfigPaths.length][];
+        allDest = new int[localConfigPaths.length];
         seqNumber = 1;
         try {
             Thread.sleep(localConfigPaths.length * 4000 + this.id * 1000);
@@ -62,58 +64,133 @@ public class ServerGlobal extends DefaultRecoverable {
         for (int i = 0; i < localConfigPaths.length; i++) {
             System.out.println("Connected to Local Group " + i + ", config '" + localConfigPaths[i] + "'  as ID: " + clientId);
             proxiesToLocal[i] = new ServiceProxy(clientId, localConfigPaths[i]);
+            allDest[i] = i;
         }
         new ServiceReplica(id, configPath, this, this, null, new DefaultReplier());
     }
 
     public static void main(String[] args) {
         CLIParser p = CLIParser.getGlobalServerParser(args);
-        new ServerGlobal(p.getId(), p.getGlobalConfig(), p.getLocalConfigs());
+        new BatchServerGlobal(p.getId(), p.getGlobalConfig(), p.getLocalConfigs());
     }
 
     @Override
     public byte[][] appExecuteBatch(byte[][] command, MessageContext[] mcs) {
-        byte[][] replies = new byte[command.length][];
-        for (int i = 0; i < command.length; i++) {
-            replies[i] = executeGlobal(command[i], mcs[i]);
-        }
-        return replies;
-    }
-
-    private byte[] executeGlobal(byte[] command, MessageContext msgCtx) {
-        Request req = new Request(), reply = new Request();
-        byte[] toSend;
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        req.fromBytes(command);
+        byte[][] replies = new byte[command.length][];
+        Request mainReq = new Request(), auxReq = new Request();
+        Request[] reqs = new Request[allDest.length];
 
-        req.setSeqNumber(seqNumber++);
-        toSend = req.toBytes();
         try {
-            for (int dest : req.getDestination()) {
-                invokeThreads[dest] = new Thread(() -> {
-                    invokeReplies[dest] = proxiesToLocal[dest].invokeOrdered(toSend);
-                });
+            ObjectOutputStream dos = new ObjectOutputStream(bos);
+
+            mainReq.setType(RequestType.BATCH);
+            mainReq.setDestination(allDest);
+            mainReq.setSeqNumber(seqNumber++);
+
+            for (int i = 0; i < command.length; i++) {
+                reqs[i] = new Request();
+                reqs[i].fromBytes(command[i]);
+            }
+            dos.writeObject(reqs);
+            dos.close();
+            bos.close();
+            mainReq.setValue(bos.toByteArray());
+            for (int dest : allDest) {
+                invokeThreads[dest] = new Thread(() -> invokeReplies[dest] = proxiesToLocal[dest].invokeOrdered(mainReq.toBytes()));
                 invokeThreads[dest].start();
             }
 
-            for (int dest : req.getDestination()) {
-                invokeThreads[dest].join();
-                reply.fromBytes(invokeReplies[dest]);
-                bos.write(reply.getValue());
-            }
-            bos.flush();
-            bos.close();
-            req.setValue(bos.toByteArray());
-            return req.toBytes();
+            //reset values
+            for (int i = 0; i < command.length; i++)
+                reqs[i].setValue(null);
 
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
+
+            for (int dest : allDest) {
+                invokeThreads[dest].join();
+                auxReq.fromBytes(invokeReplies[dest]);
+                ByteArrayInputStream bis = new ByteArrayInputStream(auxReq.getValue());
+                ObjectInputStream dis = new ObjectInputStream(bis);
+                Request[] temp = (Request[]) dis.readObject();
+                for (int i = 0; i < command.length; i++) {
+                    bos.reset();
+                    if (temp[i].getType() != RequestType.NOP) { // message was addressed to group dest
+                        if (reqs[i].getValue() == null) { //set value initially to false
+                            reqs[i].setValue(temp[i].getValue());
+                        } else {
+                            bos.write(reqs[i].getValue());
+                            bos.write(temp[i].getValue());
+                            bos.close();
+                            reqs[i].setValue(bos.toByteArray());
+                        }
+                    }
+                }
+            }
+
+            for (int i = 0; i < command.length; i++)
+                replies[i] = reqs[i].toBytes();
+
+        } catch (InterruptedException | IOException | ClassNotFoundException e) {
             e.printStackTrace();
         }
-        return null;
-    }
 
+        return replies;
+        /*
+
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        ObjectInputStream[] dis = new ObjectInputStream[allDest.length];
+         ByteArrayInputStream[] bis = new ByteArrayInputStream[allDest.length];
+        byte[][] replies = new byte[command.length][];
+        final byte[] toSend;
+
+        try {
+            ObjectOutputStream dos = new ObjectOutputStream(bos);
+            Request[] reqs = new Request[command.length];
+            Request[][] replyReq = new Request[allDest.length][];
+
+            for (int i = 0; i < command.length; i++) {
+                reqs[i] = new Request();
+                reqs[i].fromBytes(command[i]);
+                reqs[i].setSeqNumber(seqNumber++);
+            }
+            dos.writeObject(reqs);
+            dos.close();
+            bos.close();
+            toSend = bos.toByteArray();
+
+            for (int dest : allDest) {
+                invokeThreads[dest] = new Thread(() -> invokeReplies[dest] = proxiesToLocal[dest].invokeOrdered(toSend));
+                invokeThreads[dest].start();
+            }
+
+
+            for (int dest : allDest) {
+                invokeThreads[dest].join();
+                bis[dest] = new ByteArrayInputStream(invokeReplies[dest]);
+                dis[dest] = new ObjectInputStream(bis[dest]);
+                replyReq[dest] = (Request[]) dis[dest].readObject();
+            }
+
+            for (int i = 0; i < replies.length; i++) {
+                bos.reset();
+                for (int j = 0; j < allDest.length; j++) {
+                    if (replyReq[j][i].getType() != RequestType.NOP) {
+                        bos.write(replyReq[j][i].getValue());
+                    }
+                }
+                bos.flush();
+                reqs[i].setValue(bos.toByteArray());
+                replies[i] = reqs[i].toBytes();
+            }
+
+        } catch (InterruptedException | IOException | ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+
+
+        return replies;
+        */
+    }
 
     // TreeMap to byte array
     @Override
