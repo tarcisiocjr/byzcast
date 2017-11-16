@@ -8,25 +8,23 @@ package ch.usi.inf.dslab.bftamcast.client;
 import ch.usi.inf.dslab.bftamcast.ProxyIf;
 import ch.usi.inf.dslab.bftamcast.kvs.Request;
 import ch.usi.inf.dslab.bftamcast.kvs.RequestType;
+import ch.usi.inf.dslab.bftamcast.util.CLIParser;
 
 import java.io.Console;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
+import java.util.Random;
 import java.util.Scanner;
 
 public class ConsoleClient {
 
     public static void main(String[] args) {
-        if (args.length < 3) {
-            System.out.println(
-                    "Usage: java Client <cliend id> <client group> <global config> <local config 0> <local config 1> ... <local config N>");
-            System.exit(-1);
-        }
-
-        int idClient = Integer.parseInt(args[0]);
-        int idGroup = Integer.parseInt(args[1]);
-        String globalConfigPath = args[2];
-        String[] localConfigPaths = args.length == 3 ? null : Arrays.copyOfRange(args, 3, args.length);
+        CLIParser p = CLIParser.getClientParser(args);
+        Random r = new Random();
+        int idGroup = p.getGroup();
+        int idClient = p.getId() == 0 ? r.nextInt(Integer.MAX_VALUE) : p.getId();
+        String globalConfigPath = p.getGlobalConfig();
+        String[] localConfigPaths = p.getLocalConfigs();
         int numGroups = localConfigPaths == null ? 1 : localConfigPaths.length;
         ProxyIf proxy = new Proxy(idClient + 1000 * idGroup, globalConfigPath, localConfigPaths);
         Request req = new Request();

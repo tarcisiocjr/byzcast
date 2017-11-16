@@ -30,7 +30,6 @@ import ch.usi.inf.dslab.bftamcast.kvs.Request;
 import ch.usi.inf.dslab.bftamcast.util.CLIParser;
 
 import java.io.*;
-import java.util.Arrays;
 
 /**
  * @author Tarcisio Ceolin - tarcisio.ceolin.junior@usi.ch
@@ -90,9 +89,7 @@ public class ServerGlobal extends DefaultRecoverable {
         toSend = req.toBytes();
         try {
             for (int dest : req.getDestination()) {
-                invokeThreads[dest] = new Thread(() -> {
-                    invokeReplies[dest] = proxiesToLocal[dest].invokeOrdered(toSend);
-                });
+                invokeThreads[dest] = new Thread(() -> invokeReplies[dest] = proxiesToLocal[dest].invokeOrdered(toSend));
                 invokeThreads[dest].start();
             }
 
@@ -106,9 +103,7 @@ public class ServerGlobal extends DefaultRecoverable {
             req.setValue(bos.toByteArray());
             return req.toBytes();
 
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
+        } catch (InterruptedException | IOException e) {
             e.printStackTrace();
         }
         return null;
@@ -155,6 +150,6 @@ public class ServerGlobal extends DefaultRecoverable {
 
     @Override
     public byte[] appExecuteUnordered(byte[] bytes, MessageContext messageContext) {
-        throw new UnsupportedOperationException("Implemented by PGAMcastReplier");
+        throw new UnsupportedOperationException("Global server only accepts ordered messages");
     }
 }

@@ -32,8 +32,9 @@ public class AMcastBatchReplier implements Replier, FIFOExecutable, Serializable
     private SortedMap<Integer, Vector<TOMMessage>> globalReplies;
     private Map<Integer, Request> executedReq;
     private int group;
+    private boolean nonGenuine;
 
-    public AMcastBatchReplier(int group) {
+    public AMcastBatchReplier(int group, boolean ng) {
         replyLock = new ReentrantLock();
         contextSet = replyLock.newCondition();
         globalReplies = new TreeMap<>();
@@ -41,6 +42,7 @@ public class AMcastBatchReplier implements Replier, FIFOExecutable, Serializable
         table = new TreeMap<>();
         req = new Request();
         this.group = group;
+        nonGenuine = ng;
     }
 
     @Override
@@ -56,9 +58,12 @@ public class AMcastBatchReplier implements Replier, FIFOExecutable, Serializable
         }
 
         req.fromBytes(request.reply.getContent());
-        if (req.getDestination().length == 1) {
+        if (req.getDestination().length == 1 && !nonGenuine) {
+            req = execute(req);
+            request.reply.setContent(req.toBytes());
             rc.getServerCommunicationSystem().send(new int[]{request.getSender()}, request.reply);
         } else {
+            //NON-GENUINE: ALL MESSAGES COME FROM THE GLOBAL GROUP
             int n = rc.getStaticConfiguration().getN();
 
             Vector<TOMMessage> msgs = saveReply(request, req.getSeqNumber());
@@ -100,42 +105,29 @@ public class AMcastBatchReplier implements Replier, FIFOExecutable, Serializable
 
     @Override
     public byte[] executeOrderedFIFO(byte[] bytes, MessageContext messageContext, int i, int i1) {
-        return executeSingle(bytes, messageContext, true);
+        return bytes;
+        // executeSingle(bytes, messageContext);
     }
 
     @Override
     public byte[] executeUnorderedFIFO(byte[] bytes, MessageContext messageContext, int i, int i1) {
-        return executeSingle(bytes, messageContext, false);
+        if (!nonGenuine)
+            new UnsupportedOperationException("Genuine batch replier only accepts ordered messages");
+        return bytes;
+        //return executeSingle(bytes, messageContext);
     }
 
     @Override
     public byte[] executeOrdered(byte[] bytes, MessageContext messageContext) {
-        return executeSingle(bytes, messageContext, true);
+        throw new UnsupportedOperationException("All ordered messages should be FIFO");
     }
 
     @Override
     public byte[] executeUnordered(byte[] bytes, MessageContext messageContext) {
-        return executeSingle(bytes, messageContext, false);
+        throw new UnsupportedOperationException("All unordered messages should be FIFO");
     }
 
-    // applies the operation into the TreeMap.
-    private byte[] executeSingle(byte[] command, MessageContext msgCtx, boolean ordered) {
-        Request req = new Request();
-
-        if (!ordered) {
-            System.err.println("Unordered msg: sig = " + msgCtx.getOperationId() + ", sender = " + msgCtx.getSender());
-        }
-
-        req.fromBytes(command);
-        if (req.getDestination().length > 1) {
-            //multi-group message
-            return command;
-        }
-
-        return execute(req).toBytes();
-    }
-
-    private Request execute(Request req) {
+    protected Request execute(Request req) {
         byte[] resultBytes;
         boolean toMe = false;
 
@@ -174,10 +166,9 @@ public class AMcastBatchReplier implements Replier, FIFOExecutable, Serializable
         return req;
     }
 
-    private Vector<TOMMessage> saveReply(TOMMessage reply, int seqNumber) {
+    protected Vector<TOMMessage> saveReply(TOMMessage reply, int seqNumber) {
         Vector<TOMMessage> messages = globalReplies.computeIfAbsent(seqNumber, k -> new Vector<>());
         messages.add(reply);
         return messages;
     }
-
 }

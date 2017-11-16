@@ -22,7 +22,7 @@ import java.util.logging.Logger;
 /**
  * @author Paulo Coelho - paulo.coelho@usi.ch
  */
-public class PGAMcastReplier implements Replier, FIFOExecutable, Serializable {
+public class AMcastReplier implements Replier, FIFOExecutable, Serializable {
     private transient Lock replyLock;
     private transient Condition contextSet;
     private transient ReplicaContext rc;
@@ -31,7 +31,7 @@ public class PGAMcastReplier implements Replier, FIFOExecutable, Serializable {
     private SortedMap<Integer, Vector<TOMMessage>> globalReplies;
     private int group;
 
-    public PGAMcastReplier(int group) {
+    public AMcastReplier(int group) {
         replyLock = new ReentrantLock();
         contextSet = replyLock.newCondition();
         globalReplies = new TreeMap<>();
@@ -48,7 +48,7 @@ public class PGAMcastReplier implements Replier, FIFOExecutable, Serializable {
                 this.contextSet.await();
                 this.replyLock.unlock();
             } catch (InterruptedException ex) {
-                Logger.getLogger(PGAMcastReplier.class.getName()).log(Level.SEVERE, null, ex);
+                Logger.getLogger(AMcastReplier.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
 

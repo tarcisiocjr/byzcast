@@ -3,7 +3,7 @@ package ch.usi.inf.dslab.bftamcast.util;
 import org.apache.commons.cli.*;
 
 public class CLIParser {
-    private Option globalConfig, localConfigs, localConfig, id, group, globalPercent, clientCount, duration, msgSize;
+    private Option globalConfig, localConfigs, localConfig, id, group, globalPercent, clientCount, duration, msgSize, nonGenuine;
     private Options options;
     private CommandLineParser parser;
     private CommandLine line;
@@ -20,6 +20,7 @@ public class CLIParser {
         globalConfig = Option.builder("gc").desc("global group config folder").argName("folder").hasArg().numberOfArgs(1).type(String.class).build();
         localConfig = Option.builder("lc").desc("local group config folder").argName("folder").hasArg().numberOfArgs(1).type(String.class).build();
         localConfigs = Option.builder("lcs").desc("2+ local group config folders").argName("folder1 ... folderN").hasArg().numberOfArgs(Option.UNLIMITED_VALUES).type(String[].class).build();
+        nonGenuine = Option.builder("ng").desc("sets the server to the non-genuine configuration").hasArg(false).build();
         options = new Options();
         parser = new DefaultParser();
         line = null;
@@ -52,6 +53,7 @@ public class CLIParser {
         parser.options.addOption(parser.id);
         parser.options.addOption(parser.globalConfig);
         parser.options.addOption(parser.localConfigs);
+        parser.options.addOption(parser.nonGenuine);
         parser.parse(args);
         return parser;
     }
@@ -65,21 +67,9 @@ public class CLIParser {
         parser.options.addOption(parser.id);
         parser.options.addOption(parser.group);
         parser.options.addOption(parser.localConfig);
+        parser.options.addOption(parser.nonGenuine);
         parser.parse(args);
         return parser;
-    }
-
-    public static void main(String args[]) {
-        args = new String[]{"-g", "1", "-i", "0"};
-        CLIParser p = CLIParser.getClientParser(args);
-        System.out.println("id = " + p.getId());
-        System.out.println("group = " + p.getGroup());
-        System.out.println("percent = " + p.getGlobalPercent());
-        System.out.println("count = " + p.getClientCount());
-        System.out.println("global config = " + p.getGlobalConfig());
-        for (String conf : p.getLocalConfigs())
-            System.out.println("local config = " + conf);
-
     }
 
     public int getId() {
@@ -120,6 +110,10 @@ public class CLIParser {
 
     public String[] getLocalConfigs() {
         return line.getOptionValues("lcs");
+    }
+
+    public boolean isNonGenuine() {
+        return line.hasOption("ng");
     }
 
     private void parse(String args[]) {

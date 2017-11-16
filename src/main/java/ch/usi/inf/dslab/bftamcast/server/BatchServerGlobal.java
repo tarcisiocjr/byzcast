@@ -33,7 +33,6 @@ import ch.usi.inf.dslab.bftamcast.util.CLIParser;
 import java.io.*;
 
 /**
- * @author Tarcisio Ceolin - tarcisio.ceolin.junior@usi.ch
  * @author Paulo Coelho - paulo.coelho@usi.ch
  */
 public class BatchServerGlobal extends DefaultRecoverable {
@@ -43,15 +42,17 @@ public class BatchServerGlobal extends DefaultRecoverable {
     private ServiceProxy[] proxiesToLocal;
     private Thread[] invokeThreads;
     private byte[][] invokeReplies;
+    private boolean nonGenuine;
 
-    private BatchServerGlobal(int serverGlobalId, String configPath, String[] localConfigPaths) {
-        int clientId = 70000 + serverGlobalId;
+    private BatchServerGlobal(int serverGlobalId, String configPath, String[] localConfigPaths, boolean ng) {
+        int clientId = 80000 + serverGlobalId;
         id = serverGlobalId;
         proxiesToLocal = new ServiceProxy[localConfigPaths.length];
         invokeThreads = new Thread[localConfigPaths.length];
         invokeReplies = new byte[localConfigPaths.length][];
         allDest = new int[localConfigPaths.length];
         innerSeqNumber = seqNumber = 1;
+        nonGenuine = ng;
         try {
             Thread.sleep(localConfigPaths.length * 4000 + this.id * 1000);
         } catch (InterruptedException e) {
@@ -70,7 +71,7 @@ public class BatchServerGlobal extends DefaultRecoverable {
 
     public static void main(String[] args) {
         CLIParser p = CLIParser.getGlobalServerParser(args);
-        new BatchServerGlobal(p.getId(), p.getGlobalConfig(), p.getLocalConfigs());
+        new BatchServerGlobal(p.getId(), p.getGlobalConfig(), p.getLocalConfigs(), p.isNonGenuine());
     }
 
     @Override
@@ -93,9 +94,9 @@ public class BatchServerGlobal extends DefaultRecoverable {
                 reqs[i].setSeqNumber(innerSeqNumber++);
             }
 
-            mainReq.setValue(Request.ArrayToBytes(reqs));//bos.toByteArray());
+            mainReq.setValue(Request.ArrayToBytes(reqs));
             for (int dest : allDest) {
-                invokeThreads[dest] = new Thread(() -> invokeReplies[dest] = proxiesToLocal[dest].invokeOrdered(mainReq.toBytes()));
+                invokeThreads[dest] = new Thread(() -> invokeReplies[dest] = nonGenuine ? proxiesToLocal[dest].invokeUnordered(mainReq.toBytes()) : proxiesToLocal[dest].invokeOrdered(mainReq.toBytes()));
                 invokeThreads[dest].start();
             }
 
@@ -120,8 +121,6 @@ public class BatchServerGlobal extends DefaultRecoverable {
                             bos.close();
                             reqs[i].setValue(bos.toByteArray());
                         }
-                        //System.out.println("received request " + temp[i] + "from dest " + dest);
-
                     }
                 }
                 auxReq.setValue(null);
@@ -147,6 +146,8 @@ public class BatchServerGlobal extends DefaultRecoverable {
             ObjectOutputStream out = new ObjectOutputStream(bos);
             out.writeInt(id);
             out.writeInt(seqNumber);
+            out.writeInt(innerSeqNumber);
+            out.writeBoolean(nonGenuine);
             out.flush();
             out.close();
             bos.close();
@@ -168,6 +169,8 @@ public class BatchServerGlobal extends DefaultRecoverable {
             ObjectInput in = new ObjectInputStream(bis);
             id = in.readInt();
             seqNumber = in.readInt();
+            innerSeqNumber = in.readInt();
+            nonGenuine = in.readBoolean();
             in.close();
             bis.close();
         } catch (IOException e) {
@@ -179,6 +182,6 @@ public class BatchServerGlobal extends DefaultRecoverable {
 
     @Override
     public byte[] appExecuteUnordered(byte[] bytes, MessageContext messageContext) {
-        throw new UnsupportedOperationException("Implemented by PGAMcastReplier");
+        throw new UnsupportedOperationException("Global server only accepts ordered messages");
     }
 }
