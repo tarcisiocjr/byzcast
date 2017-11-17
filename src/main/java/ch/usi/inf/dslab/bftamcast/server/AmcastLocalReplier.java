@@ -23,26 +23,22 @@ import java.util.logging.Logger;
 /**
  * @author Paulo Coelho - paulo.coelho@usi.ch
  */
-public class AMcastBatchReplier implements Replier, FIFOExecutable, Serializable {
-    private transient Lock replyLock;
-    private transient Condition contextSet;
-    private transient ReplicaContext rc;
-    private Request req;
+public class AmcastLocalReplier implements Replier, FIFOExecutable, Serializable {
+    protected transient Lock replyLock;
+    protected transient Condition contextSet;
+    protected transient ReplicaContext rc;
+    protected Request req;
     private Map<Integer, byte[]> table;
     private SortedMap<Integer, Vector<TOMMessage>> globalReplies;
-    private Map<Integer, Request> executedReq;
     private int group;
-    private boolean nonGenuine;
 
-    public AMcastBatchReplier(int group, boolean ng) {
+    public AmcastLocalReplier(int group) {
         replyLock = new ReentrantLock();
         contextSet = replyLock.newCondition();
         globalReplies = new TreeMap<>();
-        executedReq = new TreeMap<>();
         table = new TreeMap<>();
         req = new Request();
         this.group = group;
-        nonGenuine = ng;
     }
 
     @Override
@@ -53,43 +49,28 @@ public class AMcastBatchReplier implements Replier, FIFOExecutable, Serializable
                 this.contextSet.await();
                 this.replyLock.unlock();
             } catch (InterruptedException ex) {
-                Logger.getLogger(AMcastBatchReplier.class.getName()).log(Level.SEVERE, null, ex);
+                Logger.getLogger(AmcastLocalReplier.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
 
         req.fromBytes(request.reply.getContent());
-        if (req.getDestination().length == 1 && !nonGenuine) {
+        if (req.getDestination().length == 1) {
             req = execute(req);
             request.reply.setContent(req.toBytes());
             rc.getServerCommunicationSystem().send(new int[]{request.getSender()}, request.reply);
         } else {
-            //NON-GENUINE: ALL MESSAGES COME FROM THE GLOBAL GROUP
             int n = rc.getStaticConfiguration().getN();
+            byte[] response;
 
             Vector<TOMMessage> msgs = saveReply(request, req.getSeqNumber());
             if (msgs.size() < n) {
                 return;
             }
 
+            req = execute(req);
+            response = req.toBytes();
             for (TOMMessage msg : msgs) {
-                req.fromBytes(msg.reply.getContent());
-
-                Request[] reqs = Request.ArrayfromBytes(req.getValue());
-                //System.out.println("Sender " + msg.getSender() + ": batch #" + req.getSeqNumber() + " of size " + reqs.length);
-                for (int i = 0; i < reqs.length; i++) {
-                    //System.out.println("Processing request " + reqs[i]);
-                    Request temp = executedReq.get(reqs[i].getSeqNumber());
-                    if (temp != null) {
-                        //System.out.println("Using saved request");
-                        reqs[i] = temp;
-                    } else {
-                        reqs[i] = execute(reqs[i]);
-                        executedReq.put(reqs[i].getSeqNumber(), reqs[i]);
-                    }
-                }
-
-                req.setValue(Request.ArrayToBytes(reqs));
-                msg.reply.setContent(req.toBytes());
+                msg.reply.setContent(response);
                 rc.getServerCommunicationSystem().send(new int[]{msg.getSender()}, msg.reply);
             }
         }
@@ -110,7 +91,7 @@ public class AMcastBatchReplier implements Replier, FIFOExecutable, Serializable
 
     @Override
     public byte[] executeUnorderedFIFO(byte[] bytes, MessageContext messageContext, int i, int i1) {
-        throw new UnsupportedOperationException("Genuine batch replier only accepts ordered messages");
+        throw new UnsupportedOperationException("AMcast replier only accepts ordered messages");
     }
 
     @Override
@@ -120,7 +101,7 @@ public class AMcastBatchReplier implements Replier, FIFOExecutable, Serializable
 
     @Override
     public byte[] executeUnordered(byte[] bytes, MessageContext messageContext) {
-        throw new UnsupportedOperationException("All unordered messages should be FIFO");
+        throw new UnsupportedOperationException("All ordered messages should be FIFO");
     }
 
     protected Request execute(Request req) {

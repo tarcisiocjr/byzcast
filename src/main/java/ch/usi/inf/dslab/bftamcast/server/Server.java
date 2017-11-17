@@ -12,14 +12,14 @@ import java.io.*;
  * @author Paulo Coelho - paulo.coelho@usi.ch
  */
 public class Server extends DefaultRecoverable /*implements FIFOExecutable*/ {
-    private AMcastBatchReplier replier;
+    private AmcastLocalBatchReplier replier;
     private int id, groupId, nextTS;
 
     public Server(int id, int group, String configPath, boolean nonGenuine) {
         this.id = id;
         this.groupId = group;
         this.nextTS = 0;
-        replier = new AMcastBatchReplier(groupId, nonGenuine);//nonGenuine ? new NGAMcastBatchReplier(groupId) : new AMcastBatchReplier(groupId, false);
+        replier = new AmcastLocalBatchReplier(groupId, nonGenuine);
 
         try {
             Thread.sleep(this.groupId * 4000 + this.id * 1000);
@@ -67,7 +67,7 @@ public class Server extends DefaultRecoverable /*implements FIFOExecutable*/ {
         ByteArrayInputStream bis = new ByteArrayInputStream(state);
         try {
             ObjectInput in = new ObjectInputStream(bis);
-            replier = (AMcastBatchReplier) in.readObject();
+            replier = (AmcastLocalBatchReplier) in.readObject();
             id = in.readInt();
             groupId = in.readInt();
             nextTS = in.readInt();
@@ -84,11 +84,11 @@ public class Server extends DefaultRecoverable /*implements FIFOExecutable*/ {
 
     @Override
     public byte[][] appExecuteBatch(byte[][] bytes, MessageContext[] messageContexts) {
-        throw new UnsupportedOperationException("Implemented by AMcastReplier");
+        throw new UnsupportedOperationException("Implemented by AmcastLocalReplier");
     }
 
     @Override
     public byte[] appExecuteUnordered(byte[] bytes, MessageContext messageContext) {
-        throw new UnsupportedOperationException("Implemented by AMcastReplier");
+        throw new UnsupportedOperationException("Implemented by AmcastLocalReplier");
     }
 }

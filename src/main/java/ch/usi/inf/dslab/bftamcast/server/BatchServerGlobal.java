@@ -42,9 +42,8 @@ public class BatchServerGlobal extends DefaultRecoverable {
     private ServiceProxy[] proxiesToLocal;
     private Thread[] invokeThreads;
     private byte[][] invokeReplies;
-    private boolean nonGenuine;
 
-    private BatchServerGlobal(int serverGlobalId, String configPath, String[] localConfigPaths, boolean ng) {
+    private BatchServerGlobal(int serverGlobalId, String configPath, String[] localConfigPaths) {
         int clientId = 80000 + serverGlobalId;
         id = serverGlobalId;
         proxiesToLocal = new ServiceProxy[localConfigPaths.length];
@@ -52,7 +51,6 @@ public class BatchServerGlobal extends DefaultRecoverable {
         invokeReplies = new byte[localConfigPaths.length][];
         allDest = new int[localConfigPaths.length];
         innerSeqNumber = seqNumber = 1;
-        nonGenuine = ng;
         try {
             Thread.sleep(localConfigPaths.length * 4000 + this.id * 1000);
         } catch (InterruptedException e) {
@@ -71,7 +69,7 @@ public class BatchServerGlobal extends DefaultRecoverable {
 
     public static void main(String[] args) {
         CLIParser p = CLIParser.getGlobalServerParser(args);
-        new BatchServerGlobal(p.getId(), p.getGlobalConfig(), p.getLocalConfigs(), p.isNonGenuine());
+        new BatchServerGlobal(p.getId(), p.getGlobalConfig(), p.getLocalConfigs());
     }
 
     @Override
@@ -147,7 +145,6 @@ public class BatchServerGlobal extends DefaultRecoverable {
             out.writeInt(id);
             out.writeInt(seqNumber);
             out.writeInt(innerSeqNumber);
-            out.writeBoolean(nonGenuine);
             out.flush();
             out.close();
             bos.close();
@@ -170,7 +167,6 @@ public class BatchServerGlobal extends DefaultRecoverable {
             id = in.readInt();
             seqNumber = in.readInt();
             innerSeqNumber = in.readInt();
-            nonGenuine = in.readBoolean();
             in.close();
             bis.close();
         } catch (IOException e) {
