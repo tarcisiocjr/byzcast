@@ -96,7 +96,7 @@ public class BatchServerGlobal extends DefaultRecoverable {
 
             mainReq.setValue(Request.ArrayToBytes(reqs));
             for (int dest : allDest) {
-                invokeThreads[dest] = new Thread(() -> invokeReplies[dest] = nonGenuine ? proxiesToLocal[dest].invokeUnordered(mainReq.toBytes()) : proxiesToLocal[dest].invokeOrdered(mainReq.toBytes()));
+                invokeThreads[dest] = new Thread(() -> invokeReplies[dest] = proxiesToLocal[dest].invokeOrdered(mainReq.toBytes()));
                 invokeThreads[dest].start();
             }
 

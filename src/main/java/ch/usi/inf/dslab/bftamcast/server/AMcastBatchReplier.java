@@ -106,15 +106,11 @@ public class AMcastBatchReplier implements Replier, FIFOExecutable, Serializable
     @Override
     public byte[] executeOrderedFIFO(byte[] bytes, MessageContext messageContext, int i, int i1) {
         return bytes;
-        // executeSingle(bytes, messageContext);
     }
 
     @Override
     public byte[] executeUnorderedFIFO(byte[] bytes, MessageContext messageContext, int i, int i1) {
-        if (!nonGenuine)
-            new UnsupportedOperationException("Genuine batch replier only accepts ordered messages");
-        return bytes;
-        //return executeSingle(bytes, messageContext);
+        throw new UnsupportedOperationException("Genuine batch replier only accepts ordered messages");
     }
 
     @Override

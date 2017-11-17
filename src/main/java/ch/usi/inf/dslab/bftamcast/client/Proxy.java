@@ -29,11 +29,6 @@ public class Proxy implements ProxyIf {
     @Override
     public byte[] reliableMulticast(RequestIf req) {
         byte[] response;
-        if (req.getDestination().length > 1 && localClients == null ||
-                req.getDestination().length < 1) {
-            System.err.println("Invalid destination, message will NOT be multicast");
-            return null;
-        }
 
         if (req.getDestination().length > 1 || localClients == null)
             response = globalClient.invokeUnordered(req.toBytes());
@@ -47,12 +42,6 @@ public class Proxy implements ProxyIf {
     @Override
     public byte[] atomicMulticast(RequestIf req) {
         byte[] response;
-        if (req.getDestination().length > 1 && localClients == null ||
-                req.getDestination().length < 1) {
-            System.err.println("Invalid destination, message will NOT be multicast");
-            return null;
-        }
-
         if (req.getDestination().length > 1 || localClients == null)
             response = globalClient.invokeOrdered(req.toBytes());
         else
