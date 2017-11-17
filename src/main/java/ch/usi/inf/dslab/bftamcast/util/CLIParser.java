@@ -40,13 +40,14 @@ public class CLIParser {
         parser.options.addOption(parser.globalPercent);
         parser.options.addOption(parser.globalConfig);
         parser.options.addOption(parser.localConfigs);
+        parser.options.addOption(parser.nonGenuine);
         parser.parse(args);
         return parser;
     }
 
     public static CLIParser getGlobalServerParser(String[] args) {
         CLIParser parser = new CLIParser();
-        parser.command = "global server";
+        parser.command = "GLOBAL server";
         parser.id.setRequired(true);
         parser.globalConfig.setRequired(true);
         parser.localConfigs.setRequired(true);
@@ -60,7 +61,7 @@ public class CLIParser {
 
     public static CLIParser getLocalServerParser(String[] args) {
         CLIParser parser = new CLIParser();
-        parser.command = "local server";
+        parser.command = "LOCAL server";
         parser.id.setRequired(true);
         parser.group.setRequired(true);
         parser.localConfig.setRequired(true);

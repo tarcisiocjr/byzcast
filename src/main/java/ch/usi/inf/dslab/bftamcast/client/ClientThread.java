@@ -25,7 +25,7 @@ public class ClientThread implements Runnable {
     private ProxyIf proxy;
 
 
-    public ClientThread(int clientId, int groupId, String globalConfig, String[] localConfigs, boolean verbose, int runTime, int valueSize, int globalPerc) {
+    public ClientThread(int clientId, int groupId, String globalConfig, String[] localConfigs, boolean verbose, int runTime, int valueSize, int globalPerc, boolean ng) {
         this.clientId = clientId;
         this.groupId = groupId;
         this.numOfGroups = (localConfigs == null || localConfigs.length == 0) ? 1 : localConfigs.length;
@@ -36,7 +36,9 @@ public class ClientThread implements Runnable {
         this.random = new Random();
         this.localStats = new Stats();
         this.globalStats = new Stats();
-        this.proxy = new Proxy(clientId + 1000 * groupId, globalConfig, localConfigs);
+        this.proxy = ng ?
+                new Proxy(clientId + 1000 * groupId, globalConfig, null) :
+                new Proxy(clientId + 1000 * groupId, globalConfig, localConfigs);
     }
 
 
