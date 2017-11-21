@@ -43,6 +43,7 @@ public class CLIParser {
         parser.options.addOption(parser.globalConfig);
         parser.options.addOption(parser.localConfigs);
         parser.options.addOption(parser.nonGenuine);
+        parser.options.addOption(parser.async);
         parser.parse(args);
         return parser;
     }
@@ -71,7 +72,6 @@ public class CLIParser {
         parser.options.addOption(parser.group);
         parser.options.addOption(parser.localConfig);
         parser.options.addOption(parser.nonGenuine);
-        parser.options.addOption(parser.async);
         parser.parse(args);
         return parser;
     }
