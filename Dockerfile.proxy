@@ -1,8 +1,0 @@
-FROM anapsix/alpine-java
-
-COPY dist/ /root/
-
-RUN chmod +x /root/buildConfig.sh
-RUN chmod +x /root/startProxy.sh
-
-CMD ["sh", "-c", "/root/buildConfig.sh && /root/startProxy.sh"]

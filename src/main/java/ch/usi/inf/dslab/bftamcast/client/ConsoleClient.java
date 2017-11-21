@@ -5,7 +5,6 @@ package ch.usi.inf.dslab.bftamcast.client;
  * @author Paulo Coelho - paulo.coelho@usi.ch
  */
 
-import ch.usi.inf.dslab.bftamcast.ProxyIf;
 import ch.usi.inf.dslab.bftamcast.kvs.Request;
 import ch.usi.inf.dslab.bftamcast.kvs.RequestType;
 import ch.usi.inf.dslab.bftamcast.util.CLIParser;

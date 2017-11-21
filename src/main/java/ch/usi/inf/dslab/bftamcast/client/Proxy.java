@@ -1,7 +1,6 @@
 package ch.usi.inf.dslab.bftamcast.client;
 
 import bftsmart.tom.ServiceProxy;
-import ch.usi.inf.dslab.bftamcast.ProxyIf;
 import ch.usi.inf.dslab.bftamcast.RequestIf;
 
 /**
@@ -49,5 +48,15 @@ public class Proxy implements ProxyIf {
 
         req.fromBytes(response);
         return req.getValue();
+    }
+
+    @Override
+    public byte[] asyncReliableMulticast(RequestIf req, AsyncProxyListenerIf listener) {
+        throw new UnsupportedOperationException("Not implemented by SYNC proxy");
+    }
+
+    @Override
+    public byte[] asyncAtomicMulticast(RequestIf req, AsyncProxyListenerIf listener) {
+        throw new UnsupportedOperationException("Not implemented by SYNC proxy");
     }
 }

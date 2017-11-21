@@ -1,6 +1,5 @@
 package ch.usi.inf.dslab.bftamcast.client;
 
-import ch.usi.inf.dslab.bftamcast.ProxyIf;
 import ch.usi.inf.dslab.bftamcast.kvs.Request;
 import ch.usi.inf.dslab.bftamcast.kvs.RequestType;
 import ch.usi.inf.dslab.bftamcast.util.Stats;
@@ -12,17 +11,17 @@ import java.util.Random;
  */
 public class ClientThread implements Runnable {
 
-    private final char[] symbols = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".toCharArray();
-    private int clientId;
-    private int groupId;
-    private int numOfGroups;
-    private boolean verbose;
-    private int runTime;
-    private int size;
-    private int globalPerc;
-    private Random random;
-    private Stats localStats, globalStats;
-    private ProxyIf proxy;
+    final char[] symbols = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".toCharArray();
+    final int clientId;
+    final int groupId;
+    final int numOfGroups;
+    final boolean verbose;
+    final int runTime;
+    final int size;
+    final int globalPerc;
+    final Random random;
+    final Stats localStats, globalStats;
+    ProxyIf proxy;
 
 
     public ClientThread(int clientId, int groupId, String globalConfig, String[] localConfigs, boolean verbose, int runTime, int valueSize, int globalPerc, boolean ng) {
@@ -95,7 +94,7 @@ public class ClientThread implements Runnable {
 
     }
 
-    private String randomString(int len) {
+    String randomString(int len) {
         char[] buf = new char[len];
 
         for (int idx = 0; idx < buf.length; ++idx)
