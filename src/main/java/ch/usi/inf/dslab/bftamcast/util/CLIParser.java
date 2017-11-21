@@ -3,7 +3,8 @@ package ch.usi.inf.dslab.bftamcast.util;
 import org.apache.commons.cli.*;
 
 public class CLIParser {
-    private Option globalConfig, localConfigs, localConfig, id, group, globalPercent, clientCount, duration, msgSize, nonGenuine;
+    private Option globalConfig, localConfigs, localConfig, id, group,
+            globalPercent, clientCount, duration, msgSize, nonGenuine, async;
     private Options options;
     private CommandLineParser parser;
     private CommandLine line;
@@ -21,6 +22,7 @@ public class CLIParser {
         localConfig = Option.builder("lc").desc("local group config folder").argName("folder").hasArg().numberOfArgs(1).type(String.class).build();
         localConfigs = Option.builder("lcs").desc("2+ local group config folders").argName("folder1 ... folderN").hasArg().numberOfArgs(Option.UNLIMITED_VALUES).type(String[].class).build();
         nonGenuine = Option.builder("ng").desc("sets the server to the non-genuine configuration").hasArg(false).build();
+        async = Option.builder("a").desc("number of outstanding messages per client thread (defaults to 0 - no async messages)").argName("outstanding").hasArg().numberOfArgs(1).type(Integer.class).build();
         options = new Options();
         parser = new DefaultParser();
         line = null;
@@ -69,6 +71,7 @@ public class CLIParser {
         parser.options.addOption(parser.group);
         parser.options.addOption(parser.localConfig);
         parser.options.addOption(parser.nonGenuine);
+        parser.options.addOption(parser.async);
         parser.parse(args);
         return parser;
     }
@@ -99,6 +102,11 @@ public class CLIParser {
     public int getMsgSize() {
         String v = line.getOptionValue("s");
         return v == null ? 64 : Integer.parseInt(v);
+    }
+
+    public int getAsync() {
+        String v = line.getOptionValue("a");
+        return v == null ? 0 : Integer.parseInt(v);
     }
 
     public String getGlobalConfig() {

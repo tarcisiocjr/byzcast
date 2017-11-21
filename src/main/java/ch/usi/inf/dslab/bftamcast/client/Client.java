@@ -19,6 +19,7 @@ public class Client {
         int id = p.getId() == 0 ? r.nextInt(Integer.MAX_VALUE) : p.getId();
         int perc = p.getGlobalPercent();
         boolean ng = p.isNonGenuine();
+        int async = p.getAsync();
         String globalConfigPath = p.getGlobalConfig();
         String[] localConfigPaths = p.getLocalConfigs();
         ClientThread[] clients = new ClientThread[clientCount];
@@ -27,7 +28,11 @@ public class Client {
         for (int i = 0; i < clientCount; i++) {
             System.out.println("Starting client " + (id + i));
             Thread.sleep(r.nextInt(600));
-            clients[i] = new ClientThread(id + i, idGroup, globalConfigPath, localConfigPaths, true, totalTime, valueSize, perc, ng);
+            clients[i] = async == 0 ?
+                    new ClientThread(id + i, idGroup, globalConfigPath, localConfigPaths,
+                            true, totalTime, valueSize, perc, ng)
+                    : new AsyncClientThread(id + i, idGroup, globalConfigPath, localConfigPaths,
+                    true, totalTime, valueSize, perc, async, ng);
             clientThreads[i] = new Thread(clients[i]);
             clientThreads[i].start();
         }
