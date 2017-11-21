@@ -2,7 +2,12 @@ package ch.usi.inf.dslab.bftamcast.client;
 
 import ch.usi.inf.dslab.bftamcast.util.CLIParser;
 
+import java.util.Collection;
+import java.util.LinkedList;
 import java.util.Random;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 /**
  * @author Paulo Coelho - paulo.coelho@usi.ch
@@ -25,23 +30,48 @@ public class Client {
         ClientThread[] clients = new ClientThread[clientCount];
         Thread[] clientThreads = new Thread[clientCount];
 
-        for (int i = 0; i < clientCount; i++) {
-            System.out.println("Starting client " + (id + i));
-            Thread.sleep(r.nextInt(600));
-            clients[i] = async == 0 ?
-                    new ClientThread(id + i, idGroup, globalConfigPath, localConfigPaths,
-                            true, totalTime, valueSize, perc, ng)
-                    : new AsyncClientThread(id + i, idGroup, globalConfigPath, localConfigPaths,
-                    true, totalTime, valueSize, perc, async, ng);
-            clientThreads[i] = new Thread(clients[i]);
-            clientThreads[i].start();
+        if (async == 0) {
+            for (int i = 0; i < clientCount; i++) {
+                System.out.println("Starting client " + (id + i));
+                Thread.sleep(r.nextInt(600));
+                clients[i] = new ClientThread(id + i, idGroup, globalConfigPath,
+                        localConfigPaths, true, totalTime, valueSize, perc, ng);
+                clientThreads[i] = new Thread(clients[i]);
+                clientThreads[i].start();
+            }
+
+            for (int i = 0; i < clientCount; i++) {
+                clientThreads[i].join();
+                System.out.println("Client " + i + " finished execution");
+
+            }
+        } else {
+            for (int i = 0; i < clientCount; i++) {
+                System.out.println("Starting client " + (id + i));
+                Thread.sleep(r.nextInt(600));
+                clients[i] = new AsyncClientThread(id + i, idGroup, globalConfigPath, localConfigPaths,
+                        true, totalTime, valueSize, perc, async, ng);
+            }
         }
 
-        for (int i = 0; i < clientCount; i++) {
-            clientThreads[i].join();
-            System.out.println("Client " + i + " finished execution");
+        ExecutorService exec = Executors.newFixedThreadPool(clients.length);
+        Collection<Future<?>> tasks = new LinkedList<>();
+
+        for (ClientThread c : clients) {
+            tasks.add(exec.submit(c));
+        }
+
+        // wait for tasks completion
+        for (Future<?> currTask : tasks) {
+            try {
+                currTask.get();
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
 
         }
+
+        exec.shutdown();
         System.exit(0);
     }
 
