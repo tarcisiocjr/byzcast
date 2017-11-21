@@ -74,26 +74,17 @@ public class AsyncProxy implements ProxyIf {
 
         @Override
         public void reset() {
-            System.out.println("[RequestContext] The proxy is re-issuing the request to the replicas");
             replies = 0;
         }
 
         @Override
         public void replyReceived(RequestContext context, TOMMessage reply) {
-            StringBuilder builder = new StringBuilder();
-            builder.append("[RequestContext] id: " + context.getReqId() + " type: " + context.getRequestType());
-            builder.append("[TOMMessage reply] sender id: " + reply.getSender() + " Hash content: " + Arrays.toString(reply.getContent()));
-            System.out.println(builder.toString());
-
             replies++;
             double q = Math.ceil((double) (proxy.getViewManager().getCurrentViewN() + proxy.getViewManager().getCurrentViewF() + 1) / 2.0);
-
-            if (replies >= q) {
-                System.out.println("[RequestContext] clean request context id: " + context.getReqId());
+            if (replies == q) {
                 proxy.cleanAsynchRequest(context.getOperationId());
                 listener.receiveResponse(reply.getContent());
             }
-
         }
 
     }

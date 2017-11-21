@@ -2,12 +2,7 @@ package ch.usi.inf.dslab.bftamcast.client;
 
 import ch.usi.inf.dslab.bftamcast.util.CLIParser;
 
-import java.util.Collection;
-import java.util.LinkedList;
 import java.util.Random;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 
 /**
  * @author Paulo Coelho - paulo.coelho@usi.ch
@@ -51,9 +46,23 @@ public class Client {
                 Thread.sleep(r.nextInt(600));
                 clients[i] = new AsyncClientThread(id + i, idGroup, globalConfigPath, localConfigPaths,
                         true, totalTime, valueSize, perc, async, ng);
+                clientThreads[i] = new Thread(clients[i]);
+                clientThreads[i].start();
+            }
+
+
+            try {
+                Thread.sleep((totalTime) * 1000);
+                for (ClientThread c : clients) {
+                    ((AsyncClientThread) c).stop();
+                    Thread.sleep(r.nextInt(600));
+                    ((AsyncClientThread) c).saveStats();
+                }
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
         }
-
+/*
         ExecutorService exec = Executors.newFixedThreadPool(clients.length);
         Collection<Future<?>> tasks = new LinkedList<>();
 
@@ -72,6 +81,8 @@ public class Client {
         }
 
         exec.shutdown();
+*/
+
         System.exit(0);
     }
 

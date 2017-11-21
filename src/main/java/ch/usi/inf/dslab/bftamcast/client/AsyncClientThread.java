@@ -18,6 +18,7 @@ public class AsyncClientThread extends ClientThread implements AsyncProxyListene
     private long startTime, now;
     private long elapsed = 0, delta = 0, usLat = startTime;
     private byte[] response;
+    private boolean stop;
 
     public AsyncClientThread(int clientId, int groupId, String globalConfig, String[] localConfigs,
                              boolean verbose, int runTime, int valueSize, int globalPerc, int outstanding, boolean ng) {
@@ -40,6 +41,7 @@ public class AsyncClientThread extends ClientThread implements AsyncProxyListene
         req = new Request();
         startTime = System.nanoTime();
         req.setValue(randomString(size).getBytes());
+        stop = false;
         for (int i = 0; i < outstanding; i++) {
             setRequest(req);
             proxy.asyncAtomicMulticast(req, this);
@@ -56,7 +58,6 @@ public class AsyncClientThread extends ClientThread implements AsyncProxyListene
     @Override
     public void receiveResponse(byte[] response) {
         this.response = response;
-        if (elapsed / 1e9 < runTime) {
             try {
                 if (response == null && req.getType() == RequestType.SIZE) {
                     System.err.println("Problem");
@@ -75,12 +76,21 @@ public class AsyncClientThread extends ClientThread implements AsyncProxyListene
                         delta = elapsed;
                     }
                     setRequest(req);
-                    proxy.asyncAtomicMulticast(req, this);
+                    if(!stop) {
+                        proxy.asyncAtomicMulticast(req, this);
+                    }
                 }
             } catch (Exception e) {
                 e.printStackTrace();
             }
-        }
+
+    }
+
+    public void stop() {
+        this.stop = true;
+    }
+
+    public void saveStats() {
         if (localStats.getCount() > 0) {
             localStats.persist("localStats-client-g" + groupId + "-" + clientId + ".txt", 15);
             System.out.println("LOCAL STATS:" + localStats);
@@ -90,6 +100,5 @@ public class AsyncClientThread extends ClientThread implements AsyncProxyListene
             globalStats.persist("globalStats-client-g" + groupId + "-" + clientId + ".txt", 15);
             System.out.println("\nGLOBAL STATS:" + globalStats);
         }
-        ((AsyncProxy) proxy).close();
     }
 }
