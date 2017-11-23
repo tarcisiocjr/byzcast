@@ -49,14 +49,4 @@ public class Proxy implements ProxyIf {
         req.fromBytes(response);
         return req.getValue();
     }
-
-    @Override
-    public byte[] asyncReliableMulticast(RequestIf req, AsyncProxyListenerIf listener) {
-        throw new UnsupportedOperationException("Not implemented by SYNC proxy");
-    }
-
-    @Override
-    public byte[] asyncAtomicMulticast(RequestIf req, AsyncProxyListenerIf listener) {
-        throw new UnsupportedOperationException("Not implemented by SYNC proxy");
-    }
 }
