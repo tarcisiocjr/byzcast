@@ -1,7 +1,7 @@
 <?xml version="1.0" ?>
 <project default="main">
 	<property name="base.dir" location="." />
-	<property name="src.dir" location="src" />
+        <property name="src.dir" location="src/main/java" />
 	<property name="build.dir" location="bin" />
 	<property name="dist.dir" location="dist" />
 	<property name="lib.dir" location="lib" />
@@ -20,7 +20,7 @@
 		</javac>
 	</target>
 	<target name="jar" description="Compression target">
-		<jar jarfile="${build.dir}/bftswarm.jar">
+		<jar jarfile="${build.dir}/bftamcast.jar">
 			<fileset dir="${build.dir}">
 				<include name="**/*.class" />
 			</fileset>

@@ -82,3 +82,13 @@ crashlytics.properties
 crashlytics-build.properties
 fabric.properties
 
+#Eclipse project
+.project
+.classpath
+.settings/
+*.ipr
+
+#Maven binaries
+target/
+
+**/*Stats*.txt
