@@ -61,7 +61,7 @@ public class LocalBatchReplier extends LocalReplier {
                     reqs) {
                 total = innerReplies.compute(r.getSeqNumber(), (k, v) -> (v == null) ? 1 : v + 1);
                 //System.out.println("partial total = " + total + ", req = " + r + " , sender = " +
-                //        request.getSender() + ", #msgs = " + reqs.length);
+                //       request.getSender() + ", #msgs = " + reqs.length);
                 if (total == N)
                     checkAll = true;
             }
@@ -74,7 +74,6 @@ public class LocalBatchReplier extends LocalReplier {
                     total = 0;
                     //System.out.println("Checking batch " + batch + " to sender " + msg.getSender() + " with size " + reqs.length);
                     for (Request r : reqs) {
-                        //System.out.println("total = " + total + " for req " + r.getSeqNumber());
                         Integer i = innerReplies.get(r.getSeqNumber());
                         if (i != null)
                             total += i;
@@ -99,13 +98,12 @@ public class LocalBatchReplier extends LocalReplier {
                         batch.setValue(Request.ArrayToBytes(reqs));
                         msg.reply.setContent(batch.toBytes());
                         rc.getServerCommunicationSystem().send(new int[]{msg.getSender()}, msg.reply);
+                        //} else {
+                        //System.out.println("CANNOT reply " + batch);
                     }
-                    //else {
-                    //    System.out.println("CANNOT reply " + batch);
-                    //}
                 }
                 //} else {
-                //   System.out.println("Total = " + total + " / " + N);
+                //System.out.println("Total = " + total + " / " + N);
             }
         }
     }

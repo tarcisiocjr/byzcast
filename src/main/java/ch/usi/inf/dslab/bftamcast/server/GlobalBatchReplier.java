@@ -19,8 +19,11 @@ public class GlobalBatchReplier extends LocalReplier {
     private Vector<Request> requests;
     private BatchServerGlobal server;
     private SortedMap<Integer, Request> batchRequests;
-    private int batchId;
     private SortedMap<Integer, Request> executedReq;
+
+
+    private SortedMap<Integer, TOMMessage> pending;
+    private SortedMap<Integer, Integer> innerReplies;
 
 
     GlobalBatchReplier(BatchServerGlobal server) {
@@ -30,7 +33,8 @@ public class GlobalBatchReplier extends LocalReplier {
         requests = new Vector<>();
         batchRequests = new TreeMap<>();
         executedReq = new TreeMap<>();
-        batchId = -1;
+        pending = new TreeMap<>();
+        innerReplies = new TreeMap<>();
     }
 
     @Override
@@ -44,28 +48,67 @@ public class GlobalBatchReplier extends LocalReplier {
                 Logger.getLogger(GlobalBatchReplier.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
+        int N = rc.getStaticConfiguration().getN();
+
         remaining--;
         req.fromBytes(request.reply.getContent());
         if (req.getType() == RequestType.BATCH) {
-           // System.out.println("Message from TOP LEVEL: " + req);
-            Vector<TOMMessage> msgs = saveReply(request, req.getSeqNumber());
-            saveRequests(req);
-            if (msgs.size() < rc.getStaticConfiguration().getN()) {
-                //System.out.println("Not enough replicas: " + msgs.size());
-                return;
-            } else {
-                //System.out.println("All replies. Batch requests are: ");
-                //for (Request r : batchRequests.values())
-                 //   System.out.println("request = " + r);
+            //System.out.println("Message from TOP LEVEL: " + req);
+            pending.remove(request.getSender());
+            pending.put(request.getSender(), request);
 
-                batchId = req.getSeqNumber();
-                batchRequests.entrySet().removeIf(entry -> executedReq.containsKey(entry.getKey()));
-
-                requests.addAll(batchRequests.values());
+            Request[] reqs = Request.ArrayfromBytes(req.getValue());
+            int total;
+            boolean checkAll = false;
+            for (Request r :
+                    reqs) {
+                total = innerReplies.compute(r.getSeqNumber(), (k, v) -> (v == null) ? 1 : v + 1);
+                //System.out.println("Partial total = " + total + ", req = " + r + " , sender = " +
+                //        request.getSender() + ", #msgs = " + reqs.length);
+                if (total == N)
+                    checkAll = true;
             }
+
+            if (checkAll) {
+                for (TOMMessage msg : pending.values()) {
+                    Request batch = new Request();
+                    batch.fromBytes(msg.reply.getContent());
+                    reqs = Request.ArrayfromBytes(batch.getValue());
+                    total = 0;
+                    //System.out.println("Checking batch " + batch + " to sender " + msg.getSender() + " with size " + reqs.length);
+                    for (Request r : reqs) {
+                        Integer i = innerReplies.get(r.getSeqNumber());
+                        if (i != null)
+                            total += i;
+                        //System.out.println("total = " + total + " for req " + r.getSeqNumber());
+                    }
+                    //System.out.println("Total = " + total + " / " + N);
+                    if (total == reqs.length * N) {
+                        //System.out.println("can reply this: " + batch + " to sender " + msg.getSender());
+                        for (int i = 0; i < reqs.length; i++) {
+                            batchRequests.put(reqs[i].getSeqNumber(), reqs[i].clone());
+                        }
+                        //} else {
+                        //System.out.println("CANNOT forward yet\n\n");
+                    }
+                }
+                //} else {
+                //System.out.println("Total = " + total + " / " + N);
+            }
+
+
+            batchRequests.entrySet().removeIf(entry -> executedReq.containsKey(entry.getKey()));
+            for (Request r : batchRequests.values())
+                if (!requests.contains(r))
+                    requests.add(r);
+            //requests.addAll(batchRequests.values());
+
+            //for (int i : batchRequests.keySet())
+            //System.out.println("key = " + i);
+
         } else {
             req.setSeqNumber(server.getNextInnerSeqNumber()); // set request's seq number
-           // System.out.println("Message from a CLIENT: " + req);
+            //System.out.println("Message from a CLIENT: " + req);
             saveReply(request, req.getSeqNumber());
             requests.add(req.clone());
         }
@@ -73,10 +116,8 @@ public class GlobalBatchReplier extends LocalReplier {
         //sending....
         if (remaining == 0 && requests.size() > 0) {
             //System.out.println("Request size = " + requests.size());
-            //for (Request r :
-             //       requests) {
-            //    System.out.println("\tTO SEND: " + r);
-           // }
+            //for (Request r : requests)
+            //System.out.println("\tTO SEND: " + r);
 
             Request[] responses = server.send(requests.toArray(new Request[0]));
             requests.clear();
@@ -86,12 +127,8 @@ public class GlobalBatchReplier extends LocalReplier {
                 //System.out.println("Received response: " + r);
                 Vector<TOMMessage> msgVector = getReply(r.getSeqNumber());
 
-                //for (int i :
-                //        batchRequests.keySet()) {
-                    //System.out.println("key = " + i);
-                //}
 
-                if (batchRequests.containsKey(r.getSeqNumber())) {
+                if (innerReplies.containsKey(r.getSeqNumber())) {
                     //System.out.println("message for top-level batch");
                     executedReq.put(r.getSeqNumber(), r);
                 } else {
@@ -102,32 +139,34 @@ public class GlobalBatchReplier extends LocalReplier {
                 }
 
             }
-            if (batchId > 0) {
-                //System.out.println("sending pending batch " + batchId);
-                Vector<TOMMessage> msgVector = getReply(batchId);
-                for (TOMMessage msg : msgVector) {
-                    Request batch = new Request();
-                    batch.fromBytes(msg.reply.getContent());
-                    //System.out.println("batch = " + batch);
-                    Request[] inReqs = Request.ArrayfromBytes(batch.getValue());
+            for (TOMMessage msg : pending.values()) {
 
-                    for (int i = 0; i < inReqs.length; i++) {
-                        try {
-                            //System.out.println(msg.getSender() + " added to batch: " + inReqs[i]);
-                            inReqs[i].setValue(executedReq.get(inReqs[i].getSeqNumber()).getValue());
-                        } catch (NullPointerException e) {
-                            //System.out.println("FATAL ERROR: batch with non-replied message.");
-                            System.exit(1);
-                        }
+                //if (batchId > 0) {
+                //Vector<TOMMessage> msgVector = getReply(batchId);
+                //for (TOMMessage msg : msgVector) {
+                Request batch = new Request();
+                batch.fromBytes(msg.reply.getContent());
+                //System.out.println("checking batch = " + batch);
+                Request[] inReqs = Request.ArrayfromBytes(batch.getValue());
+                int i;
+                for (i = 0; i < inReqs.length; i++) {
+                    try {
+                        //System.out.println(msg.getSender() + " added to batch: " + inReqs[i]);
+                        inReqs[i].setValue(executedReq.get(inReqs[i].getSeqNumber()).getValue());
+                    } catch (NullPointerException e) {
+                        //System.out.println("ERROR: batch with non-replied message. trying next");
+                        break;
+                        //System.exit(1);
                     }
+                }
 
+                if (i == inReqs.length) {
                     batch.setValue(Request.ArrayToBytes(inReqs));
                     msg.reply.setContent(batch.toBytes());
                     //System.out.println("Replying to top-level server " + msg.getSender());
                     rc.getServerCommunicationSystem().send(new int[]{msg.getSender()}, msg.reply);
                 }
             }
-            batchId = -1;
             batchRequests.clear();
         }
     }
@@ -135,13 +174,5 @@ public class GlobalBatchReplier extends LocalReplier {
     void setBatchSize(int size) {
         remaining += size;
         //System.out.println("New batch of size " + size + ", remaining " + remaining);
-    }
-
-    private void saveRequests(Request batch) {
-        Request[] reqs = Request.ArrayfromBytes(batch.getValue());
-        for (Request r :
-                reqs) {
-            batchRequests.put(r.getSeqNumber(), r);
-        }
     }
 }

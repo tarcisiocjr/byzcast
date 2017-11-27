@@ -60,7 +60,7 @@ public class BatchServerGlobal extends DefaultRecoverable {
         if (configPaths.length == 1) {
             System.out.println("******UNIQUE GLOBAL GROUP******");
             proxies = new ServiceProxy[localConfigPaths.length];
-            sleepTime = proxies.length * 5000 + this.id * 1500;
+            sleepTime = 7000 + this.id * 1500;
             configs = localConfigPaths;
             myConfig = configPaths[0];
             rep = new DefaultReplier();
@@ -69,7 +69,7 @@ public class BatchServerGlobal extends DefaultRecoverable {
             if (groupId == 0) {
                 System.out.println("-.-.-.-TOP LEVEL-.-.-.-");
                 proxies = new ServiceProxy[configPaths.length - 1];
-                sleepTime = (localConfigPaths.length + 1) * 5000 + this.id * 1500;
+                sleepTime = 14000 + this.id * 1500;
                 configs = Arrays.copyOfRange(configPaths, 1, configPaths.length);
                 myConfig = configPaths[groupId];
                 rep = new DefaultReplier();
@@ -78,7 +78,7 @@ public class BatchServerGlobal extends DefaultRecoverable {
                 System.out.println("-.-.-.-INTERMEDIATE LEVEL-.-.-.-");
                 clientId += groupId * 10000;
                 proxies = new ServiceProxy[2];
-                sleepTime = localConfigPaths.length * 5000 + this.id * 1500;
+                sleepTime = 7000 + this.id * 1500;
                 configs = new String[]{
                         localConfigPaths[2 * groupId - 2],
                         localConfigPaths[2 * groupId - 1]
@@ -100,6 +100,7 @@ public class BatchServerGlobal extends DefaultRecoverable {
             for (int i = 0; i < configs.length; i++) {
                 System.out.println("Connected to Group with config '" + configs[i] + "'  as ID: " + clientId);
                 proxies[i] = new ServiceProxy(clientId, configs[i]);
+                proxies[i].setInvokeTimeout(100);
                 allDest[i] = i;
             }
             new ServiceReplica(id, myConfig, this, this, null, rep);
@@ -133,7 +134,6 @@ public class BatchServerGlobal extends DefaultRecoverable {
     @Override
     public byte[][] appExecuteBatch(byte[][] command, MessageContext[] mcs) {
         if (groupId == 0) {
-            //System.out.println("batch size = " + command.length);
             Request[] reqs = new Request[command.length];
             byte[][] replies = new byte[reqs.length][];
 
@@ -162,7 +162,6 @@ public class BatchServerGlobal extends DefaultRecoverable {
             mainReq.setDestination(allDest);
             mainReq.setSeqNumber(getNextSeqNumber());
             mainReq.setValue(Request.ArrayToBytes(reqs));
-            //System.out.println("batch size = " + command.length + ", seq. number = " + mainReq.getSeqNumber());
 
             for (int dest : allDest) {
                 invokeThreads[dest] = new Thread(() -> invokeReplies[dest] = proxies[dest].invokeOrdered(mainReq.toBytes()));
@@ -189,10 +188,9 @@ public class BatchServerGlobal extends DefaultRecoverable {
                             bos.close();
                             reqs[i].setValue(bos.toByteArray());
                         }
+                        //} else {
+                        //System.out.println("NULL VALUE!!!!");
                     }
-                    //else {
-                    //System.out.println("NULL VALUE!!!!");
-                    //}
                 }
                 auxReq.setValue(null);
             }

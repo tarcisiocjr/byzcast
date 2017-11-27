@@ -22,7 +22,7 @@ public class Server extends DefaultRecoverable /*implements FIFOExecutable*/ {
         replier = new LocalBatchReplier(groupId, nonGenuine);
 
         try {
-            Thread.sleep(this.groupId * 4000 + this.id * 1000);
+            Thread.sleep(this.id * 1500);
         } catch (InterruptedException e) {
             System.err.println("Error starting server " + this.id);
             e.printStackTrace();
