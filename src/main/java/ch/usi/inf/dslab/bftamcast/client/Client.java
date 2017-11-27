@@ -16,10 +16,10 @@ public class Client {
         int valueSize = p.getMsgSize();
         int clientCount = p.getClientCount();
         int idGroup = p.getGroup();
-        int id = p.getId() == 0 ? r.nextInt(Integer.MAX_VALUE) : p.getId();
+        int id = p.getId() == 0 ? r.nextInt(Integer.MAX_VALUE / 2) : p.getId();
         int perc = p.getGlobalPercent();
         boolean ng = p.isNonGenuine();
-        String globalConfigPath = p.getGlobalConfig();
+        String[] globalConfigPaths = p.getGlobalConfig();
         String[] localConfigPaths = p.getLocalConfigs();
         ClientThread[] clients = new ClientThread[clientCount];
         Thread[] clientThreads = new Thread[clientCount];
@@ -27,7 +27,7 @@ public class Client {
         for (int i = 0; i < clientCount; i++) {
             System.out.println("Starting client " + (id + i));
             Thread.sleep(r.nextInt(600));
-            clients[i] = new ClientThread(id + i, idGroup, globalConfigPath,
+            clients[i] = new ClientThread(id + i, idGroup, globalConfigPaths,
                     localConfigPaths, true, totalTime, valueSize, perc, ng);
             clientThreads[i] = new Thread(clients[i]);
             clientThreads[i].start();
@@ -36,9 +36,8 @@ public class Client {
         for (int i = 0; i < clientCount; i++) {
             clientThreads[i].join();
             System.out.println("Client " + i + " finished execution");
-
         }
-
+        System.exit(0);
     }
 
 }

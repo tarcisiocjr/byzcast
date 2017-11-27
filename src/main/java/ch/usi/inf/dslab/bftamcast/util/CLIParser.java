@@ -18,7 +18,7 @@ public class CLIParser {
         duration = Option.builder("d").desc("time to execute in seconds (defaults to 120)").argName("seconds").hasArg().numberOfArgs(1).type(Integer.class).build();
         msgSize = Option.builder("s").desc("message size in bytes (defaults to 64)").argName("bytes").hasArg().numberOfArgs(1).type(Integer.class).build();
         clientCount = Option.builder("c").desc("number of client threads (defaults to 1)").argName("clients").hasArg().numberOfArgs(1).type(Integer.class).build();
-        globalConfig = Option.builder("gc").desc("global group config folder").argName("folder").hasArg().numberOfArgs(1).type(String.class).build();
+        globalConfig = Option.builder("gc").desc("1+ global group config folder(s)").argName("folder").hasArg().numberOfArgs(Option.UNLIMITED_VALUES).type(String[].class).build();
         localConfig = Option.builder("lc").desc("local group config folder").argName("folder").hasArg().numberOfArgs(1).type(String.class).build();
         localConfigs = Option.builder("lcs").desc("2+ local group config folders").argName("folder1 ... folderN").hasArg().numberOfArgs(Option.UNLIMITED_VALUES).type(String[].class).build();
         nonGenuine = Option.builder("ng").desc("sets the server to the non-genuine configuration").hasArg(false).build();
@@ -50,9 +50,11 @@ public class CLIParser {
         CLIParser parser = new CLIParser();
         parser.command = "GLOBAL server";
         parser.id.setRequired(true);
+        parser.group.setRequired(true);
         parser.globalConfig.setRequired(true);
         parser.localConfigs.setRequired(true);
         parser.options.addOption(parser.id);
+        parser.options.addOption(parser.group);
         parser.options.addOption(parser.globalConfig);
         parser.options.addOption(parser.localConfigs);
         parser.options.addOption(parser.nonGenuine);
@@ -101,9 +103,9 @@ public class CLIParser {
         String v = line.getOptionValue("s");
         return v == null ? 64 : Integer.parseInt(v);
     }
-    
-    public String getGlobalConfig() {
-        return line.getOptionValue("gc");
+
+    public String[] getGlobalConfig() {
+        return line.getOptionValues("gc");
     }
 
     public String getLocalConfig() {

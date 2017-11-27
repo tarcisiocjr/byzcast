@@ -23,16 +23,16 @@ import java.util.logging.Logger;
 /**
  * @author Paulo Coelho - paulo.coelho@usi.ch
  */
-public class AmcastLocalReplier implements Replier, FIFOExecutable, Serializable {
-    protected transient Lock replyLock;
-    protected transient Condition contextSet;
-    protected transient ReplicaContext rc;
-    protected Request req;
+public class LocalReplier implements Replier, FIFOExecutable, Serializable {
+    transient Lock replyLock;
+    transient Condition contextSet;
+    transient ReplicaContext rc;
+    Request req;
     private Map<Integer, byte[]> table;
-    private SortedMap<Integer, Vector<TOMMessage>> globalReplies;
     private int group;
+    private SortedMap<Integer, Vector<TOMMessage>> globalReplies;
 
-    public AmcastLocalReplier(int group) {
+    LocalReplier(int group) {
         replyLock = new ReentrantLock();
         contextSet = replyLock.newCondition();
         globalReplies = new TreeMap<>();
@@ -49,7 +49,7 @@ public class AmcastLocalReplier implements Replier, FIFOExecutable, Serializable
                 this.contextSet.await();
                 this.replyLock.unlock();
             } catch (InterruptedException ex) {
-                Logger.getLogger(AmcastLocalReplier.class.getName()).log(Level.SEVERE, null, ex);
+                Logger.getLogger(LocalReplier.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
 
@@ -104,7 +104,7 @@ public class AmcastLocalReplier implements Replier, FIFOExecutable, Serializable
         throw new UnsupportedOperationException("All ordered messages should be FIFO");
     }
 
-    protected Request execute(Request req) {
+    Request execute(Request req) {
         byte[] resultBytes;
         boolean toMe = false;
 
@@ -115,8 +115,8 @@ public class AmcastLocalReplier implements Replier, FIFOExecutable, Serializable
             }
         }
 
-        if (!toMe) {
-            //System.out.println("Message not addressed to my group.");
+        if (!toMe && req.getType() != RequestType.BATCH) {
+            //System.out.println("Message not addressed to my group: " + req);
             req.setType(RequestType.NOP);
             req.setValue(null);
         } else {
@@ -143,9 +143,13 @@ public class AmcastLocalReplier implements Replier, FIFOExecutable, Serializable
         return req;
     }
 
-    protected Vector<TOMMessage> saveReply(TOMMessage reply, int seqNumber) {
+    Vector<TOMMessage> saveReply(TOMMessage reply, int seqNumber) {
         Vector<TOMMessage> messages = globalReplies.computeIfAbsent(seqNumber, k -> new Vector<>());
         messages.add(reply);
         return messages;
+    }
+
+    Vector<TOMMessage> getReply(int seqNumber) {
+        return globalReplies.get(seqNumber);
     }
 }

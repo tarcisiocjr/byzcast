@@ -11,20 +11,20 @@ import java.util.Random;
  */
 public class ClientThread implements Runnable {
 
-    final char[] symbols = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".toCharArray();
-    final int clientId;
-    final int groupId;
-    final int numOfGroups;
-    final boolean verbose;
-    final int runTime;
-    final int size;
-    final int globalPerc;
-    final Random random;
-    final Stats localStats, globalStats;
-    ProxyIf proxy;
+    private char[] symbols = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".toCharArray();
+    private int clientId;
+    private int groupId;
+    private int numOfGroups;
+    private boolean verbose;
+    private int runTime;
+    private int size;
+    private int globalPerc;
+    private Random random;
+    private Stats localStats, globalStats;
+    private ProxyIf proxy;
 
 
-    public ClientThread(int clientId, int groupId, String globalConfig, String[] localConfigs, boolean verbose, int runTime, int valueSize, int globalPerc, boolean ng) {
+    ClientThread(int clientId, int groupId, String[] globalConfigs, String[] localConfigs, boolean verbose, int runTime, int valueSize, int globalPerc, boolean ng) {
         this.clientId = clientId;
         this.groupId = groupId;
         this.numOfGroups = (localConfigs == null || localConfigs.length == 0) ? 1 : localConfigs.length;
@@ -36,8 +36,8 @@ public class ClientThread implements Runnable {
         this.localStats = new Stats();
         this.globalStats = new Stats();
         this.proxy = ng ?
-                new Proxy(clientId + 1000 * groupId, globalConfig, null) :
-                new Proxy(clientId + 1000 * groupId, globalConfig, localConfigs);
+                new Proxy(clientId + 1000 * groupId, globalConfigs, null) :
+                new Proxy(clientId + 1000 * groupId, globalConfigs, localConfigs);
     }
 
 
@@ -48,14 +48,24 @@ public class ClientThread implements Runnable {
         long startTime = System.nanoTime(), now;
         long elapsed = 0, delta = 0, usLat = startTime;
         byte[] response;
-        int[] all = new int[numOfGroups], local = new int[]{groupId};
+        int[] local = new int[]{groupId};
 
+        /*
+        int[] all = new int[numOfGroups];
         for (int i = 0; i < numOfGroups; i++)
             all[i] = i;
+        */
+        int[][] allPairs = {{0, 1}, {0, 2}, {0, 3}, {1, 2}, {1, 3}, {2, 3}};
+        int[] percentage = {0, 18, 34, 50, 66, 101};
+        int[] all;
 
         req.setValue(randomString(size).getBytes());
         while (elapsed / 1e9 < runTime) {
             try {
+                int index = 0, rn = r.nextInt(100);
+                while (rn > percentage[index]) index++;
+
+                all = allPairs[index];
                 req.setDestination(r.nextInt(100) >= globalPerc || numOfGroups == 1 ? local : all);
                 req.setKey(r.nextInt(Integer.MAX_VALUE));
                 req.setType(req.getDestination().length > 1 ? RequestType.SIZE : RequestType.PUT);
@@ -91,10 +101,9 @@ public class ClientThread implements Runnable {
             globalStats.persist("globalStats-client-g" + groupId + "-" + clientId + ".txt", 15);
             System.out.println("\nGLOBAL STATS:" + globalStats);
         }
-
     }
 
-    String randomString(int len) {
+    private String randomString(int len) {
         char[] buf = new char[len];
 
         for (int idx = 0; idx < buf.length; ++idx)
