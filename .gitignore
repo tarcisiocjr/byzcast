@@ -92,3 +92,5 @@ fabric.properties
 target/
 
 **/*Stats*.txt
+script/*.txt
+**/currentView

@@ -55,18 +55,20 @@ public class ClientThread implements Runnable {
         for (int i = 0; i < numOfGroups; i++)
             all[i] = i;
         */
-        int[][] allPairs = {{0, 1}, {0, 2}, {0, 3}, {1, 2}, {1, 3}, {2, 3}};
-        int[] percentage = {0, 18, 34, 50, 66, 101};
-        int[] all;
+        int[][] allDests = {{0, 1}, {0, 2}, {0, 3}, {1, 2}, {1, 3}, {2, 3}};
+        int[] percentage = {40, 45, 50, 55, 60, 101};
 
         req.setValue(randomString(size).getBytes());
         while (elapsed / 1e9 < runTime) {
             try {
-                int index = 0, rn = r.nextInt(100);
-                while (rn > percentage[index]) index++;
+                if (r.nextInt(100) >= globalPerc || numOfGroups == 1) {
+                    req.setDestination(local);
+                } else {
+                    int index = 0, rn = r.nextInt(100);
+                    while (rn > percentage[index]) index++;
 
-                all = allPairs[index];
-                req.setDestination(r.nextInt(100) >= globalPerc || numOfGroups == 1 ? local : all);
+                    req.setDestination(allDests[index]);
+                }
                 req.setKey(r.nextInt(Integer.MAX_VALUE));
                 req.setType(req.getDestination().length > 1 ? RequestType.SIZE : RequestType.PUT);
                 response = proxy.atomicMulticast(req);
