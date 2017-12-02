@@ -125,17 +125,16 @@ public class GlobalBatchReplier extends LocalReplier {
             for (Request r :
                     responses) {
                 //System.out.println("Received response: " + r);
-                Vector<TOMMessage> msgVector = getReply(r.getSeqNumber());
-
-
                 if (innerReplies.containsKey(r.getSeqNumber())) {
                     //System.out.println("message for top-level batch");
                     executedReq.put(r.getSeqNumber(), r);
                 } else {
                     //System.out.println("Replying to client");
+                    Vector<TOMMessage> msgVector = getReply(r.getSeqNumber());
                     TOMMessage msg = msgVector.get(0);
                     msg.reply.setContent(r.toBytes());
                     rc.getServerCommunicationSystem().send(new int[]{msg.getSender()}, msg.reply);
+                    deleteReply(r.getSeqNumber());
                 }
 
             }

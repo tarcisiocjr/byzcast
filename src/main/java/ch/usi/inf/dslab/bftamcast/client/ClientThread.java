@@ -20,7 +20,7 @@ public class ClientThread implements Runnable {
     private int size;
     private int globalPerc;
     private Random random;
-    private Stats localStats, globalStats;
+    private Stats stats;
     private ProxyIf proxy;
 
 
@@ -33,8 +33,7 @@ public class ClientThread implements Runnable {
         this.size = valueSize;
         this.globalPerc = globalPerc;
         this.random = new Random();
-        this.localStats = new Stats();
-        this.globalStats = new Stats();
+        this.stats = new Stats();
         this.proxy = ng ?
                 new Proxy(clientId + 1000 * groupId, globalConfigs, null) :
                 new Proxy(clientId + 1000 * groupId, globalConfigs, localConfigs);
@@ -57,6 +56,7 @@ public class ClientThread implements Runnable {
         */
         int[][] allDests = {{0, 1}, {0, 2}, {0, 3}, {1, 2}, {1, 3}, {2, 3}};
         int[] percentage = {40, 45, 50, 55, 60, 101};
+        int[] count = {0, 0, 0, 0, 0, 0};
 
         req.setValue(randomString(size).getBytes());
         while (elapsed / 1e9 < runTime) {
@@ -68,6 +68,7 @@ public class ClientThread implements Runnable {
                     while (rn > percentage[index]) index++;
 
                     req.setDestination(allDests[index]);
+                    count[index]++;
                 }
                 req.setKey(r.nextInt(Integer.MAX_VALUE));
                 req.setType(req.getDestination().length > 1 ? RequestType.SIZE : RequestType.PUT);
@@ -78,15 +79,11 @@ public class ClientThread implements Runnable {
                 }
                 now = System.nanoTime();
                 elapsed = (now - startTime);
-
-                if (req.getDestination().length > 1)
-                    globalStats.store((now - usLat) / 1000);
-                else
-                    localStats.store((now - usLat) / 1000);
+                stats.store((now - usLat) / 1000, req.getDestination().length > 1);
 
                 usLat = now;
                 if (verbose && elapsed - delta >= 2 * 1e9) {
-                    System.out.println("Client " + clientId + " ops/second:" + (localStats.getPartialCount() + globalStats.getPartialCount()) / ((float) (elapsed - delta) / 1e9));
+                    System.out.println("Client " + clientId + " ops/second:" + (stats.getPartialCount() / ((float) (elapsed - delta) / 1e9)));
                     delta = elapsed;
                 }
 
@@ -94,15 +91,14 @@ public class ClientThread implements Runnable {
                 e.printStackTrace();
             }
         }
-        if (localStats.getCount() > 0) {
-            localStats.persist("localStats-client-g" + groupId + "-" + clientId + ".txt", 15);
-            System.out.println("LOCAL STATS:" + localStats);
+        if (stats.getCount() > 0) {
+            stats.persist("stats-client-g" + groupId + "-" + clientId + ".txt", 15);
+            System.out.println("LOCAL STATS:" + stats);
+        }
+        for (int i = 0; i < count.length; i++) {
+            System.out.println("msg to (" + allDests[i][0] + ", " + allDests[i][1] + ": " + count[i]);
         }
 
-        if (globalStats.getCount() > 0) {
-            globalStats.persist("globalStats-client-g" + groupId + "-" + clientId + ".txt", 15);
-            System.out.println("\nGLOBAL STATS:" + globalStats);
-        }
     }
 
     private String randomString(int len) {

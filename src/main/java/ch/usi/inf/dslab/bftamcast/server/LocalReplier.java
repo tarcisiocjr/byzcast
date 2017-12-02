@@ -149,6 +149,10 @@ public class LocalReplier implements Replier, FIFOExecutable, Serializable {
         return messages;
     }
 
+    void deleteReply(int seqNumber) {
+        globalReplies.remove(seqNumber);
+    }
+
     Vector<TOMMessage> getReply(int seqNumber) {
         return globalReplies.get(seqNumber);
     }

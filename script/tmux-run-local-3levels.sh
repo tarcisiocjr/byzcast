@@ -31,9 +31,9 @@ for (( j = 1; j <=$(( G+1+G/2 )); j++ )); do
     for (( i = 1; i <= $N; i++ )); do
         PANE=$(( (j-1)*N + i ))
         if (( j > G )); then
-            tmux send-keys -t bftamcast.$PANE "$JAVA.server.BatchServerGlobal -g $(( j-G-1 )) -i $(( i-1 )) $GCS $LCS $ARGS | tee log-global-$(( i-1 ))-$(( j-G-1 )).txt" C-m
+            tmux send-keys -t bftamcast.$PANE "$JAVA.server.BatchServerGlobal -g $(( j-G-1 )) -i $(( i-1 )) $GCS $LCS $ARGS " C-m #| tee log-global-$(( i-1 ))-$(( j-G-1 )).txt" C-m
         else
-            tmux send-keys -t bftamcast.$PANE "$JAVA.server.Server -i $(( i-1 )) -g $(( j-1 )) -lc ../config/local$(( j-1 )) $ARGS | tee log-local-$(( i-1 ))-$(( j-1 )).txt" C-m
+            tmux send-keys -t bftamcast.$PANE "$JAVA.server.Server -i $(( i-1 )) -g $(( j-1 )) -lc ../config/local$(( j-1 )) $ARGS " C-m #  | tee log-local-$(( i-1 ))-$(( j-1 )).txt" C-m
         fi
     done
 done
