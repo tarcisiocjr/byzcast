@@ -1,17 +1,18 @@
 package ch.usi.inf.dslab.bftamcast.client;
 
-import ch.usi.inf.dslab.bftamcast.kvs.Request;
-import ch.usi.inf.dslab.bftamcast.kvs.RequestType;
-import ch.usi.inf.dslab.bftamcast.util.Stats;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import bftsmart.communication.client.ReplyListener;
 import bftsmart.tom.AsynchServiceProxy;
 import bftsmart.tom.RequestContext;
 import bftsmart.tom.core.messages.TOMMessage;
+import ch.usi.inf.dslab.bftamcast.kvs.Request;
+import ch.usi.inf.dslab.bftamcast.kvs.RequestType;
+import ch.usi.inf.dslab.bftamcast.util.Stats;
 
 /**
  * @author Paulo Coelho - paulo.coelho@usi.ch
@@ -30,6 +31,9 @@ public class ClientThread implements Runnable, ReplyListener {
 	final Random random;
 	final Stats localStats, globalStats;
 	final Map<Integer, Integer> repliesCounter;
+	private int counter = 0;
+	private int secs = 0;
+
 	ProxyIf proxy;
 	final Request replyReq;
 
@@ -62,6 +66,19 @@ public class ClientThread implements Runnable, ReplyListener {
 		// local and global ids
 		int[] all = new int[numOfGroups], local = new int[] { groupId };
 
+		TimerTask statsTask = new TimerTask() {
+
+			@Override
+			public void run() {
+				secs++;
+				System.out.println((counter / secs) + "req/s");
+			}
+		};
+
+		// And From your main() method or any other method
+		Timer timer = new Timer();
+		timer.schedule(statsTask, 0, 1000);
+
 		// set groups ids?
 		for (int i = 0; i < numOfGroups; i++)
 			all[i] = i;
@@ -81,38 +98,42 @@ public class ClientThread implements Runnable, ReplyListener {
 						(double) (prox.getViewManager().getCurrentViewN() + prox.getViewManager().getCurrentViewF() + 1)
 								/ 2.0);
 				repliesCounter.put(seqNumber, q);
-				System.out.println("sent   seq#" + seqNumber);
+//				System.out.println("sent   seq#" + seqNumber);
 
 				// stats code
-//				now = System.nanoTime();
-//				elapsed = (now - startTime);
-//
-//				if (req.getDestination().length > 1)
-//					globalStats.store((now - usLat) / 1000);
-//				else
-//					localStats.store((now - usLat) / 1000);
-//
-//				usLat = now;
-//				if (verbose && elapsed - delta >= 2 * 1e9) {
-//					System.out.println("Client " + clientId + " ops/second:"
-//							+ (localStats.getPartialCount() + globalStats.getPartialCount())
-//									/ ((float) (elapsed - delta) / 1e9));
-//					delta = elapsed;
-//				}
+				 now = System.nanoTime();
+				 elapsed = (now - startTime);
+				//
+				// if (req.getDestination().length > 1)
+				// globalStats.store((now - usLat) / 1000);
+				// else
+				// localStats.store((now - usLat) / 1000);
+				//
+				// usLat = now;
+				// if (verbose && elapsed - delta >= 2 * 1e9) {
+				// System.out.println("Client " + clientId + " ops/second:"
+				// + (localStats.getPartialCount() + globalStats.getPartialCount())
+				// / ((float) (elapsed - delta) / 1e9));
+				// delta = elapsed;
+				// }
 
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
 		}
-//		if (localStats.getCount() > 0) {
-//			localStats.persist("localStats-client-g" + groupId + "-" + clientId + ".txt", 15);
-//			System.out.println("LOCAL STATS:" + localStats);
-//		}
-//
-//		if (globalStats.getCount() > 0) {
-//			globalStats.persist("globalStats-client-g" + groupId + "-" + clientId + ".txt", 15);
-//			System.out.println("\nGLOBAL STATS:" + globalStats);
-//		}
+		System.out.println("done");
+		timer.cancel();
+		// if (localStats.getCount() > 0) {
+		// localStats.persist("localStats-client-g" + groupId + "-" + clientId + ".txt",
+		// 15);
+		// System.out.println("LOCAL STATS:" + localStats);
+		// }
+		//
+		// if (globalStats.getCount() > 0) {
+		// globalStats.persist("globalStats-client-g" + groupId + "-" + clientId +
+		// ".txt", 15);
+		// System.out.println("\nGLOBAL STATS:" + globalStats);
+		// }
 
 	}
 
@@ -140,8 +161,9 @@ public class ClientThread implements Runnable, ReplyListener {
 			count--;
 
 			if (count == 0) {
+				counter++;
 				repliesCounter.remove(seqN);
-				System.out.println("recieved   seq#" + seqN);
+//				System.out.println("recieved   seq#" + seqN);
 				// done process req
 				// TODO ask why do this when recieved majority
 				// prox.cleanAsynchRequest(requestId);
@@ -151,39 +173,6 @@ public class ClientThread implements Runnable, ReplyListener {
 		}
 
 	}
-
-	// @Override
-	// public void receiveResponse(byte[] response) {
-	// this.response = response;
-	// try {
-	// if (response == null && req.getType() == RequestType.SIZE) {
-	// System.err.println("Problem");
-	// } else {
-	// now = System.nanoTime();
-	// elapsed = (now - startTime);
-	//
-	// if (req.getDestination().length > 1)
-	// globalStats.store((now - usLat) / 1000);
-	// else
-	// localStats.store((now - usLat) / 1000);
-	//
-	// usLat = now;
-	// if (verbose && elapsed - delta >= 2 * 1e9) {
-	// System.out.println("Client " + clientId + " ops/second:" +
-	// (localStats.getPartialCount() + globalStats.getPartialCount()) / ((float)
-	// (elapsed - delta) / 1e9));
-	// delta = elapsed;
-	// }
-	// setRequest(req);
-	// if(!stop) {
-	// proxy.asyncAtomicMulticast(req, this);
-	// }
-	// }
-	// } catch (Exception e) {
-	// e.printStackTrace();
-	// }
-	//
-	// }
 
 	@Override
 	public void reset() {
