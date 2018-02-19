@@ -28,7 +28,7 @@ public class ConsoleClient {
         ProxyIf proxy = new Proxy(idClient + 1000 * idGroup, globalConfigPath, localConfigPaths);
         Request req = new Request();
         int[] dest;
-        byte[] result;
+        byte[] result = null;
 
         Console console = System.console();
         Scanner sc = new Scanner(System.in);
@@ -49,7 +49,7 @@ public class ConsoleClient {
                     req.setKey(Integer.parseInt(console.readLine("Enter the key: ")));
                     req.setDestination(new int[]{req.getKey() % numGroups});
                     req.setValue(console.readLine("Enter the value: ").getBytes());
-                    result = proxy.atomicMulticast(req);
+//                    result = proxy.atomicMulticast(req);
                     System.out.println("previous value: " + (result == null ? "NULL" : new String(result)));
                     break;
                 case 2:
@@ -58,7 +58,7 @@ public class ConsoleClient {
                     req.setKey(Integer.parseInt(console.readLine("Enter the key: ")));
                     req.setValue(null);
                     req.setDestination(new int[]{req.getKey() % numGroups});
-                    result = proxy.atomicMulticast(req);
+//                    result = proxy.atomicMulticast(req);
                     System.out.println("value: " + (result == null ? "NULL" : new String(result)));
                     break;
                 case 3:
@@ -66,7 +66,7 @@ public class ConsoleClient {
                     req.setType(RequestType.REMOVE);
                     req.setKey(Integer.parseInt(console.readLine("Enter the key: ")));
                     req.setDestination(new int[]{req.getKey() % numGroups});
-                    result = proxy.atomicMulticast(req);
+//                    result = proxy.atomicMulticast(req);
                     System.out.println("removed value: " + (result == null ? "NULL" : new String(result)));
                     break;
                 case 4:
@@ -79,7 +79,7 @@ public class ConsoleClient {
                         dest[i] = i;
 
                     req.setDestination(dest);
-                    result = proxy.atomicMulticast(req);
+//                    result = proxy.atomicMulticast(req);
                     System.out.println("result size = " + result.length);
                     for (int i = 0; i < dest.length; i++)
                         System.out.println("Map size (group " + i + "): " + (result == null ? "NULL" : ByteBuffer.wrap(Arrays.copyOfRange(result, i * 4, i * 4 + 4)).getInt()));
