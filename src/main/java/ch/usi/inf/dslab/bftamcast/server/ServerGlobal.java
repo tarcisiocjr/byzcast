@@ -87,6 +87,7 @@ public class ServerGlobal extends DefaultRecoverable {
 
         req.setSeqNumber(seqNumber++);
         toSend = req.toBytes();
+        //send to leafs
         try {
             for (int dest : req.getDestination()) {
                 invokeThreads[dest] = new Thread(() -> invokeReplies[dest] = proxiesToLocal[dest].invokeOrdered(toSend));

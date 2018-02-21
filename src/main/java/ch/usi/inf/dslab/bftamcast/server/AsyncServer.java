@@ -3,6 +3,14 @@
  */
 package ch.usi.inf.dslab.bftamcast.server;
 
+import java.io.Serializable;
+
+import bftsmart.tom.MessageContext;
+import bftsmart.tom.ReplicaContext;
+import bftsmart.tom.core.messages.TOMMessage;
+import bftsmart.tom.server.FIFOExecutable;
+import bftsmart.tom.server.Replier;
+
 /**
  * @author Christian Vuerich - christian.vuerich@usi.ch
  *
@@ -12,6 +20,46 @@ package ch.usi.inf.dslab.bftamcast.server;
  * - make server and clients non blocking (asynchronous)
  * - remove auxiliary groups and use target groups to build the overlay tree
  */
-public class AsyncServer {
+public class AsyncServer implements Replier, FIFOExecutable, Serializable {
+	
+	public AsyncServer() {
+		
+	}
+
+	@Override
+	public byte[] executeOrdered(byte[] command, MessageContext msgCtx) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public byte[] executeUnordered(byte[] command, MessageContext msgCtx) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public byte[] executeOrderedFIFO(byte[] command, MessageContext msgCtx, int clientId, int operationId) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public byte[] executeUnorderedFIFO(byte[] command, MessageContext msgCtx, int clientId, int operationId) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public void setReplicaContext(ReplicaContext rc) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void manageReply(TOMMessage request, MessageContext msgCtx) {
+		// TODO Auto-generated method stub
+		
+	}
 
 }

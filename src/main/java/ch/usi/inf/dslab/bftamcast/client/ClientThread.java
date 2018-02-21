@@ -33,6 +33,7 @@ public class ClientThread implements Runnable, ReplyListener {
 	final Map<Integer, Integer> repliesCounter;
 	private int counter = 0;
 	private int secs = 0;
+	long startTime, usLat, delta =0;
 
 	ProxyIf proxy;
 	final Request replyReq;
@@ -59,7 +60,9 @@ public class ClientThread implements Runnable, ReplyListener {
 	public void run() {
 		// setup
 		Random r = new Random();
-		long startTime = System.nanoTime(), now;
+		startTime = System.nanoTime();
+		usLat = startTime;
+		long now;
 		long elapsed = 0, delta = 0, usLat = startTime;
 		Request req = new Request();
 		// byte[] response;
@@ -77,7 +80,7 @@ public class ClientThread implements Runnable, ReplyListener {
 
 		// And From your main() method or any other method
 		Timer timer = new Timer();
-		timer.schedule(statsTask, 0, 1000);
+//		timer.schedule(statsTask, 0, 1000);
 
 		// set groups ids?
 		for (int i = 0; i < numOfGroups; i++)
@@ -98,11 +101,11 @@ public class ClientThread implements Runnable, ReplyListener {
 						(double) (prox.getViewManager().getCurrentViewN() + prox.getViewManager().getCurrentViewF() + 1)
 								/ 2.0);
 				repliesCounter.put(seqNumber, q);
-//				System.out.println("sent   seq#" + seqNumber);
+				// System.out.println("sent seq#" + seqNumber);
 
 				// stats code
-				 now = System.nanoTime();
-				 elapsed = (now - startTime);
+				now = System.nanoTime();
+				elapsed = (now - startTime);
 				//
 				// if (req.getDestination().length > 1)
 				// globalStats.store((now - usLat) / 1000);
@@ -120,9 +123,19 @@ public class ClientThread implements Runnable, ReplyListener {
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
+
 		}
 		System.out.println("done");
 		timer.cancel();
+		if (localStats.getCount() > 0) {
+            localStats.persist("localStats-client-g" + groupId + "-" + clientId + ".txt", 15);
+            System.out.println("LOCAL STATS:" + localStats);
+        }
+
+        if (globalStats.getCount() > 0) {
+            globalStats.persist("globalStats-client-g" + groupId + "-" + clientId + ".txt", 15);
+            System.out.println("\nGLOBAL STATS:" + globalStats);
+        }
 		// if (localStats.getCount() > 0) {
 		// localStats.persist("localStats-client-g" + groupId + "-" + clientId + ".txt",
 		// 15);
@@ -161,9 +174,26 @@ public class ClientThread implements Runnable, ReplyListener {
 			count--;
 
 			if (count == 0) {
+
+				long now = System.nanoTime();
+				long elapsed = (now - startTime);
+
+				if (replyReq.getDestination().length > 1)
+					globalStats.store((now - usLat) / 1000);
+				else
+					localStats.store((now - usLat) / 1000);
+
+				usLat = now;
+				if (verbose && elapsed - delta >= 2 * 1e9) {
+					System.out.println("Client " + clientId + " ops/second:"
+							+ (localStats.getPartialCount() + globalStats.getPartialCount())
+									/ ((float) (elapsed - delta) / 1e9));
+					delta = elapsed;
+				}
+				System.out.println("req#" + seqN);
 				counter++;
 				repliesCounter.remove(seqN);
-//				System.out.println("recieved   seq#" + seqN);
+				// System.out.println("recieved seq#" + seqN);
 				// done process req
 				// TODO ask why do this when recieved majority
 				// prox.cleanAsynchRequest(requestId);
