@@ -20,9 +20,14 @@ import bftsmart.tom.server.Replier;
  * - make server and clients non blocking (asynchronous)
  * - remove auxiliary groups and use target groups to build the overlay tree
  */
-public class AsyncServer implements Replier, FIFOExecutable, Serializable {
+public class UniversalReplier implements Replier, FIFOExecutable, Serializable {
 	
-	public AsyncServer() {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+
+	public UniversalReplier(int group) {
 		
 	}
 
