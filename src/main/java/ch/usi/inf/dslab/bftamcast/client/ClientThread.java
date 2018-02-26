@@ -35,6 +35,7 @@ public class ClientThread implements Runnable, ReplyListener {
 	private int secs = 0;
 	long startTime, usLat, delta =0;
 
+
 	ProxyIf proxy;
 	final Request replyReq;
 
