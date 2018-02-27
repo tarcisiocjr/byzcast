@@ -10,6 +10,7 @@ import bftsmart.tom.ReplicaContext;
 import bftsmart.tom.core.messages.TOMMessage;
 import bftsmart.tom.server.FIFOExecutable;
 import bftsmart.tom.server.Replier;
+import ch.usi.inf.dslab.bftamcast.graph.Tree;
 
 /**
  * @author Christian Vuerich - christian.vuerich@usi.ch
@@ -26,9 +27,13 @@ public class UniversalReplier implements Replier, FIFOExecutable, Serializable {
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
+	private Tree overlayTree;
+	private int groupID;
+	
 
-	public UniversalReplier(int group) {
-		
+	public UniversalReplier(int groupID, String treeConfig) {
+		this.overlayTree = new Tree(treeConfig);
+		this.groupID= groupID;
 	}
 
 	@Override

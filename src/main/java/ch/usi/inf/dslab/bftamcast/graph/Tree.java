@@ -29,14 +29,48 @@ public class Tree {
 	 * @return the lowest common ancestor in the tree of all the vertices in the
 	 *         input vertices list.
 	 */
-	public Vertex lca(int[] vetices) {
-		//TODO
-		return null;
+	public Vertex lca(List<Vertex> vertices) {
+		// List<List<Vertex>> ancestors = new ArrayList<>();
+		// for (Vertex v : vertices) {
+		// List<Vertex> vAncestors = new ArrayList();
+		// Vertex tmp = v;
+		// while(v != null) {
+		// vAncestors.add(tmp);
+		// tmp = tmp.parent;
+		// }
+		// ancestors.add(vAncestors);
+		// }
+
+		// tree only has one path between any two nodes, so only one child of root could
+		// be anchestor
+		Vertex ancestor = root;
+		boolean reachable = true;
+		while (reachable) {
+			reachable = true;
+			for (Vertex v : ancestor.connections) {
+				reachable = true;
+				for (Vertex target : vertices) {
+					reachable = reachable & v.inReach(target.groupId);
+					if (!reachable) {
+						break;
+					}
+				}
+				if (reachable) {
+					// tree only one path between two vertices, so if found lower anchestor it is
+					// not needed to keep searching other children
+					ancestor = v;
+					break;
+				}
+			}
+		}
+		return ancestor;
 	}
 
 	/**
 	 * Main for testing
-	 * @param args none
+	 * 
+	 * @param args
+	 *            none
 	 */
 	public static void main(String[] args) {
 		Tree t = new Tree("config/tree.conf");
@@ -114,7 +148,7 @@ public class Tree {
 			e.printStackTrace();
 		}
 	}
-	
+
 	public Vertex findVertexById(int id) {
 		return root.findVertexByID(id);
 	}
