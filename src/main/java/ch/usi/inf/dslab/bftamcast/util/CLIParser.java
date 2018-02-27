@@ -4,7 +4,7 @@ import org.apache.commons.cli.*;
 
 public class CLIParser {
     private Option globalConfig, localConfigs, localConfig, id, group,
-            globalPercent, clientCount, duration, msgSize, nonGenuine;
+            globalPercent, clientCount, duration, msgSize, nonGenuine, treeConfig;
     private Options options;
     private CommandLineParser parser;
     private CommandLine line;
@@ -21,7 +21,8 @@ public class CLIParser {
         globalConfig = Option.builder("gc").desc("global group config folder").argName("folder").hasArg().numberOfArgs(1).type(String.class).build();
         localConfig = Option.builder("lc").desc("local group config folder").argName("folder").hasArg().numberOfArgs(1).type(String.class).build();
         localConfigs = Option.builder("lcs").desc("2+ local group config folders").argName("folder1 ... folderN").hasArg().numberOfArgs(Option.UNLIMITED_VALUES).type(String[].class).build();
-        nonGenuine = Option.builder("ng").desc("sets the server to the non-genuine configuration").hasArg(false).build();
+        treeConfig= Option.builder("t").desc("tree conf file").argName("file").hasArg().numberOfArgs(1).type(String.class).required().build();
+        nonGenuine = Option.builder("ng").desc("sets the server to the non-genuine config.uration").hasArg(false).build();
         options = new Options();
         parser = new DefaultParser();
         line = null;
@@ -42,6 +43,7 @@ public class CLIParser {
         parser.options.addOption(parser.globalConfig);
         parser.options.addOption(parser.localConfigs);
         parser.options.addOption(parser.nonGenuine);
+        parser.options.addOption(parser.treeConfig);
         parser.parse(args);
         return parser;
     }
@@ -56,6 +58,7 @@ public class CLIParser {
         parser.options.addOption(parser.globalConfig);
         parser.options.addOption(parser.localConfigs);
         parser.options.addOption(parser.nonGenuine);
+        parser.options.addOption(parser.treeConfig);
         parser.parse(args);
         return parser;
     }
@@ -70,6 +73,7 @@ public class CLIParser {
         parser.options.addOption(parser.group);
         parser.options.addOption(parser.localConfig);
         parser.options.addOption(parser.nonGenuine);
+        parser.options.addOption(parser.treeConfig);
         parser.parse(args);
         return parser;
     }
@@ -104,6 +108,10 @@ public class CLIParser {
     
     public String getGlobalConfig() {
         return line.getOptionValue("gc");
+    }
+    
+    public String getTreeConfig() {
+        return line.getOptionValue("t");
     }
 
     public String getLocalConfig() {

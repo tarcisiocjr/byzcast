@@ -20,6 +20,7 @@ public class Client {
         int perc = p.getGlobalPercent();
         boolean ng = p.isNonGenuine();
         String globalConfigPath = p.getGlobalConfig();
+        String treeConfigPath = p.getTreeConfig();
         String[] localConfigPaths = p.getLocalConfigs();
         ClientThread[] clients = new ClientThread[clientCount];
         Thread[] clientThreads = new Thread[clientCount];
@@ -28,7 +29,7 @@ public class Client {
             System.out.println("Starting client " + (id + i));
             Thread.sleep(r.nextInt(600));
             clients[i] = new ClientThread(id + i, idGroup, globalConfigPath,
-                    localConfigPaths, true, totalTime, valueSize, perc, ng);
+                    localConfigPaths, true, totalTime, valueSize, perc, ng, treeConfigPath);
             clientThreads[i] = new Thread(clients[i]);
             clientThreads[i].start();
         }

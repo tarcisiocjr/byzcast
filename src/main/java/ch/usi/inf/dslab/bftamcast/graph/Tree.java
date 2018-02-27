@@ -19,6 +19,7 @@ import bftsmart.reconfiguration.util.HostsConfig.Config;
  */
 public class Tree {
 	private Vertex root;
+	private List<Integer> destinations;
 
 	/**
 	 * 
@@ -29,18 +30,38 @@ public class Tree {
 	 *         input vertices list.
 	 */
 	public Vertex lca(int[] vetices) {
-		// TODO
+		//TODO
 		return null;
 	}
 
+	/**
+	 * Main for testing
+	 * @param args none
+	 */
 	public static void main(String[] args) {
 		Tree t = new Tree("config/tree.conf");
-		
 		Vertex v = t.root;
-		
 	}
 
+	/**
+	 * getter for list of destinations in the tree
+	 * 
+	 * @return the field destinations containing the id of all destinations in the
+	 *         tree
+	 */
+	public List<Integer> getDestinations() {
+		return destinations;
+	}
+
+	/**
+	 * Constructor
+	 * 
+	 * @param configFile
+	 *            containing the id of the vertices and their config path for bft
+	 *            smart and connection between them
+	 */
 	public Tree(String configFile) {
+		destinations = new ArrayList();
 		List<Vertex> vertices = new ArrayList<>();
 		FileReader fr;
 		BufferedReader rd;
@@ -55,14 +76,15 @@ public class Tree {
 					// etc and build optimal tree)
 					StringTokenizer str = new StringTokenizer(line, " ");
 					if (str.countTokens() == 2) {
-						//throw away  in config file (temporary to distinguish between vertex declaration and edges)
+						// throw away in config file (temporary to distinguish between vertex
+						// declaration and edges)
 						vertices.add(new Vertex(Integer.valueOf(str.nextToken()), str.nextToken()));
-
+						destinations.add(vertices.get(vertices.size() - 1).groupId);
 					}
 					if (str.countTokens() == 3) {
-						
+
 						int from = Integer.valueOf(str.nextToken());
-						str.nextToken();//throw away "->"
+						str.nextToken();// throw away "->"
 						int to = Integer.valueOf(str.nextToken());
 
 						for (Vertex v1 : vertices) {
@@ -75,7 +97,7 @@ public class Tree {
 								}
 							}
 						}
-						
+
 						for (Vertex v : vertices) {
 							if (v.parent == null) {
 								root = v;
@@ -91,7 +113,10 @@ public class Tree {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-
+	}
+	
+	public Vertex findVertexById(int id) {
+		return root.findVertexByID(id);
 	}
 
 }

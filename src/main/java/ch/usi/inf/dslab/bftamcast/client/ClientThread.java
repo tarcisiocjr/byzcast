@@ -10,6 +10,7 @@ import bftsmart.communication.client.ReplyListener;
 import bftsmart.tom.AsynchServiceProxy;
 import bftsmart.tom.RequestContext;
 import bftsmart.tom.core.messages.TOMMessage;
+import ch.usi.inf.dslab.bftamcast.graph.Tree;
 import ch.usi.inf.dslab.bftamcast.kvs.Request;
 import ch.usi.inf.dslab.bftamcast.kvs.RequestType;
 import ch.usi.inf.dslab.bftamcast.util.Stats;
@@ -34,13 +35,14 @@ public class ClientThread implements Runnable, ReplyListener {
 	private int counter = 0;
 	private int secs = 0;
 	long startTime, usLat, delta =0;
+	private Tree overlayTree;
 
 
 	ProxyIf proxy;
 	final Request replyReq;
 
 	public ClientThread(int clientId, int groupId, String globalConfig, String[] localConfigs, boolean verbose,
-			int runTime, int valueSize, int globalPerc, boolean ng) {
+			int runTime, int valueSize, int globalPerc, boolean ng, String treeConfigPath) {
 		this.clientId = clientId;
 		this.groupId = groupId;
 		this.numOfGroups = (localConfigs == null || localConfigs.length == 0) ? 1 : localConfigs.length;
@@ -55,6 +57,7 @@ public class ClientThread implements Runnable, ReplyListener {
 				: new Proxy(clientId + 1000 * groupId, globalConfig, localConfigs);
 		this.repliesCounter = new HashMap<>();
 		this.replyReq = new Request();
+		this.overlayTree = new Tree(treeConfigPath);
 	}
 
 	@Override
