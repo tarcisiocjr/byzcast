@@ -29,7 +29,12 @@ public class Tree {
 	 * @return the lowest common ancestor in the tree of all the vertices in the
 	 *         input vertices list.
 	 */
-	public Vertex lca(List<Vertex> vertices) {
+	public Vertex lca(int[] ids) {
+		
+		List<Vertex> vertices = new ArrayList<>();
+		for (int i =0; i < ids.length; i++) {
+			vertices.add(findVertexById(ids[i]));
+		}
 		// List<List<Vertex>> ancestors = new ArrayList<>();
 		// for (Vertex v : vertices) {
 		// List<Vertex> vAncestors = new ArrayList();

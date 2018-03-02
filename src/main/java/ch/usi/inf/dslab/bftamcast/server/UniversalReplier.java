@@ -72,6 +72,7 @@ public class UniversalReplier implements Replier, FIFOExecutable, Serializable {
 		}
 
 		req.fromBytes(request.reply.getContent());
+		System.out.println("called manageReply");
 
 	}
 	
@@ -126,6 +127,7 @@ public class UniversalReplier implements Replier, FIFOExecutable, Serializable {
 
 	@Override
 	public byte[] executeOrderedFIFO(byte[] bytes, MessageContext messageContext, int i, int i1) {
+		System.out.println("called executeOrderedFIFO");
 		return bytes;
 	}
 
