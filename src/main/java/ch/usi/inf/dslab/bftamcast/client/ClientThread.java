@@ -1,6 +1,9 @@
 package ch.usi.inf.dslab.bftamcast.client;
 
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Timer;
@@ -10,6 +13,8 @@ import bftsmart.communication.client.ReplyListener;
 import bftsmart.tom.AsynchServiceProxy;
 import bftsmart.tom.RequestContext;
 import bftsmart.tom.core.messages.TOMMessage;
+import bftsmart.tom.core.messages.TOMMessageType;
+import bftsmart.tom.leaderchange.CollectData;
 import ch.usi.inf.dslab.bftamcast.graph.Tree;
 import ch.usi.inf.dslab.bftamcast.kvs.Request;
 import ch.usi.inf.dslab.bftamcast.kvs.RequestType;
@@ -23,7 +28,6 @@ public class ClientThread implements Runnable, ReplyListener {
 	final char[] symbols = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".toCharArray();
 	final int clientId;
 	final int groupId;
-	final int numOfGroups;
 	final boolean verbose;
 	final int runTime;
 	final int size;
@@ -38,14 +42,12 @@ public class ClientThread implements Runnable, ReplyListener {
 	private Tree overlayTree;
 
 
-	ProxyIf proxy;
 	final Request replyReq;
 
-	public ClientThread(int clientId, int groupId, String globalConfig, String[] localConfigs, boolean verbose,
+	public ClientThread(int clientId, int groupId, boolean verbose,
 			int runTime, int valueSize, int globalPerc, boolean ng, String treeConfigPath) {
 		this.clientId = clientId;
 		this.groupId = groupId;
-		this.numOfGroups = (localConfigs == null || localConfigs.length == 0) ? 1 : localConfigs.length;
 		this.verbose = verbose;
 		this.runTime = runTime;
 		this.size = valueSize;
@@ -53,8 +55,6 @@ public class ClientThread implements Runnable, ReplyListener {
 		this.random = new Random();
 		this.localStats = new Stats();
 		this.globalStats = new Stats();
-		this.proxy = ng ? new Proxy(clientId + 1000 * groupId, globalConfig, null)
-				: new Proxy(clientId + 1000 * groupId, globalConfig, localConfigs);
 		this.repliesCounter = new HashMap<>();
 		this.replyReq = new Request();
 		this.overlayTree = new Tree(treeConfigPath);
@@ -71,7 +71,6 @@ public class ClientThread implements Runnable, ReplyListener {
 		Request req = new Request();
 		// byte[] response;
 		// local and global ids
-		int[] all = new int[numOfGroups], local = new int[] { groupId };
 
 		TimerTask statsTask = new TimerTask() {
 
@@ -86,19 +85,21 @@ public class ClientThread implements Runnable, ReplyListener {
 		Timer timer = new Timer();
 //		timer.schedule(statsTask, 0, 1000);
 
-		// set groups ids?
-		for (int i = 0; i < numOfGroups; i++)
-			all[i] = i;
+	
 
 		req.setValue(randomString(size).getBytes());
 		while (elapsed / 1e9 < runTime) {
 			try {
-				req.setDestination(r.nextInt(100) >= globalPerc || numOfGroups == 1 ? local : all);
+				List<Integer> list = new LinkedList<Integer>(overlayTree.getDestinations());
+				Collections.shuffle(list);
+
+				req.setDestination(list.subList(r.nextInt(list.size()), list.size()-1).stream().mapToInt(i->i).toArray());
 				req.setKey(r.nextInt(Integer.MAX_VALUE));
 				req.setType(req.getDestination().length > 1 ? RequestType.SIZE : RequestType.PUT);
 				req.setSeqNumber(seqNumber++);
 
-				AsynchServiceProxy prox = proxy.asyncAtomicMulticast(req, this);
+				AsynchServiceProxy prox =  overlayTree.lca(req.getDestination()).proxy;
+				prox.invokeAsynchRequest(req.toBytes(), this, TOMMessageType.ORDERED_REQUEST);
 				// TODO ask why do this when recieved majority
 				// prox.cleanAsynchRequest(requestId);
 				int q = (int) Math.ceil(

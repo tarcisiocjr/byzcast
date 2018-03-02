@@ -3,6 +3,7 @@
  */
 package ch.usi.inf.dslab.bftamcast.graph;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -17,7 +18,7 @@ import ch.usi.inf.dslab.bftamcast.client.ProxyIf;
  * @author Christian Vuerich - christian.vuerich@usi.ch
  *
  */
-public class Vertex implements ProxyIf {
+public class Vertex implements ProxyIf, Serializable {
 
 	public AsynchServiceProxy proxy;
 	public int groupId;

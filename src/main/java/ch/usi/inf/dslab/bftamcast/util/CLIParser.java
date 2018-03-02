@@ -4,7 +4,7 @@ import org.apache.commons.cli.*;
 
 public class CLIParser {
     private Option globalConfig, localConfigs, localConfig, id, group,
-            globalPercent, clientCount, duration, msgSize, nonGenuine, treeConfig;
+            globalPercent, clientCount, duration, msgSize, nonGenuine, treeConfig, GroupConfig;
     private Options options;
     private CommandLineParser parser;
     private CommandLine line;
@@ -19,6 +19,7 @@ public class CLIParser {
         msgSize = Option.builder("s").desc("message size in bytes (defaults to 64)").argName("bytes").hasArg().numberOfArgs(1).type(Integer.class).build();
         clientCount = Option.builder("c").desc("number of client threads (defaults to 1)").argName("clients").hasArg().numberOfArgs(1).type(Integer.class).build();
         globalConfig = Option.builder("gc").desc("global group config folder").argName("folder").hasArg().numberOfArgs(1).type(String.class).build();
+        GroupConfig = Option.builder("G").desc("group config folder").argName("folder").hasArg().numberOfArgs(1).type(String.class).build();
         localConfig = Option.builder("lc").desc("local group config folder").argName("folder").hasArg().numberOfArgs(1).type(String.class).build();
         localConfigs = Option.builder("lcs").desc("2+ local group config folders").argName("folder1 ... folderN").hasArg().numberOfArgs(Option.UNLIMITED_VALUES).type(String[].class).build();
         treeConfig= Option.builder("t").desc("tree conf file").argName("file").hasArg().numberOfArgs(1).type(String.class).required().build();
@@ -33,15 +34,12 @@ public class CLIParser {
         parser.command = "Client";
         parser.id.setRequired(true);
         parser.group.setRequired(true);
-        parser.globalConfig.setRequired(true);
         parser.options.addOption(parser.id);
         parser.options.addOption(parser.group);
         parser.options.addOption(parser.clientCount);
         parser.options.addOption(parser.duration);
         parser.options.addOption(parser.msgSize);
         parser.options.addOption(parser.globalPercent);
-        parser.options.addOption(parser.globalConfig);
-        parser.options.addOption(parser.localConfigs);
         parser.options.addOption(parser.nonGenuine);
         parser.options.addOption(parser.treeConfig);
         parser.parse(args);
@@ -58,6 +56,20 @@ public class CLIParser {
         parser.options.addOption(parser.globalConfig);
         parser.options.addOption(parser.localConfigs);
         parser.options.addOption(parser.nonGenuine);
+        parser.options.addOption(parser.treeConfig);
+        parser.parse(args);
+        return parser;
+    }
+    
+    public static CLIParser getServerParser(String[] args) {
+        CLIParser parser = new CLIParser();
+        parser.command = "Univers server";
+        parser.id.setRequired(true);
+        parser.group.setRequired(true);
+        parser.GroupConfig.setRequired(true);
+        parser.options.addOption(parser.id);
+        parser.options.addOption(parser.group);
+        parser.options.addOption(parser.GroupConfig);
         parser.options.addOption(parser.treeConfig);
         parser.parse(args);
         return parser;
@@ -80,6 +92,10 @@ public class CLIParser {
 
     public int getId() {
         return Integer.parseInt(line.getOptionValue("i"));
+    }
+    
+    public String getGroupConfig() {
+        return line.getOptionValue("G");
     }
 
     public int getGroup() {

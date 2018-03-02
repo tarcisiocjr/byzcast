@@ -14,4 +14,4 @@ for (( i = 0; i < $(( G )); i++ )); do
 done
 
 #echo -gc ../config/global $LCS -i $RANDOM $ARGS
-java -cp '../lib/*:../target/*' ch.usi.inf.dslab.bftamcast.client.Client -gc ../config/global $LCS -i $RANDOM $ARGS
+java -cp '../lib/*:../target/*' ch.usi.inf.dslab.bftamcast.client.Client -t ../config/tree.conf -gc ../config/global $LCS -i $RANDOM $ARGS

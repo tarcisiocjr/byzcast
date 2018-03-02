@@ -39,12 +39,12 @@ public class ConsoleClient implements ReplyListener{
 		Random r = new Random();
 		int idGroup = p.getGroup();
 		int idClient = p.getId() == 0 ? r.nextInt(Integer.MAX_VALUE) : p.getId();
-		String globalConfigPath = p.getGlobalConfig();
-		String[] localConfigPaths = p.getLocalConfigs();
+//		String globalConfigPath = p.getGlobalConfig();
+//		String[] localConfigPaths = p.getLocalConfigs();
 		String treeConfigPath = p.getTreeConfig();
 		Tree overlayTree = new Tree(treeConfigPath);
-		int numGroups = localConfigPaths == null ? 1 : localConfigPaths.length;
-		ProxyIf proxy = new Proxy(idClient + 1000 * idGroup, globalConfigPath, localConfigPaths);
+//		int numGroups = localConfigPaths == null ? 1 : localConfigPaths.length;
+//		ProxyIf proxy = new Proxy(idClient + 1000 * idGroup, globalConfigPath, localConfigPaths);
 		Request req = new Request();
 		int[] dest;
 		byte[] result = null;
@@ -65,7 +65,6 @@ public class ConsoleClient implements ReplyListener{
 			int[] n;
 			int index;
 			AsynchServiceProxy target;
-			
 			switch (cmd) {
 			case 1:
 				System.out.println("Putting value in the distributed map");

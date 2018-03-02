@@ -13,6 +13,7 @@ import java.io.ObjectOutputStream;
 import bftsmart.tom.MessageContext;
 import bftsmart.tom.ServiceReplica;
 import bftsmart.tom.server.defaultservices.DefaultRecoverable;
+import ch.usi.inf.dslab.bftamcast.util.CLIParser;
 
 /**
  * @author Christian Vuerich - christian.vuerich@usi.ch
@@ -21,6 +22,11 @@ import bftsmart.tom.server.defaultservices.DefaultRecoverable;
 public class UniversalServer extends DefaultRecoverable{
 	private UniversalReplier replier;
 	private int id, groupId, nextTS;
+	
+	public static void main(String[] args) {
+        CLIParser p = CLIParser.getServerParser(args);
+        new UniversalServer(p.getId(), p.getGroup(), p.getGroupConfig(), p.getTreeConfig());
+    }
 	
 	
 	

@@ -7,6 +7,7 @@ import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.StringTokenizer;
@@ -17,7 +18,7 @@ import bftsmart.reconfiguration.util.HostsConfig.Config;
  * @author Christian Vuerich - christian.vuerich@usi.ch
  *
  */
-public class Tree {
+public class Tree implements Serializable{
 	private Vertex root;
 	private List<Integer> destinations;
 
