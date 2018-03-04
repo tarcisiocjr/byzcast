@@ -40,6 +40,7 @@ public class UniversalReplier implements Replier, FIFOExecutable, Serializable {
 	 */
 	private static final long serialVersionUID = 1L;
 	private Tree overlayTree;
+	private String confTree;
 	private int groupID;
 	protected transient Lock replyLock;
 	protected transient Condition contextSet;
@@ -49,6 +50,7 @@ public class UniversalReplier implements Replier, FIFOExecutable, Serializable {
 	private SortedMap<Integer, Vector<TOMMessage>> globalReplies;
 
 	public UniversalReplier(int groupID, String treeConfig) {
+		this.confTree = treeConfig;
 		this.overlayTree = new Tree(treeConfig);
 		this.groupID = groupID;
 
@@ -61,6 +63,7 @@ public class UniversalReplier implements Replier, FIFOExecutable, Serializable {
 
 	@Override
 	public void manageReply(TOMMessage request, MessageContext msgCtx) {
+		//call second
 		while (rc == null) {
 			try {
 				this.replyLock.lock();
@@ -75,47 +78,45 @@ public class UniversalReplier implements Replier, FIFOExecutable, Serializable {
 		System.out.println("called manageReply");
 
 	}
-	
-	
+
 	protected Request execute(Request req) {
-        byte[] resultBytes;
-        boolean toMe = false;
+		byte[] resultBytes;
+		boolean toMe = false;
 
-        for (int i = 0; i < req.getDestination().length; i++) {
-            if (req.getDestination()[i] == groupID) {
-                toMe = true;
-                break;
-            }
-        }
+		for (int i = 0; i < req.getDestination().length; i++) {
+			if (req.getDestination()[i] == groupID) {
+				toMe = true;
+				break;
+			}
+		}
 
-        if (!toMe) {
-            //System.out.println("Message not addressed to my group.");
-            req.setType(RequestType.NOP);
-            req.setValue(null);
-        } else {
-            switch (req.getType()) {
-                case PUT:
-                    resultBytes = table.put(req.getKey(), req.getValue());
-                    break;
-                case GET:
-                    resultBytes = table.get(req.getKey());
-                    break;
-                case REMOVE:
-                    resultBytes = table.remove(req.getKey());
-                    break;
-                case SIZE:
-                    resultBytes = ByteBuffer.allocate(4).putInt(table.size()).array();
-                    break;
-                default:
-                    resultBytes = null;
-                    System.err.println("Unknown request type: " + req.getType());
-            }
+		if (!toMe) {
+			// System.out.println("Message not addressed to my group.");
+			req.setType(RequestType.NOP);
+			req.setValue(null);
+		} else {
+			switch (req.getType()) {
+			case PUT:
+				resultBytes = table.put(req.getKey(), req.getValue());
+				break;
+			case GET:
+				resultBytes = table.get(req.getKey());
+				break;
+			case REMOVE:
+				resultBytes = table.remove(req.getKey());
+				break;
+			case SIZE:
+				resultBytes = ByteBuffer.allocate(4).putInt(table.size()).array();
+				break;
+			default:
+				resultBytes = null;
+				System.err.println("Unknown request type: " + req.getType());
+			}
 
-            req.setValue(resultBytes);
-        }
-        return req;
-    }
-	
+			req.setValue(resultBytes);
+		}
+		return req;
+	}
 
 	@Override
 	public void setReplicaContext(ReplicaContext rc) {
@@ -128,6 +129,7 @@ public class UniversalReplier implements Replier, FIFOExecutable, Serializable {
 	@Override
 	public byte[] executeOrderedFIFO(byte[] bytes, MessageContext messageContext, int i, int i1) {
 		System.out.println("called executeOrderedFIFO");
+		//call first
 		return bytes;
 	}
 
@@ -145,5 +147,7 @@ public class UniversalReplier implements Replier, FIFOExecutable, Serializable {
 	public byte[] executeUnordered(byte[] bytes, MessageContext messageContext) {
 		throw new UnsupportedOperationException("All ordered messages should be FIFO");
 	}
+
+
 
 }

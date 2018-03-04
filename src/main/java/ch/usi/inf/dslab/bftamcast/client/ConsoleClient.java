@@ -79,8 +79,11 @@ public class ConsoleClient implements ReplyListener{
 				}
 				req.setDestination(n);
 				req.setValue(console.readLine("Enter the value: ").getBytes());
+				System.out.println(n.toString());
 				target = overlayTree.lca(n).proxy;
+				System.out.println("target aquired");
 				target.invokeAsynchRequest(req.toBytes(), c, TOMMessageType.ORDERED_REQUEST);
+				System.out.println("sent");
 				// result = proxy.atomicMulticast(req);
 //				System.out.println("previous value: " + (result == null ? "NULL" : new String(result)));
 				break;

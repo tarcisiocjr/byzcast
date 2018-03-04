@@ -35,3 +35,6 @@ for (( j = 1; j <=$(( G )); j++ )); do
 done
 
 tmux attach-session -t bftamcast
+
+
+# java -cp 'lib/*:target/*' ch.usi.inf.dslab.bftamcast.server.UniversalServer -t config/tree.conf -i 0 -g 0 -G config/local0 $ARGS C-m

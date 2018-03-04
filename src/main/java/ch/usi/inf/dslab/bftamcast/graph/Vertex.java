@@ -3,6 +3,9 @@
  */
 package ch.usi.inf.dslab.bftamcast.graph;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
@@ -20,17 +23,19 @@ import ch.usi.inf.dslab.bftamcast.client.ProxyIf;
  */
 public class Vertex implements ProxyIf, Serializable {
 
-	public AsynchServiceProxy proxy;
+	public transient AsynchServiceProxy proxy;
+	private String confPath;
 	public int groupId;
 	public List<Vertex> connections;
 	// cyclic but for now it easy to have for lca
 	public Vertex parent;
 
 	public Vertex(int ID, String configPath) {
+		this.confPath = configPath;
 		connections = new ArrayList<>();
 		this.groupId = ID;
 		// Maybe use async for everithing???
-		this.proxy = new AsynchServiceProxy(groupId, configPath);
+		this.proxy = new AsynchServiceProxy(groupId, confPath);
 	}
 
 	// max load
@@ -84,4 +89,19 @@ public class Vertex implements ProxyIf, Serializable {
 		}
 		return ret;
 	}
+ 
+	//Service proxy is not serialazable, so ignore with transient and while doing "readObject" create new proxy (I hope it works)
+	private void writeObject(ObjectOutputStream oos) throws IOException {
+		// default serialization
+		oos.defaultWriteObject();
+
+	}
+
+	private void readObject(ObjectInputStream ois) throws ClassNotFoundException, IOException {
+		// default deserialization
+		ois.defaultReadObject();
+		this.proxy = new AsynchServiceProxy(groupId, confPath);
+
+	}
+
 }
