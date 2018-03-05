@@ -65,7 +65,9 @@ public class ConsoleClient implements ReplyListener{
 			int[] n;
 			int index;
 			AsynchServiceProxy target;
+			req.setMsg(23876);
 			switch (cmd) {
+			
 			case 1:
 				System.out.println("Putting value in the distributed map");
 				req.setType(RequestType.PUT);

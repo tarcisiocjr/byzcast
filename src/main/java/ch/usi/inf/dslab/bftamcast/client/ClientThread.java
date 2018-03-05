@@ -98,6 +98,7 @@ public class ClientThread implements Runnable, ReplyListener {
 				req.setKey(r.nextInt(Integer.MAX_VALUE));
 				req.setType(req.getDestination().length > 1 ? RequestType.SIZE : RequestType.PUT);
 				req.setSeqNumber(seqNumber++);
+				req.setMsg(r.nextInt());
 
 				AsynchServiceProxy prox =  overlayTree.lca(req.getDestination()).proxy;
 				prox.invokeAsynchRequest(req.toBytes(), this, TOMMessageType.ORDERED_REQUEST);

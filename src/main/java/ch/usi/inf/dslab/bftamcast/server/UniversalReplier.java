@@ -23,6 +23,7 @@ import bftsmart.tom.core.messages.TOMMessage;
 import bftsmart.tom.server.FIFOExecutable;
 import bftsmart.tom.server.Replier;
 import ch.usi.inf.dslab.bftamcast.graph.Tree;
+import ch.usi.inf.dslab.bftamcast.graph.Vertex;
 import ch.usi.inf.dslab.bftamcast.kvs.Request;
 import ch.usi.inf.dslab.bftamcast.kvs.RequestType;
 
@@ -77,8 +78,14 @@ public class UniversalReplier implements Replier, FIFOExecutable, Serializable {
 		}
 
 		req.fromBytes(request.reply.getContent());
-		System.out.print("seq#" + req.getSeqNumber());
-		System.out.print("sender" + request.getSender());
+		System.out.println("seq #" + req.getSeqNumber());
+		System.out.println("seq #" + req.getMsg());
+		System.out.println("sender" + request.getSender() +" "+ request.reply.acceptSentTime     );
+		System.out.println("called manageReply");
+		req.fromBytes(request.getContent());
+		System.out.println("seq #" + req.getSeqNumber());
+		System.out.println("seq #" + req.getMsg());
+		System.out.println("sender" + request.getSender() +" "+ request.reply.acceptSentTime     );
 		System.out.println("called manageReply");
 		Boolean furtherDests = false;
 		int index = -1;
@@ -90,8 +97,16 @@ public class UniversalReplier implements Replier, FIFOExecutable, Serializable {
 				furtherDests= true;
 			}
 		}
+		System.out.println(groupID);
 		if(furtherDests) {
 			//check if children,check reach of childrens
+			
+			for(Vertex v : overlayTree.findVertexById(groupID).children()) {
+				//check if it's a destination and if further destinations are reachable
+			}
+			//compute new destination list for each child to send the msg
+			
+			//store in req??
 			
 			int[] dests;
 			if(index != -1) {
