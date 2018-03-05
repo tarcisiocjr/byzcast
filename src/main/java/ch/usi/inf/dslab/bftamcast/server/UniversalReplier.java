@@ -5,6 +5,8 @@ package ch.usi.inf.dslab.bftamcast.server;
 
 import java.io.Serializable;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -63,7 +65,7 @@ public class UniversalReplier implements Replier, FIFOExecutable, Serializable {
 
 	@Override
 	public void manageReply(TOMMessage request, MessageContext msgCtx) {
-		//call second
+		// call second
 		while (rc == null) {
 			try {
 				this.replyLock.lock();
@@ -75,7 +77,33 @@ public class UniversalReplier implements Replier, FIFOExecutable, Serializable {
 		}
 
 		req.fromBytes(request.reply.getContent());
+		System.out.print("seq#" + req.getSeqNumber());
+		System.out.print("sender" + request.getSender());
 		System.out.println("called manageReply");
+		Boolean furtherDests = false;
+		int index = -1;
+		for (int i = 0; i < req.getDestination().length; i++) {
+			if(req.getDestination()[i] == groupID) {
+				index = i;
+				//execute
+			}else {
+				furtherDests= true;
+			}
+		}
+		if(furtherDests) {
+			//check if children,check reach of childrens
+			
+			int[] dests;
+			if(index != -1) {
+				
+			}else {
+				dests = req.getDestination();
+			}
+//			overlayTree.lca(furtherDests.toArray(int));
+		}
+		else {
+//			send reply?? or send anyway and wait for anwers from all groups
+		}
 
 	}
 
@@ -129,7 +157,7 @@ public class UniversalReplier implements Replier, FIFOExecutable, Serializable {
 	@Override
 	public byte[] executeOrderedFIFO(byte[] bytes, MessageContext messageContext, int i, int i1) {
 		System.out.println("called executeOrderedFIFO");
-		//call first
+		// call first
 		return bytes;
 	}
 
@@ -147,7 +175,5 @@ public class UniversalReplier implements Replier, FIFOExecutable, Serializable {
 	public byte[] executeUnordered(byte[] bytes, MessageContext messageContext) {
 		throw new UnsupportedOperationException("All ordered messages should be FIFO");
 	}
-
-
 
 }
