@@ -80,44 +80,61 @@ public class UniversalReplier implements Replier, FIFOExecutable, Serializable {
 		req.fromBytes(request.reply.getContent());
 		System.out.println("seq #" + req.getSeqNumber());
 		System.out.println("seq #" + req.getMsg());
-		System.out.println("sender" + request.getSender() +" "+ request.reply.acceptSentTime     );
+		System.out.println("sender" + request.getSender() + " " + request.reply.acceptSentTime);
 		System.out.println("called manageReply");
+		req = new Request();
+		System.out.println("test seq #" + req.getMsg());
 		req.fromBytes(request.getContent());
 		System.out.println("seq #" + req.getSeqNumber());
 		System.out.println("seq #" + req.getMsg());
-		System.out.println("sender" + request.getSender() +" "+ request.reply.acceptSentTime     );
+		System.out.println("sender" + request.getSender() + " " + request.reply.acceptSentTime);
 		System.out.println("called manageReply");
 		Boolean furtherDests = false;
 		int index = -1;
 		for (int i = 0; i < req.getDestination().length; i++) {
-			if(req.getDestination()[i] == groupID) {
+			if (req.getDestination()[i] == groupID) {
 				index = i;
-				//execute
-			}else {
-				furtherDests= true;
+				// execute
+			} else {
+				furtherDests = true;
 			}
 		}
+		req.setMsg(groupID);
+		request.reply.setContent(req.toBytes());
 		System.out.println(groupID);
-		if(furtherDests) {
-			//check if children,check reach of childrens
+		rc.getServerCommunicationSystem().send(new int[] { request.getSender() }, request.reply);
+
+		if (furtherDests) {
+			// testing
 			
-			for(Vertex v : overlayTree.findVertexById(groupID).children()) {
-				//check if it's a destination and if further destinations are reachable
+			for (int i = 0; i < req.getDestination().length; i++) {
+				if(req.getDestination()[i] != groupID) {
+//					rc.getServerCommunicationSystem().getClientsConn().
+//					overlayTree.findVertexById(req.getDestination()[i]).asyncAtomicMulticast(req, msgCtx.); //find replyserver from somewhere
+				}
 			}
-			//compute new destination list for each child to send the msg
+
+			// check if children,check reach of childrens
 			
-			//store in req??
-			
-			int[] dests;
-			if(index != -1) {
+
+//			for (Vertex v : overlayTree.findVertexById(groupID).children()) {
+//				for
 				
-			}else {
+				// check if it's a destination and if further destinations are reachable
+			}
+			// compute new destination list for each child to send the msg
+
+			// store in req??
+
+			int[] dests;
+			if (index != -1) {
+
+			} else {
 				dests = req.getDestination();
 			}
-//			overlayTree.lca(furtherDests.toArray(int));
-		}
-		else {
-//			send reply?? or send anyway and wait for anwers from all groups
+			// overlayTree.lca(furtherDests.toArray(int));
+		} else {
+			// send reply?? or send anyway and wait for anwers from all groups
 		}
 
 	}
@@ -189,6 +206,15 @@ public class UniversalReplier implements Replier, FIFOExecutable, Serializable {
 	@Override
 	public byte[] executeUnordered(byte[] bytes, MessageContext messageContext) {
 		throw new UnsupportedOperationException("All ordered messages should be FIFO");
+	}
+
+	private boolean contains(int[] array, int item) {
+		for (int i = 0; i < array.length; i++) {
+			if (array[i] == item) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 }

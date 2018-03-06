@@ -151,14 +151,15 @@ public class ConsoleClient implements ReplyListener{
 
 	@Override
 	public void replyReceived(RequestContext reqCtx, TOMMessage msgReply) {
+		System.out.println("reply");
 		// TODO check content for null, do stats
-		replyReq.fromBytes(msgReply.getContent());
-		Integer seqN = replyReq.getSeqNumber();
-		Integer count = repliesCounter.get(seqN);
-		if (count != null) {
-			count--;
-
-			if (count == 0) {
+//		replyReq.fromBytes(msgReply.getContent());
+//		Integer seqN = replyReq.getSeqNumber();
+//		Integer count = repliesCounter.get(seqN);
+//		if (count != null) {
+//			count--;
+//
+//			if (count == 0) {
 //
 //				long now = System.nanoTime();
 //				long elapsed = (now - startTime);
@@ -175,17 +176,17 @@ public class ConsoleClient implements ReplyListener{
 //									/ ((float) (elapsed - delta) / 1e9));
 //					delta = elapsed;
 //				}
-				System.out.println("req#" + seqN);
-				counter++;
-				repliesCounter.remove(seqN);
-				// System.out.println("recieved seq#" + seqN);
-				// done process req
-				// TODO ask why do this when recieved majority
-				// prox.cleanAsynchRequest(requestId);
-			} else {
-				repliesCounter.put(seqN, count);
-			}
-		}
+//				System.out.println("req#" + seqN);
+//				counter++;
+//				repliesCounter.remove(seqN);
+//				// System.out.println("recieved seq#" + seqN);
+//				// done process req
+//				// TODO ask why do this when recieved majority
+//				// prox.cleanAsynchRequest(requestId);
+//			} else {
+//				repliesCounter.put(seqN, count);
+//			}
+//		}
 
 	}
 }
