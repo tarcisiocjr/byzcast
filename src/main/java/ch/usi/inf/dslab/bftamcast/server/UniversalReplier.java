@@ -17,8 +17,13 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import bftsmart.communication.client.CommunicationSystemServerSide;
+import bftsmart.communication.client.ReplyListener;
+import bftsmart.communication.client.netty.NettyClientServerSession;
+import bftsmart.reconfiguration.ServerViewController;
 import bftsmart.tom.MessageContext;
 import bftsmart.tom.ReplicaContext;
+import bftsmart.tom.RequestContext;
 import bftsmart.tom.core.messages.TOMMessage;
 import bftsmart.tom.server.FIFOExecutable;
 import bftsmart.tom.server.Replier;
@@ -36,7 +41,7 @@ import ch.usi.inf.dslab.bftamcast.kvs.RequestType;
  *         (asynchronous) - remove auxiliary groups and use target groups to
  *         build the overlay tree
  */
-public class UniversalReplier implements Replier, FIFOExecutable, Serializable {
+public class UniversalReplier implements Replier, FIFOExecutable, Serializable, ReplyListener {
 
 	/**
 	 * 
@@ -94,6 +99,7 @@ public class UniversalReplier implements Replier, FIFOExecutable, Serializable {
 		for (int i = 0; i < req.getDestination().length; i++) {
 			if (req.getDestination()[i] == groupID) {
 				index = i;
+				req.getDestination()[i] = -1;
 				// execute
 			} else {
 				furtherDests = true;
@@ -102,17 +108,21 @@ public class UniversalReplier implements Replier, FIFOExecutable, Serializable {
 		req.setMsg(groupID);
 		request.reply.setContent(req.toBytes());
 		System.out.println(groupID);
-		rc.getServerCommunicationSystem().send(new int[] { request.getSender() }, request.reply);
+//		rc.getServerCommunicationSystem().getClientsConn().
+		
+		rc.getServerCommunicationSystem().send(new int[] { 0 }, request.reply);
+//		rc.getServerCommunicationSystem().getClientsConn();
 
 		if (furtherDests) {
 			// testing
-			
+			CommunicationSystemServerSide a = rc.getServerCommunicationSystem().getClientsConn(); 
 			for (int i = 0; i < req.getDestination().length; i++) {
-				if(req.getDestination()[i] != groupID) {
+				if(req.getDestination()[i] != -1 && req.getDestination()[i] != groupID && overlayTree.findVertexById(groupID).children().contains(overlayTree.findVertexById(req.getDestination()[i]))) {
 //					rc.getServerCommunicationSystem().getClientsConn().
-//					overlayTree.findVertexById(req.getDestination()[i]).asyncAtomicMulticast(req, msgCtx.); //find replyserver from somewhere
+					overlayTree.findVertexById(req.getDestination()[i]).asyncAtomicMulticast(req, this); //find replyserver from somewhere
 				}
 			}
+		}
 
 			// check if children,check reach of childrens
 			
@@ -121,21 +131,21 @@ public class UniversalReplier implements Replier, FIFOExecutable, Serializable {
 //				for
 				
 				// check if it's a destination and if further destinations are reachable
-			}
+//			}
 			// compute new destination list for each child to send the msg
 
 			// store in req??
 
-			int[] dests;
-			if (index != -1) {
-
-			} else {
-				dests = req.getDestination();
-			}
-			// overlayTree.lca(furtherDests.toArray(int));
-		} else {
-			// send reply?? or send anyway and wait for anwers from all groups
-		}
+//			int[] dests;
+//			if (index != -1) {
+//
+//			} else {
+//				dests = req.getDestination();
+//			}
+//			// overlayTree.lca(furtherDests.toArray(int));
+//		} else {
+//			// send reply?? or send anyway and wait for anwers from all groups
+//		}
 
 	}
 
@@ -215,6 +225,19 @@ public class UniversalReplier implements Replier, FIFOExecutable, Serializable {
 			}
 		}
 		return false;
+	}
+
+	@Override
+	public void reset() {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void replyReceived(RequestContext context, TOMMessage reply) {
+		System.out.println("received");
+		// TODO Auto-generated method stub
+		
 	}
 
 }
