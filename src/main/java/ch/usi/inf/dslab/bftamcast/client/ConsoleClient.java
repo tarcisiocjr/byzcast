@@ -1,5 +1,18 @@
 package ch.usi.inf.dslab.bftamcast.client;
 
+import java.io.Console;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Random;
+import java.util.Scanner;
+import java.util.StringTokenizer;
+import java.util.UUID;
+
+import bftsmart.communication.client.ReplyListener;
+import bftsmart.tom.AsynchServiceProxy;
+import bftsmart.tom.RequestContext;
+import bftsmart.tom.core.messages.TOMMessage;
+import bftsmart.tom.core.messages.TOMMessageType;
 import ch.usi.inf.dslab.bftamcast.graph.Tree;
 
 /**
@@ -11,47 +24,33 @@ import ch.usi.inf.dslab.bftamcast.kvs.Request;
 import ch.usi.inf.dslab.bftamcast.kvs.RequestType;
 import ch.usi.inf.dslab.bftamcast.util.CLIParser;
 
-import java.io.Console;
-import java.nio.ByteBuffer;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Random;
-import java.util.Scanner;
-import java.util.StringTokenizer;
-
-import bftsmart.communication.client.ReplyListener;
-import bftsmart.tom.AsynchServiceProxy;
-import bftsmart.tom.RequestContext;
-import bftsmart.tom.core.messages.TOMMessage;
-import bftsmart.tom.core.messages.TOMMessageType;
-
 public class ConsoleClient implements ReplyListener{
 	final Map<Integer, Integer> repliesCounter =new HashMap<>();
-	private int counter = 0;
-	private int secs = 0;
+//	private int counter = 0;
+//	private int secs = 0;
 	long startTime, usLat, delta =0;
 	final Request replyReq = new Request();
+	private static Scanner scanner;
 
 	public static void main(String[] args) {
 		ConsoleClient c = new ConsoleClient();
 		CLIParser p = CLIParser.getClientParser(args);
 		Random r = new Random();
-		int idGroup = p.getGroup();
-		int idClient = p.getId() == 0 ? r.nextInt(Integer.MAX_VALUE) : p.getId();
+		int groupId = p.getGroup();
+		int clientId = p.getId() == 0 ? r.nextInt(Integer.MAX_VALUE) : p.getId();
 //		String globalConfigPath = p.getGlobalConfig();
 //		String[] localConfigPaths = p.getLocalConfigs();
 		String treeConfigPath = p.getTreeConfig();
-		Tree overlayTree = new Tree(treeConfigPath, 5555);
+		
+		Tree overlayTree = new Tree(treeConfigPath, 5);//UUID.randomUUID().hashCode());
 //		int numGroups = localConfigPaths == null ? 1 : localConfigPaths.length;
 //		ProxyIf proxy = new Proxy(idClient + 1000 * idGroup, globalConfigPath, localConfigPaths);
 		Request req = new Request();
-		int[] dest;
-		byte[] result = null;
+//		int[] dest;
+//		byte[] result = null;
 
 		Console console = System.console();
-		Scanner sc = new Scanner(System.in);
-
+		scanner = new Scanner(System.in);
 		while (true) {
 			System.out.println("Select an option:");
 			System.out.println("1. ADD A KEY/VALUE");
@@ -59,7 +58,8 @@ public class ConsoleClient implements ReplyListener{
 			System.out.println("3. REMOVE AND ENTRY");
 			System.out.println("4. GET THE SIZE OF THE MAP (multi-partition)");
 
-			int cmd = sc.nextInt();
+			
+			int cmd = scanner.nextInt();
 
 			StringTokenizer dt;
 			int[] n;

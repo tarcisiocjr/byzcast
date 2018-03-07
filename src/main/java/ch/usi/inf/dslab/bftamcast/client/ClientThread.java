@@ -1,6 +1,5 @@
 package ch.usi.inf.dslab.bftamcast.client;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -8,15 +7,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Timer;
-import java.util.TimerTask;
+import java.util.UUID;
 
 import bftsmart.communication.client.ReplyListener;
 import bftsmart.tom.AsynchServiceProxy;
 import bftsmart.tom.RequestContext;
-import bftsmart.tom.ServiceProxy;
 import bftsmart.tom.core.messages.TOMMessage;
 import bftsmart.tom.core.messages.TOMMessageType;
-import bftsmart.tom.leaderchange.CollectData;
 import ch.usi.inf.dslab.bftamcast.graph.Tree;
 import ch.usi.inf.dslab.bftamcast.kvs.Request;
 import ch.usi.inf.dslab.bftamcast.kvs.RequestType;
@@ -38,8 +35,8 @@ public class ClientThread implements Runnable, ReplyListener {
 	final Random random;
 	final Stats localStats, globalStats;
 	final Map<Integer, Integer> repliesCounter;
-	private int counter = 0;
-	private int secs = 0;
+//	private int counter = 0;
+//	private int secs = 0;
 	long startTime, usLat, delta =0;
 	private Tree overlayTree;
 
@@ -59,7 +56,7 @@ public class ClientThread implements Runnable, ReplyListener {
 		this.globalStats = new Stats();
 		this.repliesCounter = new HashMap<>();
 		this.replyReq = new Request();
-		this.overlayTree = new Tree(treeConfigPath,5555);
+		this.overlayTree = new Tree(treeConfigPath,UUID.randomUUID().hashCode());
 	}
 
 	@Override
@@ -69,19 +66,19 @@ public class ClientThread implements Runnable, ReplyListener {
 		startTime = System.nanoTime();
 		usLat = startTime;
 		long now;
-		long elapsed = 0, delta = 0, usLat = startTime;
+		long elapsed = 0;// delta = 0, usLat = startTime;
 		Request req = new Request();
 		// byte[] response;
 		// local and global ids
 
-		TimerTask statsTask = new TimerTask() {
-
-			@Override
-			public void run() {
-				secs++;
-				System.out.println((counter / secs) + "req/s");
-			}
-		};
+//		TimerTask statsTask = new TimerTask() {
+//
+//			@Override
+//			public void run() {
+//				secs++;
+//				System.out.println((counter / secs) + "req/s");
+//			}
+//		};
 
 		// And From your main() method or any other method
 		Timer timer = new Timer();
@@ -199,7 +196,7 @@ public class ClientThread implements Runnable, ReplyListener {
 					delta = elapsed;
 				}
 				System.out.println("req#" + seqN);
-				counter++;
+//				counter++;
 				repliesCounter.remove(seqN);
 				// System.out.println("recieved seq#" + seqN);
 				// done process req

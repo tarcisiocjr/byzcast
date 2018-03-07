@@ -4,21 +4,21 @@
 package ch.usi.inf.dslab.bftamcast.graph;
 
 import java.io.BufferedReader;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
-import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.StringTokenizer;
-
-import bftsmart.reconfiguration.util.HostsConfig.Config;
 
 /**
  * @author Christian Vuerich - christian.vuerich@usi.ch
  *
  */
 public class Tree implements Serializable {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -1340477045756411763L;
 	private Vertex root;
 	private List<Integer> destinations;
 
@@ -29,8 +29,7 @@ public class Tree implements Serializable {
 	 *            none
 	 */
 	public static void main(String[] args) {
-		Tree t = new Tree("config/tree.conf",0);
-		Vertex v = t.root;
+		new Tree("config/tree.conf",0);
 	}
 
 	/**
@@ -51,7 +50,8 @@ public class Tree implements Serializable {
 	 *            smart and connection between them
 	 */
 	public Tree(String configFile, int proxyID) {
-		destinations = new ArrayList();
+		
+		destinations = new ArrayList<>();
 		List<Vertex> vertices = new ArrayList<>();
 		FileReader fr;
 		BufferedReader rd;
@@ -81,7 +81,8 @@ public class Tree implements Serializable {
 							if (v1.groupId == from) {
 								for (Vertex v2 : vertices) {
 									if (v2.groupId == to) {
-										v1.connections.add(v2);
+										v1.children.add(v2);
+										v1.childernIDs.add(v2.groupId);
 										v2.parent = v1;
 									}
 								}
@@ -99,6 +100,14 @@ public class Tree implements Serializable {
 
 			fr.close();
 			rd.close();
+			
+			
+			
+			System.out.println("");
+			System.out.println("");
+			System.out.println("ID          "+proxyID);
+			System.out.println("");
+			System.out.println("");
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -137,10 +146,10 @@ public class Tree implements Serializable {
 		while (reachable) {
 			reachable = true;
 			System.out.println(ancestor.groupId);
-			if(ancestor.connections.isEmpty()) {
+			if(ancestor.children.isEmpty()) {
 				return ancestor;
 			}
-			for (Vertex v : ancestor.connections) {
+			for (Vertex v : ancestor.children) {
 				reachable = true;
 				for (Vertex target : vertices) {
 					reachable = reachable & v.inReach(target.groupId);

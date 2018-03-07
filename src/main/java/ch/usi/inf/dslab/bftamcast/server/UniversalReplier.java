@@ -5,8 +5,6 @@ package ch.usi.inf.dslab.bftamcast.server;
 
 import java.io.Serializable;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -18,10 +16,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import bftsmart.communication.client.CommunicationSystemServerSide;
 import bftsmart.communication.client.ReplyListener;
-import bftsmart.communication.client.netty.NettyClientServerSession;
-import bftsmart.reconfiguration.ServerViewController;
 import bftsmart.tom.MessageContext;
 import bftsmart.tom.ReplicaContext;
 import bftsmart.tom.RequestContext;
@@ -49,17 +44,20 @@ public class UniversalReplier implements Replier, FIFOExecutable, Serializable, 
 	 */
 	private static final long serialVersionUID = 1L;
 	private Tree overlayTree;
-	private int groupID;
+	private int groupId;
 	protected transient Lock replyLock;
 	protected transient Condition contextSet;
 	protected transient ReplicaContext rc;
 	protected Request req;
 	private Map<Integer, byte[]> table;
 	private SortedMap<Integer, Vector<TOMMessage>> globalReplies;
+	private Vertex me;
 
 	public UniversalReplier(int RepID, int groupID, String treeConfig) {
-		this.overlayTree = new Tree(treeConfig,100*groupID+RepID);
-		this.groupID = groupID;
+		
+		this.overlayTree = new Tree(treeConfig,UUID.randomUUID().hashCode());
+		this.groupId = groupID;
+		me = overlayTree.findVertexById(groupID);
 
 		replyLock = new ReentrantLock();
 		contextSet = replyLock.newCondition();
@@ -95,56 +93,38 @@ public class UniversalReplier implements Replier, FIFOExecutable, Serializable, 
 //		if me execute
 //		if in child send
 //		else for child, if child reach send, if not already sent (child also a destination)
-		
-		Boolean furtherDests = false;
-		int index = -1;
-		for (int i = 0; i < req.getDestination().length; i++) {
-			if (req.getDestination()[i] == groupID) {
-				index = i;
-				req.getDestination()[i] = -1;
-				// execute
-			} else {
-				furtherDests = true;
+		boolean sent = false;
+		int[] destinations = req.getDestination();
+		for (int i = 0; i < destinations.length; i++) {
+			if(destinations[i] == groupId) {
+				//execute
+//				Request ans = execute(req);
+				//reply
+				request.reply.setContent(req.toBytes());
+//				rc.getServerCommunicationSystem().send(new int[] { request.getSender() }, request.reply);
+				rc.getServerCommunicationSystem().send(new int[] {5 }, request.reply);
 			}
-		}
-		request.reply.setContent(req.toBytes());
-//		rc.getServerCommunicationSystem().getClientsConn().getClients()
-		
-//		rc.getServerCommunicationSystem().send(new int[] { request.getSender() }, request.reply);
-		rc.getServerCommunicationSystem().send(new int[] { request.getSender() }, request.reply);
-
-
-		if (furtherDests) {
-			// testing
-			for (int i = 0; i < req.getDestination().length; i++) {
-				if(req.getDestination()[i] != -1 && req.getDestination()[i] != groupID && overlayTree.findVertexById(groupID).children().contains(overlayTree.findVertexById(req.getDestination()[i]))) {
-					overlayTree.findVertexById(req.getDestination()[i]).asyncAtomicMulticast(req, this); //find replyserver from somewhere
+			//my child in tree is a destination, forward it
+			else if(me.childernIDs.contains(destinations[i])){
+				overlayTree.findVertexById(destinations[i]).asyncAtomicMulticast(req, this);
+			}
+			//destination must be in the path of only one of my childrens (tree), have to do it just once.
+			else if (!sent) {
+				sent = true;
+				
+				for(Vertex v : me.children) {
+					if(v.inReach(destinations[i])) {
+						v.asyncAtomicMulticast(req, this);
+						break;
+					}
 				}
 			}
-		}
-
-			// check if children,check reach of childrens
 			
-
-//			for (Vertex v : overlayTree.findVertexById(groupID).children()) {
-//				for
-				
-				// check if it's a destination and if further destinations are reachable
-//			}
-			// compute new destination list for each child to send the msg
-
-			// store in req??
-
-//			int[] dests;
-//			if (index != -1) {
-//
-//			} else {
-//				dests = req.getDestination();
-//			}
-//			// overlayTree.lca(furtherDests.toArray(int));
-//		} else {
-//			// send reply?? or send anyway and wait for anwers from all groups
-//		}
+			
+		}
+		
+	
+	
 
 	}
 
@@ -153,14 +133,14 @@ public class UniversalReplier implements Replier, FIFOExecutable, Serializable, 
 		boolean toMe = false;
 
 		for (int i = 0; i < req.getDestination().length; i++) {
-			if (req.getDestination()[i] == groupID) {
+			if (req.getDestination()[i] == groupId) {
 				toMe = true;
 				break;
 			}
 		}
 
 		if (!toMe) {
-			// System.out.println("Message not addressed to my group.");
+			 System.out.println("Message not addressed to my group.");
 			req.setType(RequestType.NOP);
 			req.setValue(null);
 		} else {
