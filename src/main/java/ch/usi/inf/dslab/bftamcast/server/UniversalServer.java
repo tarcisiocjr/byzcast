@@ -35,7 +35,7 @@ public class UniversalServer extends DefaultRecoverable{
 		this.id = id;
         this.groupId = group;
         this.nextTS = 0;
-        replier = new UniversalReplier(group,treeConfigPath);
+        replier = new UniversalReplier(id, group,treeConfigPath);
 
         try {
             Thread.sleep(this.groupId * 4000 + this.id * 1000);

@@ -42,7 +42,7 @@ public class ConsoleClient implements ReplyListener{
 //		String globalConfigPath = p.getGlobalConfig();
 //		String[] localConfigPaths = p.getLocalConfigs();
 		String treeConfigPath = p.getTreeConfig();
-		Tree overlayTree = new Tree(treeConfigPath);
+		Tree overlayTree = new Tree(treeConfigPath, 5555);
 //		int numGroups = localConfigPaths == null ? 1 : localConfigPaths.length;
 //		ProxyIf proxy = new Proxy(idClient + 1000 * idGroup, globalConfigPath, localConfigPaths);
 		Request req = new Request();

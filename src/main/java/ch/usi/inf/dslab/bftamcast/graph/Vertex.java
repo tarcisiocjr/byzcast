@@ -30,12 +30,13 @@ public class Vertex implements ProxyIf, Serializable {
 	// cyclic but for now it easy to have for lca
 	public Vertex parent;
 
-	public Vertex(int ID, String configPath) {
+	public Vertex(int ID, String configPath, int proxyID) {
 		this.confPath = configPath;
 		connections = new ArrayList<>();
 		this.groupId = ID;
 		// Maybe use async for everithing???
-		this.proxy = new AsynchServiceProxy(groupId, confPath);
+		//change to proxy
+		this.proxy = new AsynchServiceProxy(proxyID, confPath);
 	}
 
 	// max load

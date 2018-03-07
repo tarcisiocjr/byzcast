@@ -57,9 +57,9 @@ public class UniversalReplier implements Replier, FIFOExecutable, Serializable, 
 	private Map<Integer, byte[]> table;
 	private SortedMap<Integer, Vector<TOMMessage>> globalReplies;
 
-	public UniversalReplier(int groupID, String treeConfig) {
+	public UniversalReplier(int RepID, int groupID, String treeConfig) {
 		this.confTree = treeConfig;
-		this.overlayTree = new Tree(treeConfig);
+		this.overlayTree = new Tree(treeConfig,100*groupID+RepID);
 		this.groupID = groupID;
 
 		replyLock = new ReentrantLock();
@@ -82,18 +82,13 @@ public class UniversalReplier implements Replier, FIFOExecutable, Serializable, 
 			}
 		}
 
-		req.fromBytes(request.reply.getContent());
-		System.out.println("seq #" + req.getSeqNumber());
-		System.out.println("seq #" + req.getMsg());
-		System.out.println("sender" + request.getSender() + " " + request.reply.acceptSentTime);
-		System.out.println("called manageReply");
-		req = new Request();
-		System.out.println("test seq #" + req.getMsg());
+		
 		req.fromBytes(request.getContent());
 		System.out.println("seq #" + req.getSeqNumber());
 		System.out.println("seq #" + req.getMsg());
-		System.out.println("sender" + request.getSender() + " " + request.reply.acceptSentTime);
+		System.out.println("sender " + request.getSender());
 		System.out.println("called manageReply");
+		
 		Boolean furtherDests = false;
 		int index = -1;
 		for (int i = 0; i < req.getDestination().length; i++) {
@@ -105,20 +100,15 @@ public class UniversalReplier implements Replier, FIFOExecutable, Serializable, 
 				furtherDests = true;
 			}
 		}
-		req.setMsg(groupID);
 		request.reply.setContent(req.toBytes());
-		System.out.println(groupID);
-//		rc.getServerCommunicationSystem().getClientsConn().
-		
-		rc.getServerCommunicationSystem().send(new int[] { 0 }, request.reply);
-//		rc.getServerCommunicationSystem().getClientsConn();
+//		rc.getServerCommunicationSystem().send(new int[] { request.getSender() }, request.reply);
+		rc.getServerCommunicationSystem().send(new int[] { request.getSender() }, request.reply);
+
 
 		if (furtherDests) {
 			// testing
-			CommunicationSystemServerSide a = rc.getServerCommunicationSystem().getClientsConn(); 
 			for (int i = 0; i < req.getDestination().length; i++) {
 				if(req.getDestination()[i] != -1 && req.getDestination()[i] != groupID && overlayTree.findVertexById(groupID).children().contains(overlayTree.findVertexById(req.getDestination()[i]))) {
-//					rc.getServerCommunicationSystem().getClientsConn().
 					overlayTree.findVertexById(req.getDestination()[i]).asyncAtomicMulticast(req, this); //find replyserver from somewhere
 				}
 			}

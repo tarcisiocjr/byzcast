@@ -13,6 +13,7 @@ import java.util.TimerTask;
 import bftsmart.communication.client.ReplyListener;
 import bftsmart.tom.AsynchServiceProxy;
 import bftsmart.tom.RequestContext;
+import bftsmart.tom.ServiceProxy;
 import bftsmart.tom.core.messages.TOMMessage;
 import bftsmart.tom.core.messages.TOMMessageType;
 import bftsmart.tom.leaderchange.CollectData;
@@ -58,7 +59,7 @@ public class ClientThread implements Runnable, ReplyListener {
 		this.globalStats = new Stats();
 		this.repliesCounter = new HashMap<>();
 		this.replyReq = new Request();
-		this.overlayTree = new Tree(treeConfigPath);
+		this.overlayTree = new Tree(treeConfigPath,5555);
 	}
 
 	@Override

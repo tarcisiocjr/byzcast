@@ -29,7 +29,7 @@ public class Tree implements Serializable {
 	 *            none
 	 */
 	public static void main(String[] args) {
-		Tree t = new Tree("config/tree.conf");
+		Tree t = new Tree("config/tree.conf",0);
 		Vertex v = t.root;
 	}
 
@@ -50,7 +50,7 @@ public class Tree implements Serializable {
 	 *            containing the id of the vertices and their config path for bft
 	 *            smart and connection between them
 	 */
-	public Tree(String configFile) {
+	public Tree(String configFile, int proxyID) {
 		destinations = new ArrayList();
 		List<Vertex> vertices = new ArrayList<>();
 		FileReader fr;
@@ -68,7 +68,7 @@ public class Tree implements Serializable {
 					if (str.countTokens() == 2) {
 						// throw away in config file (temporary to distinguish between vertex
 						// declaration and edges)
-						vertices.add(new Vertex(Integer.valueOf(str.nextToken()), str.nextToken()));
+						vertices.add(new Vertex(Integer.valueOf(str.nextToken()), str.nextToken(), proxyID));
 						destinations.add(vertices.get(vertices.size() - 1).groupId);
 					}
 					if (str.countTokens() == 3) {
