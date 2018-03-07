@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.UUID;
 import java.util.Vector;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
@@ -48,7 +49,6 @@ public class UniversalReplier implements Replier, FIFOExecutable, Serializable, 
 	 */
 	private static final long serialVersionUID = 1L;
 	private Tree overlayTree;
-	private String confTree;
 	private int groupID;
 	protected transient Lock replyLock;
 	protected transient Condition contextSet;
@@ -58,7 +58,6 @@ public class UniversalReplier implements Replier, FIFOExecutable, Serializable, 
 	private SortedMap<Integer, Vector<TOMMessage>> globalReplies;
 
 	public UniversalReplier(int RepID, int groupID, String treeConfig) {
-		this.confTree = treeConfig;
 		this.overlayTree = new Tree(treeConfig,100*groupID+RepID);
 		this.groupID = groupID;
 
@@ -71,6 +70,8 @@ public class UniversalReplier implements Replier, FIFOExecutable, Serializable, 
 
 	@Override
 	public void manageReply(TOMMessage request, MessageContext msgCtx) {
+		//http://www.javapractices.com/topic/TopicAction.do?Id=56
+//		UUID.fromString("server"+group+serverid)
 		// call second
 		while (rc == null) {
 			try {
@@ -89,6 +90,12 @@ public class UniversalReplier implements Replier, FIFOExecutable, Serializable, 
 		System.out.println("sender " + request.getSender());
 		System.out.println("called manageReply");
 		
+		
+//		for
+//		if me execute
+//		if in child send
+//		else for child, if child reach send, if not already sent (child also a destination)
+		
 		Boolean furtherDests = false;
 		int index = -1;
 		for (int i = 0; i < req.getDestination().length; i++) {
@@ -101,6 +108,8 @@ public class UniversalReplier implements Replier, FIFOExecutable, Serializable, 
 			}
 		}
 		request.reply.setContent(req.toBytes());
+//		rc.getServerCommunicationSystem().getClientsConn().getClients()
+		
 //		rc.getServerCommunicationSystem().send(new int[] { request.getSender() }, request.reply);
 		rc.getServerCommunicationSystem().send(new int[] { request.getSender() }, request.reply);
 
