@@ -5,6 +5,9 @@ package ch.usi.inf.dslab.bftamcast.server;
 
 import java.io.Serializable;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -16,7 +19,10 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import bftsmart.communication.client.CommunicationSystemServerSide;
+import bftsmart.communication.client.CommunicationSystemServerSideFactory;
 import bftsmart.communication.client.ReplyListener;
+import bftsmart.tom.AsynchServiceProxy;
 import bftsmart.tom.MessageContext;
 import bftsmart.tom.ReplicaContext;
 import bftsmart.tom.RequestContext;
@@ -27,6 +33,7 @@ import ch.usi.inf.dslab.bftamcast.graph.Tree;
 import ch.usi.inf.dslab.bftamcast.graph.Vertex;
 import ch.usi.inf.dslab.bftamcast.kvs.Request;
 import ch.usi.inf.dslab.bftamcast.kvs.RequestType;
+import ch.usi.inf.dslab.bftamcast.util.RequestTracker;
 
 /**
  * @author Christian Vuerich - christian.vuerich@usi.ch
@@ -50,26 +57,28 @@ public class UniversalReplier implements Replier, FIFOExecutable, Serializable, 
 	protected transient ReplicaContext rc;
 	protected Request req;
 	private Map<Integer, byte[]> table;
+	private Map<Integer, RequestTracker> repliesTracker;
 	private SortedMap<Integer, Vector<TOMMessage>> globalReplies;
 	private Vertex me;
 
 	public UniversalReplier(int RepID, int groupID, String treeConfig) {
-		
-		this.overlayTree = new Tree(treeConfig,UUID.randomUUID().hashCode());
+
+		this.overlayTree = new Tree(treeConfig, UUID.randomUUID().hashCode());
 		this.groupId = groupID;
 		me = overlayTree.findVertexById(groupID);
 
 		replyLock = new ReentrantLock();
 		contextSet = replyLock.newCondition();
 		globalReplies = new TreeMap<>();
+		repliesTracker = new HashMap<>();
 		table = new TreeMap<>();
 		req = new Request();
 	}
 
 	@Override
 	public void manageReply(TOMMessage request, MessageContext msgCtx) {
-		//http://www.javapractices.com/topic/TopicAction.do?Id=56
-//		UUID.fromString("server"+group+serverid)
+		// http://www.javapractices.com/topic/TopicAction.do?Id=56
+		// UUID.fromString("server"+group+serverid)
 		// call second
 		while (rc == null) {
 			try {
@@ -81,50 +90,63 @@ public class UniversalReplier implements Replier, FIFOExecutable, Serializable, 
 			}
 		}
 
-		
 		req.fromBytes(request.getContent());
 		System.out.println("seq #" + req.getSeqNumber());
 		System.out.println("seq #" + req.getMsg());
 		System.out.println("sender " + request.getSender());
 		System.out.println("called manageReply");
-		
-		
-//		for
-//		if me execute
-//		if in child send
-//		else for child, if child reach send, if not already sent (child also a destination)
+
+		// for
+		// if me execute
+		// if in child send
+		// else for child, if child reach send, if not already sent (child also a
+		// destination)
 		boolean sent = false;
 		int[] destinations = req.getDestination();
+		int majNeeded = 0;
+		List<Vertex> toSend = new ArrayList<>();
+		// List<Vertex>
 		for (int i = 0; i < destinations.length; i++) {
-			if(destinations[i] == groupId) {
-				//execute
-//				Request ans = execute(req);
-				//reply
+			if (destinations[i] == groupId) {
+				// execute
+				// Request ans = execute(req);
+				// reply
 				request.reply.setContent(req.toBytes());
-//				rc.getServerCommunicationSystem().send(new int[] { request.getSender() }, request.reply);
-				rc.getServerCommunicationSystem().send(new int[] {5 }, request.reply);
+				 rc.getServerCommunicationSystem().send(new int[] { request.getSender() },
+				 request.reply);
+				// CommunicationSystemServerSide clientsConn =
+				// CommunicationSystemServerSideFactory.getCommunicationSystemServerSide(rc.getSVController().);
+//				rc.getServerCommunicationSystem().send(new int[] { 5 }, request.reply);
 			}
-			//my child in tree is a destination, forward it
-			else if(me.childernIDs.contains(destinations[i])){
-				overlayTree.findVertexById(destinations[i]).asyncAtomicMulticast(req, this);
+			// my child in tree is a destination, forward it
+			else if (me.childernIDs.contains(destinations[i])) {
+				Vertex v = overlayTree.findVertexById(destinations[i]);
+
+				majNeeded += (int) Math.ceil((double) (v.proxy.getViewManager().getCurrentViewN()
+						+ v.proxy.getViewManager().getCurrentViewF() + 1) / 2.0);
+				toSend.add(v);
 			}
-			//destination must be in the path of only one of my childrens (tree), have to do it just once.
+			// destination must be in the path of only one of my childrens (tree), have to
+			// do it just once.
 			else if (!sent) {
 				sent = true;
-				
-				for(Vertex v : me.children) {
-					if(v.inReach(destinations[i])) {
-						v.asyncAtomicMulticast(req, this);
+
+				for (Vertex v : me.children) {
+					if (v.inReach(destinations[i])) {
+						majNeeded += (int) Math.ceil((double) (v.proxy.getViewManager().getCurrentViewN()
+								+ v.proxy.getViewManager().getCurrentViewF() + 1) / 2.0);
+						toSend.add(v);
 						break;
 					}
 				}
 			}
-			
-			
+
 		}
-		
-	
-	
+
+		repliesTracker.put(req.getSeqNumber(), new RequestTracker(majNeeded, request.getSender()));
+		for (Vertex v : toSend) {
+			v.asyncAtomicMulticast(req, this);
+		}
 
 	}
 
@@ -140,7 +162,7 @@ public class UniversalReplier implements Replier, FIFOExecutable, Serializable, 
 		}
 
 		if (!toMe) {
-			 System.out.println("Message not addressed to my group.");
+			System.out.println("Message not addressed to my group.");
 			req.setType(RequestType.NOP);
 			req.setValue(null);
 		} else {
@@ -209,14 +231,22 @@ public class UniversalReplier implements Replier, FIFOExecutable, Serializable, 
 	@Override
 	public void reset() {
 		// TODO Auto-generated method stub
-		
+
 	}
 
 	@Override
 	public void replyReceived(RequestContext context, TOMMessage reply) {
+		Request replyReq = new Request();
+		replyReq.fromBytes(reply.getContent());
 		System.out.println("received");
-		// TODO Auto-generated method stub
-		
+		RequestTracker tracker = repliesTracker.get(reply.getSequence());
+		if(tracker.addReply(replyReq)) {
+			System.out.println("finish, sent up req # "  + replyReq.getSeqNumber());
+			reply.reply.setContent(tracker.getMajorityReply().toBytes());
+			rc.getServerCommunicationSystem().send(new int[] { tracker.getReplier() },
+					reply.reply);
+			
+		}
 	}
 
 }

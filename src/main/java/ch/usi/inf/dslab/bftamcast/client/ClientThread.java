@@ -17,6 +17,7 @@ import bftsmart.tom.core.messages.TOMMessageType;
 import ch.usi.inf.dslab.bftamcast.graph.Tree;
 import ch.usi.inf.dslab.bftamcast.kvs.Request;
 import ch.usi.inf.dslab.bftamcast.kvs.RequestType;
+import ch.usi.inf.dslab.bftamcast.util.RequestTracker;
 import ch.usi.inf.dslab.bftamcast.util.Stats;
 
 /**
@@ -34,7 +35,7 @@ public class ClientThread implements Runnable, ReplyListener {
 	private int seqNumber = 0;
 	final Random random;
 	final Stats localStats, globalStats;
-	final Map<Integer, Integer> repliesCounter;
+	final Map<Integer, RequestTracker> repliesTracker;
 //	private int counter = 0;
 //	private int secs = 0;
 	long startTime, usLat, delta =0;
@@ -54,7 +55,7 @@ public class ClientThread implements Runnable, ReplyListener {
 		this.random = new Random();
 		this.localStats = new Stats();
 		this.globalStats = new Stats();
-		this.repliesCounter = new HashMap<>();
+		this.repliesTracker = new HashMap<>();
 		this.replyReq = new Request();
 		this.overlayTree = new Tree(treeConfigPath,UUID.randomUUID().hashCode());
 	}
@@ -89,13 +90,14 @@ public class ClientThread implements Runnable, ReplyListener {
 		req.setValue(randomString(size).getBytes());
 		while (elapsed / 1e9 < runTime) {
 			try {
+				seqNumber++;
 				List<Integer> list = new LinkedList<Integer>(overlayTree.getDestinations());
 				Collections.shuffle(list);
 
 				req.setDestination(list.subList(r.nextInt(list.size()), list.size()-1).stream().mapToInt(i->i).toArray());
 				req.setKey(r.nextInt(Integer.MAX_VALUE));
 				req.setType(req.getDestination().length > 1 ? RequestType.SIZE : RequestType.PUT);
-				req.setSeqNumber(seqNumber++);
+				req.setSeqNumber(seqNumber);
 				req.setMsg(r.nextInt());
 
 				AsynchServiceProxy prox =  overlayTree.lca(req.getDestination()).proxy;
@@ -105,7 +107,8 @@ public class ClientThread implements Runnable, ReplyListener {
 				int q = (int) Math.ceil(
 						(double) (prox.getViewManager().getCurrentViewN() + prox.getViewManager().getCurrentViewF() + 1)
 								/ 2.0);
-				repliesCounter.put(seqNumber, q);
+				repliesTracker.put(seqNumber, new RequestTracker(((int) Math.ceil((double) (prox.getViewManager().getCurrentViewN()
+						+ prox.getViewManager().getCurrentViewF() + 1) / 2.0)), -1));
 				// System.out.println("sent seq#" + seqNumber);
 
 				// stats code
@@ -170,44 +173,17 @@ public class ClientThread implements Runnable, ReplyListener {
 	}
 
 	@Override
-	public void replyReceived(RequestContext reqCtx, TOMMessage msgReply) {
-		// TODO check content for null, do stats
-		replyReq.fromBytes(msgReply.getContent());
-		Integer seqN = replyReq.getSeqNumber();
-		Integer count = repliesCounter.get(seqN);
-		if (count != null) {
-			count--;
-
-			if (count == 0) {
-
-				long now = System.nanoTime();
-				long elapsed = (now - startTime);
-
-				if (replyReq.getDestination().length > 1)
-					globalStats.store((now - usLat) / 1000);
-				else
-					localStats.store((now - usLat) / 1000);
-
-				usLat = now;
-				if (verbose && elapsed - delta >= 2 * 1e9) {
-					System.out.println("Client " + clientId + " ops/second:"
-							+ (localStats.getPartialCount() + globalStats.getPartialCount())
-									/ ((float) (elapsed - delta) / 1e9));
-					delta = elapsed;
-				}
-				System.out.println("req#" + seqN);
-//				counter++;
-				repliesCounter.remove(seqN);
-				// System.out.println("recieved seq#" + seqN);
-				// done process req
-				// TODO ask why do this when recieved majority
-				// prox.cleanAsynchRequest(requestId);
-			} else {
-				repliesCounter.put(seqN, count);
-			}
+	public void replyReceived(RequestContext context, TOMMessage reply) {
+		Request replyReq = new Request();
+		replyReq.fromBytes(reply.getContent());
+		System.out.println("received");
+		RequestTracker tracker = repliesTracker.get(reply.getSequence());
+		if(tracker.addReply(replyReq)) {
+			System.out.println("finish, sent up req # "  + replyReq.getSeqNumber());
 		}
-
 	}
+
+	
 
 	@Override
 	public void reset() {

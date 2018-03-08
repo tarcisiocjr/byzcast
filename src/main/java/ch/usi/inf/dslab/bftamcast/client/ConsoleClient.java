@@ -23,9 +23,10 @@ import ch.usi.inf.dslab.bftamcast.graph.Tree;
 import ch.usi.inf.dslab.bftamcast.kvs.Request;
 import ch.usi.inf.dslab.bftamcast.kvs.RequestType;
 import ch.usi.inf.dslab.bftamcast.util.CLIParser;
+import ch.usi.inf.dslab.bftamcast.util.RequestTracker;
 
 public class ConsoleClient implements ReplyListener{
-	final Map<Integer, Integer> repliesCounter =new HashMap<>();
+	final Map<Integer, RequestTracker> repliesTracker =new HashMap<>();
 //	private int counter = 0;
 //	private int secs = 0;
 	long startTime, usLat, delta =0;
@@ -33,6 +34,7 @@ public class ConsoleClient implements ReplyListener{
 	private static Scanner scanner;
 
 	public static void main(String[] args) {
+		int seqN = 0;
 		ConsoleClient c = new ConsoleClient();
 		CLIParser p = CLIParser.getClientParser(args);
 		Random r = new Random();
@@ -66,12 +68,15 @@ public class ConsoleClient implements ReplyListener{
 			int index;
 			AsynchServiceProxy target;
 			req.setMsg(23876);
+			seqN++;
+			System.out.println(seqN);
 			switch (cmd) {
 			
 			case 1:
 				System.out.println("Putting value in the distributed map");
 				req.setType(RequestType.PUT);
 				req.setKey(Integer.parseInt(console.readLine("Enter the key: ")));
+				req.setSeqNumber(seqN);
 				dt = new StringTokenizer(console.readLine("Enter the destinations: "), " ");
 				n = new int[dt.countTokens()];
 				index = 0;
@@ -84,6 +89,9 @@ public class ConsoleClient implements ReplyListener{
 				System.out.println(n.toString());
 				target = overlayTree.lca(n).proxy;
 				System.out.println("target aquired");
+				c.repliesTracker.put(seqN, new RequestTracker(((int) Math.ceil((double) (target.getViewManager().getCurrentViewN()
+						+ target.getViewManager().getCurrentViewF() + 1) / 2.0)), -1));
+			
 				target.invokeAsynchRequest(req.toBytes(), c, TOMMessageType.ORDERED_REQUEST);
 				System.out.println("sent");
 				// result = proxy.atomicMulticast(req);
@@ -150,43 +158,15 @@ public class ConsoleClient implements ReplyListener{
 	}
 
 	@Override
-	public void replyReceived(RequestContext reqCtx, TOMMessage msgReply) {
-		System.out.println("reply");
-		// TODO check content for null, do stats
-//		replyReq.fromBytes(msgReply.getContent());
-//		Integer seqN = replyReq.getSeqNumber();
-//		Integer count = repliesCounter.get(seqN);
-//		if (count != null) {
-//			count--;
-//
-//			if (count == 0) {
-//
-//				long now = System.nanoTime();
-//				long elapsed = (now - startTime);
-//
-//				if (replyReq.getDestination().length > 1)
-//					globalStats.store((now - usLat) / 1000);
-//				else
-//					localStats.store((now - usLat) / 1000);
-//
-//				usLat = now;
-//				if (verbose && elapsed - delta >= 2 * 1e9) {
-//					System.out.println("Client " + clientId + " ops/second:"
-//							+ (localStats.getPartialCount() + globalStats.getPartialCount())
-//									/ ((float) (elapsed - delta) / 1e9));
-//					delta = elapsed;
-//				}
-//				System.out.println("req#" + seqN);
-//				counter++;
-//				repliesCounter.remove(seqN);
-//				// System.out.println("recieved seq#" + seqN);
-//				// done process req
-//				// TODO ask why do this when recieved majority
-//				// prox.cleanAsynchRequest(requestId);
-//			} else {
-//				repliesCounter.put(seqN, count);
-//			}
-//		}
-
+	public void replyReceived(RequestContext context, TOMMessage reply) {
+		Request replyReq = new Request();
+		replyReq.fromBytes(reply.getContent());
+		System.out.println("received");
+		System.out.println(reply.getSequence());
+		RequestTracker tracker = repliesTracker.get(reply.getSequence());
+		System.out.println(tracker);
+		if(tracker.addReply(replyReq)) {
+			System.out.println("finish, sent up req # "  + replyReq.getSeqNumber());
+		}
 	}
 }
