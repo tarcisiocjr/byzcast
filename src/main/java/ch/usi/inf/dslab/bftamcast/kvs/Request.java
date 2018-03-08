@@ -9,22 +9,18 @@ import java.io.*;
  */
 public class Request implements RequestIf, Serializable {
 	private RequestType type;
-	private int msg;
 	private int key;
+	private int sender;
 	private byte[] value;
 	private int[] destination;
 	private int seqNumber;
 
 	public Request() {
-		this(RequestType.NOP, -1, null, null, -1);
+		this(RequestType.NOP, -1, null, null, -1, -1);
 	}
 
-	public Request(RequestType type, int key, byte[] value, int[] destination, int msg) {
-		this(type, key, value, destination, 0, msg);
-	}
-
-	public Request(RequestType type, int key, byte[] value, int[] destination, int seqNumber, int msg) {
-		this.msg = msg;
+	public Request(RequestType type, int key, byte[] value, int[] destination, int seqNumber, int sender) {
+		this.sender = sender;
 		this.type = type;
 		this.key = key;
 		this.value = value;
@@ -110,12 +106,12 @@ public class Request implements RequestIf, Serializable {
 		this.seqNumber = seqNumber;
 	}
 
-	public int getMsg() {
-		return msg;
+	public int getSender() {
+		return sender;
 	}
 
-	public void setMsg(int msg) {
-		this.msg = msg;
+	public void setSender(int sender) {
+		this.sender = sender;
 	}
 
 	public byte[] toBytes() {
@@ -129,11 +125,11 @@ public class Request implements RequestIf, Serializable {
 			if (value != null)
 				dos.write(this.value);
 			dos.writeInt(this.seqNumber);
+			dos.writeInt(sender);
 			dos.writeInt(this.destination.length);
 			for (int dest : destination)
 				dos.writeInt(dest);
 
-			dos.writeInt(msg);
 		} catch (IOException e) {
 			System.err.println("Unable to convert RequestIf to bytes");
 			e.printStackTrace();
@@ -157,12 +153,12 @@ public class Request implements RequestIf, Serializable {
 			} else
 				this.value = null;
 			this.seqNumber = dis.readInt();
+			this.sender = dis.readInt();
 			destSize = dis.readInt();
 			this.destination = new int[destSize];
 			for (int i = 0; i < destSize; i++) {
 				this.destination[i] = dis.readInt();
 			}
-			this.msg = dis.readInt();
 		} catch (IOException e) {
 			System.err.println("Unable to convert bytes to RequestIf");
 			e.printStackTrace();
@@ -172,12 +168,58 @@ public class Request implements RequestIf, Serializable {
 	@Override
 	public String toString() {
 		StringBuffer buf = new StringBuffer();
-		buf.append(
-				"RequestIf '" + this.type + "', key " + this.key + ", seq. number" + this.seqNumber + " to groups ( ");
+		buf.append("RequestIf '" + this.type + "', key " + this.key + ", seq. number" + this.seqNumber + ", sender "
+				+ this.sender + " to groups ( ");
 		for (int dest : this.destination)
 			buf.append(dest + " ");
 		buf.append(')');
 		return buf.toString();
+	}
+
+	public boolean equals(Request r) {
+		if (this.key != r.key)
+			return false;
+		if (this.type != r.type)
+			return false;
+		if (this.seqNumber != r.seqNumber)
+			return false;
+		if (this.sender != r.sender)
+			return false;
+
+		if (this.getValue() == null) {
+			if (r.getValue() != null)
+				return false;
+		} else {
+			if (r.getValue() == null)
+				return false;
+		}
+
+		if (this.getDestination() == null) {
+			if (r.getDestination() != null)
+				return false;
+		} else {
+			if (r.getDestination() == null)
+				return false;
+		}
+		if (value != null) {
+			if (this.value.length != r.getValue().length)
+				return false;
+			for (int i = 0; i < value.length; i++) {
+				if (value[i] != r.getValue()[i])
+					return false;
+			}
+		}
+		if (destination != null) {
+
+			if (this.destination.length != r.getDestination().length)
+				return false;
+			for (int i = 0; i < destination.length; i++) {
+				if (destination[i] != r.getDestination()[i])
+					return false;
+			}
+		}
+
+		return true;
 	}
 
 }

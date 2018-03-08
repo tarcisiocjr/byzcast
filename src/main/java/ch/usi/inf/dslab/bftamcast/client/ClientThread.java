@@ -98,7 +98,6 @@ public class ClientThread implements Runnable, ReplyListener {
 				req.setKey(r.nextInt(Integer.MAX_VALUE));
 				req.setType(req.getDestination().length > 1 ? RequestType.SIZE : RequestType.PUT);
 				req.setSeqNumber(seqNumber);
-				req.setMsg(r.nextInt());
 
 				AsynchServiceProxy prox =  overlayTree.lca(req.getDestination()).proxy;
 				prox.invokeAsynchRequest(req.toBytes(), this, TOMMessageType.ORDERED_REQUEST);
@@ -108,7 +107,7 @@ public class ClientThread implements Runnable, ReplyListener {
 						(double) (prox.getViewManager().getCurrentViewN() + prox.getViewManager().getCurrentViewF() + 1)
 								/ 2.0);
 				repliesTracker.put(seqNumber, new RequestTracker(((int) Math.ceil((double) (prox.getViewManager().getCurrentViewN()
-						+ prox.getViewManager().getCurrentViewF() + 1) / 2.0)), -1));
+						+ prox.getViewManager().getCurrentViewF() + 1) / 2.0)), -1, null));
 				// System.out.println("sent seq#" + seqNumber);
 
 				// stats code
@@ -173,13 +172,14 @@ public class ClientThread implements Runnable, ReplyListener {
 	}
 
 	@Override
-	public void replyReceived(RequestContext context, TOMMessage reply) {
+public void replyReceived(RequestContext context, TOMMessage reply) {
+		
 		Request replyReq = new Request();
 		replyReq.fromBytes(reply.getContent());
-		System.out.println("received");
-		RequestTracker tracker = repliesTracker.get(reply.getSequence());
-		if(tracker.addReply(replyReq)) {
-			System.out.println("finish, sent up req # "  + replyReq.getSeqNumber());
+		RequestTracker tracker = repliesTracker.get(replyReq.getSeqNumber());
+		if (tracker != null && tracker.addReply(replyReq)) {
+			System.out.println("finish, sent up req # " + replyReq.getSeqNumber());
+			repliesTracker.remove(replyReq.getSeqNumber());
 		}
 	}
 

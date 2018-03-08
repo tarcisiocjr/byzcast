@@ -92,7 +92,6 @@ public class UniversalReplier implements Replier, FIFOExecutable, Serializable, 
 
 		req.fromBytes(request.getContent());
 		System.out.println("seq #" + req.getSeqNumber());
-		System.out.println("seq #" + req.getMsg());
 		System.out.println("sender " + request.getSender());
 		System.out.println("called manageReply");
 
@@ -112,11 +111,10 @@ public class UniversalReplier implements Replier, FIFOExecutable, Serializable, 
 				// Request ans = execute(req);
 				// reply
 				request.reply.setContent(req.toBytes());
-				 rc.getServerCommunicationSystem().send(new int[] { request.getSender() },
-				 request.reply);
+				rc.getServerCommunicationSystem().send(new int[] { request.getSender() }, request.reply);
 				// CommunicationSystemServerSide clientsConn =
 				// CommunicationSystemServerSideFactory.getCommunicationSystemServerSide(rc.getSVController().);
-//				rc.getServerCommunicationSystem().send(new int[] { 5 }, request.reply);
+				// rc.getServerCommunicationSystem().send(new int[] { 5 }, request.reply);
 			}
 			// my child in tree is a destination, forward it
 			else if (me.childernIDs.contains(destinations[i])) {
@@ -126,24 +124,25 @@ public class UniversalReplier implements Replier, FIFOExecutable, Serializable, 
 						+ v.proxy.getViewManager().getCurrentViewF() + 1) / 2.0);
 				toSend.add(v);
 			}
-			// destination must be in the path of only one of my childrens (tree), have to
-			// do it just once.
-			else if (!sent) {
-				sent = true;
+			// destination must be in the path of only one of my childrens
+			else {
 
 				for (Vertex v : me.children) {
 					if (v.inReach(destinations[i])) {
-						majNeeded += (int) Math.ceil((double) (v.proxy.getViewManager().getCurrentViewN()
-								+ v.proxy.getViewManager().getCurrentViewF() + 1) / 2.0);
-						toSend.add(v);
-						break;
+						if (!toSend.contains(v)) {
+							majNeeded += (int) Math.ceil((double) (v.proxy.getViewManager().getCurrentViewN()
+									+ v.proxy.getViewManager().getCurrentViewF() + 1) / 2.0);
+							toSend.add(v);
+						}
+						break;// only one path
 					}
 				}
 			}
 
 		}
 
-		repliesTracker.put(req.getSeqNumber(), new RequestTracker(majNeeded, request.getSender()));
+		repliesTracker.put(req.getSeqNumber(), new RequestTracker(majNeeded, request.getSender(), request));
+		System.out.println("neeeeeded     " + majNeeded);
 		for (Vertex v : toSend) {
 			v.asyncAtomicMulticast(req, this);
 		}
@@ -219,15 +218,6 @@ public class UniversalReplier implements Replier, FIFOExecutable, Serializable, 
 		throw new UnsupportedOperationException("All ordered messages should be FIFO");
 	}
 
-	private boolean contains(int[] array, int item) {
-		for (int i = 0; i < array.length; i++) {
-			if (array[i] == item) {
-				return true;
-			}
-		}
-		return false;
-	}
-
 	@Override
 	public void reset() {
 		// TODO Auto-generated method stub
@@ -236,17 +226,18 @@ public class UniversalReplier implements Replier, FIFOExecutable, Serializable, 
 
 	@Override
 	public void replyReceived(RequestContext context, TOMMessage reply) {
+
 		Request replyReq = new Request();
 		replyReq.fromBytes(reply.getContent());
-		System.out.println("received");
-		RequestTracker tracker = repliesTracker.get(reply.getSequence());
-		if(tracker.addReply(replyReq)) {
-			System.out.println("finish, sent up req # "  + replyReq.getSeqNumber());
-			reply.reply.setContent(tracker.getMajorityReply().toBytes());
+		RequestTracker tracker = repliesTracker.get(replyReq.getSeqNumber());
+		if (tracker != null && tracker.addReply(replyReq)) {
+			System.out.println("finish, sent up req # " + replyReq.getSeqNumber());
+			tracker.getRecivedRequest().reply.setContent(replyReq.toBytes());
 			rc.getServerCommunicationSystem().send(new int[] { tracker.getReplier() },
-					reply.reply);
-			
+					tracker.getRecivedRequest().reply);
+
+			// repliesTracker.remove(replyReq.getSeqNumber());
+
 		}
 	}
-
 }
