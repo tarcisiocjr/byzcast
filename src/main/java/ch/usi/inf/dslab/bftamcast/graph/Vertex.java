@@ -14,17 +14,17 @@ import bftsmart.communication.client.ReplyListener;
 import bftsmart.tom.AsynchServiceProxy;
 import bftsmart.tom.core.messages.TOMMessageType;
 import ch.usi.inf.dslab.bftamcast.RequestIf;
-import ch.usi.inf.dslab.bftamcast.client.ProxyIf;
 
 /**
  * @author Christian Vuerich - christian.vuerich@usi.ch
  *
  */
-public class Vertex implements ProxyIf, Serializable {
+public class Vertex implements Serializable {
 
 	/**
 	 * 
 	 */
+	//TODO change to private most of these
 	private static final long serialVersionUID = -9019158149126879510L;
 	public transient AsynchServiceProxy proxy;
 	private String confPath;
@@ -39,8 +39,6 @@ public class Vertex implements ProxyIf, Serializable {
 		children = new ArrayList<>();
 		childernIDs = new ArrayList<>();
 		this.groupId = ID;
-		// Maybe use async for everithing???
-		//change to proxy
 		this.proxy = new AsynchServiceProxy(proxyID, confPath);
 	}
 
@@ -76,11 +74,6 @@ public class Vertex implements ProxyIf, Serializable {
 		return false;
 	}
 
-	@Override
-	public AsynchServiceProxy asyncAtomicMulticast(RequestIf req, ReplyListener listener) {
-		proxy.invokeAsynchRequest(req.toBytes(), listener, TOMMessageType.ORDERED_REQUEST);
-		return null;
-	}
 
 	public Vertex findVertexByID(int id) {
 		if (id == groupId) {

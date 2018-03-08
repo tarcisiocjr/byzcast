@@ -77,6 +77,7 @@ public class Tree implements Serializable {
 						str.nextToken();// throw away "->"
 						int to = Integer.valueOf(str.nextToken());
 
+						//add connections in vertices
 						for (Vertex v1 : vertices) {
 							if (v1.groupId == from) {
 								for (Vertex v2 : vertices) {
@@ -89,6 +90,7 @@ public class Tree implements Serializable {
 							}
 						}
 
+						//the vertex  with no parent is the root vertex of the tree
 						for (Vertex v : vertices) {
 							if (v.parent == null) {
 								root = v;
@@ -100,16 +102,7 @@ public class Tree implements Serializable {
 
 			fr.close();
 			rd.close();
-			
-			
-			
-			System.out.println("");
-			System.out.println("");
-			System.out.println("ID          "+proxyID);
-			System.out.println("");
-			System.out.println("");
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
@@ -128,35 +121,28 @@ public class Tree implements Serializable {
 		for (int i = 0; i < ids.length; i++) {
 			vertices.add(findVertexById(ids[i]));
 		}
-		// List<List<Vertex>> ancestors = new ArrayList<>();
-		// for (Vertex v : vertices) {
-		// List<Vertex> vAncestors = new ArrayList();
-		// Vertex tmp = v;
-		// while(v != null) {
-		// vAncestors.add(tmp);
-		// tmp = tmp.parent;
-		// }
-		// ancestors.add(vAncestors);
-		// }
 
 		// tree only has one path between any two nodes, so only one child of root could
-		// be anchestor
+		// be ancestor
 		Vertex ancestor = root;
 		boolean reachable = true;
 		while (reachable) {
 			reachable = true;
-			System.out.println(ancestor.groupId);
+			//if you can not go lower in the tree return current acestor
 			if(ancestor.children.isEmpty()) {
 				return ancestor;
 			}
+			//check if any of the current ancestor's childrens can reach all destinations
 			for (Vertex v : ancestor.children) {
 				reachable = true;
 				for (Vertex target : vertices) {
+					//check child reach for all destinations
 					reachable = reachable & v.inReach(target.groupId);
 					if (!reachable) {
 						break;
 					}
 				}
+				//if child can reach all it is the new ancestor
 				if (reachable) {
 					// tree only one path between two vertices, so if found lower anchestor it is
 					// not needed to keep searching other children
@@ -168,6 +154,11 @@ public class Tree implements Serializable {
 		return ancestor;
 	}
 
+	/**
+	 * find vertex in tree from it's id
+	 * @param id
+	 * @return vertex with specified id or null
+	 */
 	public Vertex findVertexById(int id) {
 		return root.findVertexByID(id);
 	}

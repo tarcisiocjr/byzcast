@@ -29,7 +29,7 @@ for (( j = 1; j <=$(( G )); j++ )); do
     for (( i = 1; i <= $N; i++ )); do
         PANE=$(( (j-1)*N + i ))
         
-        tmux send-keys -t bftamcast.$PANE "$JAVA.server.UniversalServer -t config/tree.conf -i $(( i-1 )) -g $(( j-1 )) -G config/local$(( j-1 )) $ARGS" C-m
+        tmux send-keys -t bftamcast.$PANE "$JAVA.server.Server -t config/tree.conf -i $(( i-1 )) -g $(( j-1 )) -G config/local$(( j-1 )) $ARGS" C-m
         
     done
 done
@@ -37,4 +37,4 @@ done
 tmux attach-session -t bftamcast
 
 
-# java -cp 'lib/*:target/*' ch.usi.inf.dslab.bftamcast.server.UniversalServer -t config/tree.conf -i 0 -g 0 -G config/local0 $ARGS C-m
+# java -cp 'lib/*:target/*' ch.usi.inf.dslab.bftamcast.server.Server -t config/tree.conf -i 0 -g 0 -G config/local0 $ARGS C-m

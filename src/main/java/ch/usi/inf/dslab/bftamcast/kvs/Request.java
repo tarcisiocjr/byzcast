@@ -15,10 +15,22 @@ public class Request implements RequestIf, Serializable {
 	private int[] destination;
 	private int seqNumber;
 
+	/**
+	 * empty request constructor
+	 */
 	public Request() {
 		this(RequestType.NOP, -1, null, null, -1, -1);
 	}
 
+	/**
+	 * 
+	 * @param type
+	 * @param key
+	 * @param value
+	 * @param destination
+	 * @param seqNumber
+	 * @param sender
+	 */
 	public Request(RequestType type, int key, byte[] value, int[] destination, int seqNumber, int sender) {
 		this.sender = sender;
 		this.type = type;
@@ -28,6 +40,11 @@ public class Request implements RequestIf, Serializable {
 		this.seqNumber = seqNumber;
 	}
 
+	/**
+	 * convert an array of requests to byte[]
+	 * @param reqs
+	 * @return
+	 */
 	public static byte[] ArrayToBytes(Request[] reqs) {
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
 
@@ -47,6 +64,11 @@ public class Request implements RequestIf, Serializable {
 		return out.toByteArray();
 	}
 
+	/**
+	 * convert an array of byte to an array of requests
+	 * @param b
+	 * @return
+	 */
 	public static Request[] ArrayfromBytes(byte[] b) {
 		ByteArrayInputStream in = new ByteArrayInputStream(b);
 		Request[] reqs = null;
@@ -114,6 +136,9 @@ public class Request implements RequestIf, Serializable {
 		this.sender = sender;
 	}
 
+	/**
+	 * Convert Request data to byte[]
+	 */
 	public byte[] toBytes() {
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
 		DataOutputStream dos = new DataOutputStream(out);
@@ -138,6 +163,9 @@ public class Request implements RequestIf, Serializable {
 		return out.toByteArray();
 	}
 
+	/**
+	 * fill request object from byte[]representing the data inside the oject
+	 */
 	public void fromBytes(byte[] b) {
 		ByteArrayInputStream in = new ByteArrayInputStream(b);
 		DataInputStream dis = new DataInputStream(in);
@@ -176,6 +204,8 @@ public class Request implements RequestIf, Serializable {
 		return buf.toString();
 	}
 
+	
+	//TODO if for example you put a new value on two groups, but previous values are different value will be different, also sizes will be different. what to do? append?
 	public boolean equals(Request r) {
 		if (this.key != r.key)
 			return false;

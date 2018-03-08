@@ -36,16 +36,15 @@ public class ClientThread implements Runnable, ReplyListener {
 	final Random random;
 	final Stats localStats, globalStats;
 	final Map<Integer, RequestTracker> repliesTracker;
-//	private int counter = 0;
-//	private int secs = 0;
-	long startTime, usLat, delta =0;
+	// private int counter = 0;
+	// private int secs = 0;
+	long startTime, usLat, delta = 0;
 	private Tree overlayTree;
-
 
 	final Request replyReq;
 
-	public ClientThread(int clientId, int groupId, boolean verbose,
-			int runTime, int valueSize, int globalPerc, boolean ng, String treeConfigPath) {
+	public ClientThread(int clientId, int groupId, boolean verbose, int runTime, int valueSize, int globalPerc,
+			boolean ng, String treeConfigPath) {
 		this.clientId = clientId;
 		this.groupId = groupId;
 		this.verbose = verbose;
@@ -57,7 +56,7 @@ public class ClientThread implements Runnable, ReplyListener {
 		this.globalStats = new Stats();
 		this.repliesTracker = new HashMap<>();
 		this.replyReq = new Request();
-		this.overlayTree = new Tree(treeConfigPath,UUID.randomUUID().hashCode());
+		this.overlayTree = new Tree(treeConfigPath, UUID.randomUUID().hashCode());
 	}
 
 	@Override
@@ -72,20 +71,18 @@ public class ClientThread implements Runnable, ReplyListener {
 		// byte[] response;
 		// local and global ids
 
-//		TimerTask statsTask = new TimerTask() {
-//
-//			@Override
-//			public void run() {
-//				secs++;
-//				System.out.println((counter / secs) + "req/s");
-//			}
-//		};
+		// TimerTask statsTask = new TimerTask() {
+		//
+		// @Override
+		// public void run() {
+		// secs++;
+		// System.out.println((counter / secs) + "req/s");
+		// }
+		// };
 
 		// And From your main() method or any other method
 		Timer timer = new Timer();
-//		timer.schedule(statsTask, 0, 1000);
-
-	
+		// timer.schedule(statsTask, 0, 1000);
 
 		req.setValue(randomString(size).getBytes());
 		while (elapsed / 1e9 < runTime) {
@@ -94,20 +91,23 @@ public class ClientThread implements Runnable, ReplyListener {
 				List<Integer> list = new LinkedList<Integer>(overlayTree.getDestinations());
 				Collections.shuffle(list);
 
-				req.setDestination(list.subList(r.nextInt(list.size()), list.size()-1).stream().mapToInt(i->i).toArray());
+				req.setDestination(
+						list.subList(r.nextInt(list.size()), list.size() - 1).stream().mapToInt(i -> i).toArray());
 				req.setKey(r.nextInt(Integer.MAX_VALUE));
 				req.setType(req.getDestination().length > 1 ? RequestType.SIZE : RequestType.PUT);
 				req.setSeqNumber(seqNumber);
 
-				AsynchServiceProxy prox =  overlayTree.lca(req.getDestination()).proxy;
+				AsynchServiceProxy prox = overlayTree.lca(req.getDestination()).proxy;
 				prox.invokeAsynchRequest(req.toBytes(), this, TOMMessageType.ORDERED_REQUEST);
 				// TODO ask why do this when recieved majority
 				// prox.cleanAsynchRequest(requestId);
 				int q = (int) Math.ceil(
 						(double) (prox.getViewManager().getCurrentViewN() + prox.getViewManager().getCurrentViewF() + 1)
 								/ 2.0);
-				repliesTracker.put(seqNumber, new RequestTracker(((int) Math.ceil((double) (prox.getViewManager().getCurrentViewN()
-						+ prox.getViewManager().getCurrentViewF() + 1) / 2.0)), -1, null));
+				repliesTracker.put(seqNumber, new RequestTracker(((int) Math.ceil(
+						(double) (prox.getViewManager().getCurrentViewN() + prox.getViewManager().getCurrentViewF() + 1)
+								/ 2.0)),
+						-1, null));
 				// System.out.println("sent seq#" + seqNumber);
 
 				// stats code
@@ -135,14 +135,14 @@ public class ClientThread implements Runnable, ReplyListener {
 		System.out.println("done");
 		timer.cancel();
 		if (localStats.getCount() > 0) {
-            localStats.persist("localStats-client-g" + groupId + "-" + clientId + ".txt", 15);
-            System.out.println("LOCAL STATS:" + localStats);
-        }
+			localStats.persist("localStats-client-g" + groupId + "-" + clientId + ".txt", 15);
+			System.out.println("LOCAL STATS:" + localStats);
+		}
 
-        if (globalStats.getCount() > 0) {
-            globalStats.persist("globalStats-client-g" + groupId + "-" + clientId + ".txt", 15);
-            System.out.println("\nGLOBAL STATS:" + globalStats);
-        }
+		if (globalStats.getCount() > 0) {
+			globalStats.persist("globalStats-client-g" + groupId + "-" + clientId + ".txt", 15);
+			System.out.println("\nGLOBAL STATS:" + globalStats);
+		}
 		// if (localStats.getCount() > 0) {
 		// localStats.persist("localStats-client-g" + groupId + "-" + clientId + ".txt",
 		// 15);
@@ -171,19 +171,22 @@ public class ClientThread implements Runnable, ReplyListener {
 		return new String(buf);
 	}
 
+	
+	//listener for async replies
 	@Override
-public void replyReceived(RequestContext context, TOMMessage reply) {
-		
+	public void replyReceived(RequestContext context, TOMMessage reply) {
+		//convert reply to request object
 		Request replyReq = new Request();
 		replyReq.fromBytes(reply.getContent());
+		//add it to tracker and check if majority of replies reached
+		//TODO check reply signature, authenticity? ie reply.signed()
 		RequestTracker tracker = repliesTracker.get(replyReq.getSeqNumber());
+		
 		if (tracker != null && tracker.addReply(replyReq)) {
 			System.out.println("finish, sent up req # " + replyReq.getSeqNumber());
 			repliesTracker.remove(replyReq.getSeqNumber());
 		}
 	}
-
-	
 
 	@Override
 	public void reset() {

@@ -128,6 +128,7 @@ public class ConsoleClient implements ReplyListener {
 				break;
 			case 4:
 				System.out.println("Getting the map size");
+				//TODO fix this like other items in switch
 				// req.setType(RequestType.SIZE);
 				// req.setKey(0);
 				// req.setValue(null);
@@ -163,6 +164,7 @@ public class ConsoleClient implements ReplyListener {
 		if (tracker != null && tracker.addReply(replyReq)) {
 			System.out.println("finish, sent up req # " + replyReq.getSeqNumber());
 			repliesTracker.remove(replyReq.getSeqNumber());
+			System.out.println("previous value: " + (replyReq.getValue() == null ? "NULL" : new String(replyReq.getValue())));
 		}
 
 	}
