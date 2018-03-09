@@ -110,9 +110,9 @@ public class ReplicaReplier implements Replier, FIFOExecutable, Serializable, Re
 		else {
 			// majority of parent group replicas f+1
 			Vertex lca = overlayTree.lca(req.getDestination());
-			int n = 0;
+			int majReplicasOfSender = 0;
 			if (groupId != lca.groupId) {
-				n = (int) Math.ceil((double) (me.parent.proxy.getViewManager().getCurrentViewN()
+				majReplicasOfSender = (int) Math.ceil((double) (me.parent.proxy.getViewManager().getCurrentViewN()
 						+ me.parent.proxy.getViewManager().getCurrentViewF() + 1) / 2.0);
 			}
 
@@ -129,7 +129,8 @@ public class ReplicaReplier implements Replier, FIFOExecutable, Serializable, Re
 				}
 			}
 
-			if (count >= n) {
+			// majority of replicas sent request and this replica is not already processing the request (not processing it more than once)
+			if (count >= majReplicasOfSender && !repliesTracker.containsKey(req.getSeqNumber())) {
 
 				int[] destinations = req.getDestination();
 				int majNeeded = 0;
@@ -180,6 +181,7 @@ public class ReplicaReplier implements Replier, FIFOExecutable, Serializable, Re
 						msg.reply.setContent(req.toBytes());
 						rc.getServerCommunicationSystem().send(new int[] { msg.getSender() }, msg.reply);
 					}
+					//can remove, later requests will receive answers directly from already processes replies
 					globalReplies.remove(req.getSeqNumber());
 					return;
 				} else {
