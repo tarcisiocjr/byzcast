@@ -56,6 +56,7 @@ public class ReplicaReplier implements Replier, FIFOExecutable, Serializable, Re
 	protected Request req;
 	private Map<Integer, byte[]> table;
 	private Map<Integer, RequestTracker> repliesTracker;
+	private Map<Integer, Request> processedReplies;
 	private SortedMap<Integer, Vector<TOMMessage>> globalReplies;
 	private Vertex me;
 
@@ -69,13 +70,15 @@ public class ReplicaReplier implements Replier, FIFOExecutable, Serializable, Re
 		contextSet = replyLock.newCondition();
 		globalReplies = new TreeMap<>();
 		repliesTracker = new HashMap<>();
+		processedReplies = new HashMap<>();
+
 		table = new TreeMap<>();
 		req = new Request();
 	}
 
 	@Override
 	public void manageReply(TOMMessage request, MessageContext msgCtx) {
-		//TODO check reply signature, authenticity? ie reply.signed()
+		// TODO check reply signature, authenticity? ie reply.signed()
 		while (rc == null) {
 			try {
 				this.replyLock.lock();
@@ -91,15 +94,20 @@ public class ReplicaReplier implements Replier, FIFOExecutable, Serializable, Re
 		System.out.println("sender " + request.getSender());
 		System.out.println("called manageReply");
 
+		// already processes and answered request to other replicas, send what has been
+		// done
+		if (processedReplies.containsKey(req.getSeqNumber())) {
+			request.reply.setContent(processedReplies.get(req.getSeqNumber()).toBytes());
+			rc.getServerCommunicationSystem().send(new int[] { request.getSender() }, request.reply);
+		}
 		// client contacted server directly
-		if (req.getDestination().length == 1) {
-			req = execute(req);
+		else if (req.getDestination().length == 1) {
+			execute(req);
 			request.reply.setContent(req.toBytes());
 			rc.getServerCommunicationSystem().send(new int[] { request.getSender() }, request.reply);
 		}
 		// another group contacted me, majority needed
 		else {
-
 			// majority of parent group replicas f+1
 			Vertex lca = overlayTree.lca(req.getDestination());
 			int n = 0;
@@ -132,8 +140,9 @@ public class ReplicaReplier implements Replier, FIFOExecutable, Serializable, Re
 					// I am a target, compute but wait for majority of other destination to execute
 					// the same to asnwer
 					if (destinations[i] == groupId) {
-						//TODO execute just once after reaching majority
-						req = execute(req);
+						// TODO execute just once after reaching majority
+						execute(req);
+						System.out.println(req.getValue());
 						majNeeded++;
 						addreq = true;
 					}
@@ -164,11 +173,14 @@ public class ReplicaReplier implements Replier, FIFOExecutable, Serializable, Re
 
 				// no other destination is in my reach, send reply back
 				if (toSend.isEmpty()) {
-					//TODO store max msgs size, count answers and track it, make sure to answer to all msgs (even not received yet)
+					// TODO store max msgs size, count answers and track it, make sure to answer to
+					// all msgs (even not received yet)
+					processedReplies.put(req.getSeqNumber(), req);
 					for (TOMMessage msg : msgs) {
 						msg.reply.setContent(req.toBytes());
 						rc.getServerCommunicationSystem().send(new int[] { msg.getSender() }, msg.reply);
 					}
+					globalReplies.remove(req.getSeqNumber());
 					return;
 				} else {
 
@@ -178,7 +190,7 @@ public class ReplicaReplier implements Replier, FIFOExecutable, Serializable, Re
 						repliesTracker.get(req.getSeqNumber()).addReply(req);
 					}
 					for (Vertex v : toSend) {
-						v.proxy.invokeAsynchRequest(req.toBytes(), this, TOMMessageType.ORDERED_REQUEST);
+						v.proxy.invokeAsynchRequest(request.getContent(), this, TOMMessageType.ORDERED_REQUEST);
 					}
 				}
 			}
@@ -186,44 +198,30 @@ public class ReplicaReplier implements Replier, FIFOExecutable, Serializable, Re
 
 	}
 
-	protected Request execute(Request req) {
+	protected void execute(Request req) {
+		System.out.println("executed");
 		byte[] resultBytes;
-		boolean toMe = false;
-
-		for (int i = 0; i < req.getDestination().length; i++) {
-			if (req.getDestination()[i] == groupId) {
-				toMe = true;
-				break;
-			}
+		System.out.println(req.getType().toString());
+		switch (req.getType()) {
+		case PUT:
+			resultBytes = table.put(req.getKey(), req.getValue());
+			break;
+		case GET:
+			resultBytes = table.get(req.getKey());
+			break;
+		case REMOVE:
+			resultBytes = table.remove(req.getKey());
+			break;
+		case SIZE:
+			resultBytes = ByteBuffer.allocate(4).putInt(table.size()).array();
+			break;
+		default:
+			resultBytes = null;
+			System.err.println("Unknown request type: " + req.getType());
 		}
 
-		if (!toMe) {
-			System.out.println("Message not addressed to my group.");
-			req.setType(RequestType.NOP);
-			req.setValue(null);
-		} else {
-			switch (req.getType()) {
-			case PUT:
-				resultBytes = table.put(req.getKey(), req.getValue());
-				break;
-			case GET:
-				resultBytes = table.get(req.getKey());
-				break;
-			case REMOVE:
-				resultBytes = table.remove(req.getKey());
-				break;
-			case SIZE:
-				resultBytes = ByteBuffer.allocate(4).putInt(table.size()).array();
-				break;
-			default:
-				resultBytes = null;
-				System.err.println("Unknown request type: " + req.getType());
-			}
-
-			req.setValue(resultBytes);
+		req.setValue(resultBytes);
 		}
-		return req;
-	}
 
 	@Override
 	public void setReplicaContext(ReplicaContext rc) {
@@ -235,8 +233,6 @@ public class ReplicaReplier implements Replier, FIFOExecutable, Serializable, Re
 
 	@Override
 	public byte[] executeOrderedFIFO(byte[] bytes, MessageContext messageContext, int i, int i1) {
-		System.out.println("called executeOrderedFIFO");
-		// call first
 		return bytes;
 	}
 
@@ -269,25 +265,23 @@ public class ReplicaReplier implements Replier, FIFOExecutable, Serializable, Re
 
 	@Override
 	public void replyReceived(RequestContext context, TOMMessage reply) {
-		//TODO check reply signature, authenticity? ie reply.signed()
+		// TODO check reply signature, authenticity? ie reply.signed()
 		System.out.println("reply recieved");
 		Request replyReq = new Request();
 		replyReq.fromBytes(reply.getContent());
 		RequestTracker tracker = repliesTracker.get(replyReq.getSeqNumber());
-		
+
 		if (tracker != null && tracker.addReply(replyReq)) {
 			Vector<TOMMessage> msgs = globalReplies.get(replyReq.getSeqNumber());
 			System.out.println("finish, sent up req # " + replyReq.getSeqNumber());
 			tracker.getRecivedRequest().reply.setContent(replyReq.toBytes());
+			processedReplies.put(replyReq.getSeqNumber(), replyReq);
 			for (TOMMessage msg : msgs) {
-				msg.reply.setContent(req.toBytes());
+				msg.reply.setContent(replyReq.toBytes());
 				rc.getServerCommunicationSystem().send(new int[] { msg.getSender() }, msg.reply);
 			}
-			msgs.clear();
-			//replied to all msgs, TODO store max msgs size, count answers and track it
-			if (tracker.getRequests().size() == tracker.getMajNeed()) {
-				repliesTracker.remove(replyReq.getSeqNumber());
-			}
+			globalReplies.remove(replyReq.getSeqNumber());
+			repliesTracker.remove(replyReq.getSeqNumber());
 
 		}
 	}

@@ -42,6 +42,7 @@ public class Request implements RequestIf, Serializable {
 
 	/**
 	 * convert an array of requests to byte[]
+	 * 
 	 * @param reqs
 	 * @return
 	 */
@@ -66,6 +67,7 @@ public class Request implements RequestIf, Serializable {
 
 	/**
 	 * convert an array of byte to an array of requests
+	 * 
 	 * @param b
 	 * @return
 	 */
@@ -204,48 +206,73 @@ public class Request implements RequestIf, Serializable {
 		return buf.toString();
 	}
 
-	
-	//TODO if for example you put a new value on two groups, but previous values are different value will be different, also sizes will be different. what to do? append?
+	// TODO if for example you put a new value on two groups, but previous values
+	// are different value will be different, also sizes will be different. what to
+	// do? append?
 	public boolean equals(Request r) {
-		if (this.key != r.key)
+		if (this.key != r.key) {
+			System.out.println("key problem");
 			return false;
-		if (this.type != r.type)
+		}
+		if (this.type != r.type) {
+			System.out.println("type problem");
 			return false;
-		if (this.seqNumber != r.seqNumber)
+		}
+		if (this.seqNumber != r.seqNumber) {
+			System.out.println("seq problem");
 			return false;
-		if (this.sender != r.sender)
+		}
+		if (this.sender != r.sender) {
+			System.out.println("sender problem");
 			return false;
+		}
 
 		if (this.getValue() == null) {
-			if (r.getValue() != null)
+			if (r.getValue() != null) {
+				System.out.println("value problem");
 				return false;
+			}
 		} else {
-			if (r.getValue() == null)
+			if (r.getValue() == null) {
+				System.out.println("value problem1");
 				return false;
+			}
 		}
 
 		if (this.getDestination() == null) {
-			if (r.getDestination() != null)
+			if (r.getDestination() != null) {
+				System.out.println("destination problem");
 				return false;
+			}
 		} else {
-			if (r.getDestination() == null)
+			if (r.getDestination() == null) {
+				System.out.println("destination problem1");
 				return false;
+			}
 		}
 		if (value != null) {
-			if (this.value.length != r.getValue().length)
+			if (this.value.length != r.getValue().length) {
+				System.out.println("value problem2");
 				return false;
+			}
 			for (int i = 0; i < value.length; i++) {
-				if (value[i] != r.getValue()[i])
+				if (value[i] != r.getValue()[i]) {
+					System.out.println("value problem3");
 					return false;
+				}
 			}
 		}
 		if (destination != null) {
 
-			if (this.destination.length != r.getDestination().length)
+			if (this.destination.length != r.getDestination().length) {
+				System.out.println("destination problem2");
 				return false;
+			}
 			for (int i = 0; i < destination.length; i++) {
-				if (destination[i] != r.getDestination()[i])
+				if (destination[i] != r.getDestination()[i]) {
+					System.out.println("destination problem3");
 					return false;
+				}
 			}
 		}
 

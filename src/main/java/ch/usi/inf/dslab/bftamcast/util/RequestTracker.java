@@ -17,7 +17,7 @@ public class RequestTracker {
 	private TOMMessage recivedRequest;
 	private int answerTo;
 
-	public RequestTracker(int majority, int replier,TOMMessage recivedRequest) {
+	public RequestTracker(int majority, int replier, TOMMessage recivedRequest) {
 		this.recivedRequest = recivedRequest;
 		this.answerTo = replier;
 		this.majority = majority;
@@ -25,41 +25,48 @@ public class RequestTracker {
 	}
 
 	public boolean addReply(Request reply) {
-		int count =0;
-		for(Request r : replies) {
-			if(r.equals(reply)) {
-				count ++;
+		int count = 0;
+		System.out.println();
+		System.out.println();
+		for (Request r : replies) {
+			System.out.println();
+			System.out.println(r.toString());
+			System.out.println(reply.toString());
+			if (r.equals(reply)) {
+				count++;
+				System.out.println("same");
 			}
 		}
-		
+
 		this.replies.add(reply);
-		
+
 		if (count > currentMajority) {
 			currentMajority = count;
 			majorityReply = reply;
 		}
-		if(currentMajority >= majority) {
+		if (currentMajority >= majority) {
+			System.out.println("MajReached");
 			return true;
 		}
 		return false;
 	}
-	
+
 	public Request getMajorityReply() {
 		return majorityReply;
 	}
-	
+
 	public TOMMessage getRecivedRequest() {
 		return recivedRequest;
 	}
-	
+
 	public ConcurrentSet<Request> getRequests() {
 		return replies;
 	}
-	
+
 	public int getReplier() {
 		return answerTo;
 	}
-	
+
 	public int getMajNeed() {
 		return majority;
 	}
