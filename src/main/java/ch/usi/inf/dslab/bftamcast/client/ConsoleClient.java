@@ -30,11 +30,10 @@ public class ConsoleClient implements ReplyListener {
 	// private int counter = 0;
 	// private int secs = 0;
 	long startTime, usLat, delta = 0;
-	final Request replyReq = new Request();
 	private static Scanner scanner;
 
 	public static void main(String[] args) {
-		int seqN = 0;
+		int seqNumber = 0;
 		ConsoleClient c = new ConsoleClient();
 		CLIParser p = CLIParser.getClientParser(args);
 		Random r = new Random();
@@ -44,11 +43,11 @@ public class ConsoleClient implements ReplyListener {
 		// String[] localConfigPaths = p.getLocalConfigs();
 		String treeConfigPath = p.getTreeConfig();
 
-		Tree overlayTree = new Tree(treeConfigPath, 5);// UUID.randomUUID().hashCode());
+		Tree overlayTree = new Tree(treeConfigPath, UUID.randomUUID().hashCode());
 		// int numGroups = localConfigPaths == null ? 1 : localConfigPaths.length;
 		// ProxyIf proxy = new Proxy(idClient + 1000 * idGroup, globalConfigPath,
 		// localConfigPaths);
-		Request req = new Request();
+		Request req;
 		// int[] dest;
 		// byte[] result = null;
 
@@ -67,15 +66,18 @@ public class ConsoleClient implements ReplyListener {
 			int[] n;
 			int index;
 			AsynchServiceProxy target;
-			seqN++;
+			seqNumber++;
+			byte[] value ;
+			int[] destinations;
+			int key;
+			RequestType type;
 
 			switch (cmd) {
 
 			case 1:
 				System.out.println("Putting value in the distributed map");
-				req.setType(RequestType.PUT);
-				req.setKey(Integer.parseInt(console.readLine("Enter the key: ")));
-				req.setSeqNumber(seqN);
+				type = RequestType.PUT;
+				key = Integer.parseInt(console.readLine("Enter the key: "));
 				dt = new StringTokenizer(console.readLine("Enter the destinations: "), " ");
 				n = new int[dt.countTokens()];
 				index = 0;
@@ -83,12 +85,14 @@ public class ConsoleClient implements ReplyListener {
 					n[index] = Integer.parseInt(dt.nextToken());
 					index++;
 				}
-				req.setDestination(n);
-				req.setValue(console.readLine("Enter the value: ").getBytes());
+				destinations = n;
+				value = console.readLine("Enter the value: ").getBytes();
+				
+				req = new Request(type, key, value, destinations, seqNumber, clientId);
 
-				target = overlayTree.lca(n).proxy;
-				System.out.println("seqn =    " + seqN);
-				c.repliesTracker.put(seqN,
+				target = overlayTree.lca(n).getProxy();
+				System.out.println("seqn =    " + seqNumber);
+				c.repliesTracker.put(seqNumber,
 						new RequestTracker(((int) Math.ceil((double) (target.getViewManager().getCurrentViewN()
 								+ target.getViewManager().getCurrentViewF() + 1) / 2.0)), -1, null));
 
@@ -97,9 +101,9 @@ public class ConsoleClient implements ReplyListener {
 				break;
 			case 2:
 				System.out.println("Reading value from the map");
-				req.setType(RequestType.GET);
-				req.setKey(Integer.parseInt(console.readLine("Enter the key: ")));
-				req.setValue(null);
+				type = RequestType.GET;
+				key = Integer.parseInt(console.readLine("Enter the key: "));
+				value = null;
 				dt = new StringTokenizer(console.readLine("Enter the destinations: "), " ");
 				n = new int[dt.countTokens()];
 				index = 0;
@@ -107,14 +111,19 @@ public class ConsoleClient implements ReplyListener {
 					n[index] = Integer.parseInt(dt.nextToken());
 					index++;
 				}
-				req.setDestination(n);
-				target = overlayTree.lca(n).proxy;
+				destinations = n;
+				target = overlayTree.lca(n).getProxy();
+				req = new Request(type, key, value, destinations, seqNumber, clientId);
+				c.repliesTracker.put(seqNumber,
+						new RequestTracker(((int) Math.ceil((double) (target.getViewManager().getCurrentViewN()
+								+ target.getViewManager().getCurrentViewF() + 1) / 2.0)), -1, null));
 				target.invokeAsynchRequest(req.toBytes(), c, TOMMessageType.ORDERED_REQUEST);
 				break;
 			case 3:
 				System.out.println("Removing value in the map");
-				req.setType(RequestType.REMOVE);
-				req.setKey(Integer.parseInt(console.readLine("Enter the key: ")));
+				type = RequestType.REMOVE;
+				key = Integer.parseInt(console.readLine("Enter the key: "));
+				value = null;
 				dt = new StringTokenizer(console.readLine("Enter the destinations: "), " ");
 				n = new int[dt.countTokens()];
 				index = 0;
@@ -122,22 +131,32 @@ public class ConsoleClient implements ReplyListener {
 					n[index] = Integer.parseInt(dt.nextToken());
 					index++;
 				}
-				req.setDestination(n);
-				target = overlayTree.lca(n).proxy;
+				destinations = n;
+				target = overlayTree.lca(n).getProxy();
+				req = new Request(type, key, value, destinations, seqNumber, clientId);
+				c.repliesTracker.put(seqNumber,
+						new RequestTracker(((int) Math.ceil((double) (target.getViewManager().getCurrentViewN()
+								+ target.getViewManager().getCurrentViewF() + 1) / 2.0)), -1, null));
 				target.invokeAsynchRequest(req.toBytes(), c, TOMMessageType.ORDERED_REQUEST);
 				break;
 			case 4:
 				System.out.println("Getting the map size");
-				//TODO fix this like other items in switch
-				// req.setType(RequestType.SIZE);
-				// req.setKey(0);
-				// req.setValue(null);
-				// dest = new int[numGroups];
-				// for (int i = 0; i < dest.length; i++)
-				// dest[i] = i;
-				//
-				// req.setDestination(dest);
-				// // result = proxy.atomicMulticast(req);
+				type = RequestType.SIZE;
+				key = 0;
+				value = null;
+				
+				destinations = new int[overlayTree.getDestinations().size()];
+				for(int i=0; i< destinations.length;i ++) {
+					destinations[i] = overlayTree.getDestinations().get(i);
+				}
+				target = overlayTree.lca(destinations).getProxy();
+				req = new Request(type, key, value, destinations, seqNumber, clientId);
+				c.repliesTracker.put(seqNumber,
+						new RequestTracker(((int) Math.ceil((double) (target.getViewManager().getCurrentViewN()
+								+ target.getViewManager().getCurrentViewF() + 1) / 2.0)), -1, null));
+				target.invokeAsynchRequest(req.toBytes(), c, TOMMessageType.ORDERED_REQUEST);
+				
+				
 				// System.out.println("result size = " + result.length);
 				// for (int i = 0; i < dest.length; i++)
 				// System.out.println("Map size (group " + i + "): " + (result == null ? "NULL"
@@ -150,22 +169,25 @@ public class ConsoleClient implements ReplyListener {
 		}
 	}
 
-	@Override
-	public void reset() {
-		// TODO Auto-generated method stub
-
-	}
+	
 
 	@Override
 	public void replyReceived(RequestContext context, TOMMessage reply) {
-		Request replyReq = new Request();
-		replyReq.fromBytes(reply.getContent());
+		Request replyReq = new Request(reply.getContent());
 		RequestTracker tracker = repliesTracker.get(replyReq.getSeqNumber());
 		if (tracker != null && tracker.addReply(replyReq)) {
 			System.out.println("finish, sent up req # " + replyReq.getSeqNumber());
+			
+			//TODO switch on printing different request types
 			repliesTracker.remove(replyReq.getSeqNumber());
 			System.out.println("previous value: " + (replyReq.getValue() == null ? "NULL" : new String(replyReq.getValue())));
 		}
+
+	}
+	
+	@Override
+	public void reset() {
+		// TODO Auto-generated method stub
 
 	}
 }

@@ -69,7 +69,7 @@ public class Tree implements Serializable {
 						// throw away in config file (temporary to distinguish between vertex
 						// declaration and edges)
 						vertices.add(new Vertex(Integer.valueOf(str.nextToken()), str.nextToken(), proxyID));
-						destinations.add(vertices.get(vertices.size() - 1).groupId);
+						destinations.add(vertices.get(vertices.size() - 1).getGroupId());
 					}
 					if (str.countTokens() == 3) {
 
@@ -79,11 +79,11 @@ public class Tree implements Serializable {
 
 						//add connections in vertices
 						for (Vertex v1 : vertices) {
-							if (v1.groupId == from) {
+							if (v1.getGroupId() == from) {
 								for (Vertex v2 : vertices) {
-									if (v2.groupId == to) {
-										v1.children.add(v2);
-										v1.childernIDs.add(v2.groupId);
+									if (v2.getGroupId() == to) {
+										v1.getChildren().add(v2);
+										v1.getChildernIDs().add(v2.getGroupId());
 										v2.parent = v1;
 									}
 								}
@@ -129,15 +129,15 @@ public class Tree implements Serializable {
 		while (reachable) {
 			reachable = true;
 			//if you can not go lower in the tree return current acestor
-			if(ancestor.children.isEmpty()) {
+			if(ancestor.getChildren().isEmpty()) {
 				return ancestor;
 			}
 			//check if any of the current ancestor's childrens can reach all destinations
-			for (Vertex v : ancestor.children) {
+			for (Vertex v : ancestor.getChildren()) {
 				reachable = true;
 				for (Vertex target : vertices) {
 					//check child reach for all destinations
-					reachable = reachable & v.inReach(target.groupId);
+					reachable = reachable & v.inReach(target.getGroupId());
 					if (!reachable) {
 						break;
 					}

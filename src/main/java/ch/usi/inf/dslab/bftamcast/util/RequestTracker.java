@@ -1,13 +1,8 @@
 package ch.usi.inf.dslab.bftamcast.util;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-
 import bftsmart.tom.core.messages.TOMMessage;
 import ch.usi.inf.dslab.bftamcast.kvs.Request;
 import io.netty.util.internal.ConcurrentSet;
-import io.netty.util.internal.shaded.org.jctools.queues.ConcurrentCircularArrayQueue;
 
 public class RequestTracker {
 	private ConcurrentSet<Request> replies;

@@ -24,9 +24,10 @@ import ch.usi.inf.dslab.bftamcast.util.Stats;
  * @author Paulo Coelho - paulo.coelho@usi.ch
  */
 public class ClientThread implements Runnable, ReplyListener {
-
+	//TODO fix statistics
 	final char[] symbols = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".toCharArray();
 	final int clientId;
+	//TODO answer to client not group right?
 	final int groupId;
 	final boolean verbose;
 	final int runTime;
@@ -41,7 +42,6 @@ public class ClientThread implements Runnable, ReplyListener {
 	long startTime, usLat, delta = 0;
 	private Tree overlayTree;
 
-	final Request replyReq;
 
 	public ClientThread(int clientId, int groupId, boolean verbose, int runTime, int valueSize, int globalPerc,
 			boolean ng, String treeConfigPath) {
@@ -55,7 +55,6 @@ public class ClientThread implements Runnable, ReplyListener {
 		this.localStats = new Stats();
 		this.globalStats = new Stats();
 		this.repliesTracker = new HashMap<>();
-		this.replyReq = new Request();
 		this.overlayTree = new Tree(treeConfigPath, UUID.randomUUID().hashCode());
 	}
 
@@ -67,7 +66,7 @@ public class ClientThread implements Runnable, ReplyListener {
 		usLat = startTime;
 		long now;
 		long elapsed = 0;// delta = 0, usLat = startTime;
-		Request req = new Request();
+		Request req;
 		// byte[] response;
 		// local and global ids
 
@@ -84,26 +83,23 @@ public class ClientThread implements Runnable, ReplyListener {
 		Timer timer = new Timer();
 		// timer.schedule(statsTask, 0, 1000);
 
-		req.setValue(randomString(size).getBytes());
+		
 		while (elapsed / 1e9 < runTime) {
 			try {
 				seqNumber++;
+				byte[] value = randomString(size).getBytes();
+				int[] destinations;
+				int key = r.nextInt(Integer.MAX_VALUE);
 				List<Integer> list = new LinkedList<Integer>(overlayTree.getDestinations());
 				Collections.shuffle(list);
+				destinations = list.subList(r.nextInt(list.size()), list.size() - 1).stream().mapToInt(i -> i).toArray();
+				RequestType type = destinations.length > 1 ? RequestType.SIZE : RequestType.PUT;
+				req = new Request(type, key, value, destinations, seqNumber, clientId);
 
-				req.setDestination(
-						list.subList(r.nextInt(list.size()), list.size() - 1).stream().mapToInt(i -> i).toArray());
-				req.setKey(r.nextInt(Integer.MAX_VALUE));
-				req.setType(req.getDestination().length > 1 ? RequestType.SIZE : RequestType.PUT);
-				req.setSeqNumber(seqNumber);
-
-				AsynchServiceProxy prox = overlayTree.lca(req.getDestination()).proxy;
+				AsynchServiceProxy prox = overlayTree.lca(req.getDestination()).getProxy();
 				prox.invokeAsynchRequest(req.toBytes(), this, TOMMessageType.ORDERED_REQUEST);
 				// TODO ask why do this when recieved majority
 				// prox.cleanAsynchRequest(requestId);
-				int q = (int) Math.ceil(
-						(double) (prox.getViewManager().getCurrentViewN() + prox.getViewManager().getCurrentViewF() + 1)
-								/ 2.0);
 				repliesTracker.put(seqNumber, new RequestTracker(((int) Math.ceil(
 						(double) (prox.getViewManager().getCurrentViewN() + prox.getViewManager().getCurrentViewF() + 1)
 								/ 2.0)),
@@ -175,9 +171,9 @@ public class ClientThread implements Runnable, ReplyListener {
 	//listener for async replies
 	@Override
 	public void replyReceived(RequestContext context, TOMMessage reply) {
+		//TODO check replies correctness (see old code)
 		//convert reply to request object
-		Request replyReq = new Request();
-		replyReq.fromBytes(reply.getContent());
+		Request replyReq = new Request(reply.getContent());
 		//add it to tracker and check if majority of replies reached
 		//TODO check reply signature, authenticity? ie reply.signed()
 		RequestTracker tracker = repliesTracker.get(replyReq.getSeqNumber());

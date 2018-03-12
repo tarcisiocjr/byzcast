@@ -8,18 +8,30 @@ import java.io.*;
  * @author Paulo Coelho - paulo.coelho@usi.ch
  */
 public class Request implements RequestIf, Serializable {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -8560523066225958549L;
 	private RequestType type;
 	private int key;
-	private int sender;
+	private int client;
 	private byte[] value;
 	private int[] destination;
 	private int seqNumber;
 
 	/**
-	 * empty request constructor
+	 * empty request constructor, remove empty constructor and only use real contructors to ensure setting of parameters
 	 */
-	public Request() {
-		this(RequestType.NOP, -1, null, null, -1, -1);
+//	public Request() {
+//		this(RequestType.NOP, -1, null, null, -1, -1);
+//	}
+	
+	/**
+	 * create a request object from a byte[]
+	 * @param reqBytes
+	 */
+	public Request (byte[] reqBytes) {
+		fromBytes(reqBytes);
 	}
 
 	/**
@@ -32,7 +44,7 @@ public class Request implements RequestIf, Serializable {
 	 * @param sender
 	 */
 	public Request(RequestType type, int key, byte[] value, int[] destination, int seqNumber, int sender) {
-		this.sender = sender;
+		this.client = sender;
 		this.type = type;
 		this.key = key;
 		this.value = value;
@@ -130,12 +142,12 @@ public class Request implements RequestIf, Serializable {
 		this.seqNumber = seqNumber;
 	}
 
-	public int getSender() {
-		return sender;
+	public int getClient() {
+		return client;
 	}
 
-	public void setSender(int sender) {
-		this.sender = sender;
+	public void setClient(int sender) {
+		this.client = sender;
 	}
 
 	/**
@@ -152,7 +164,7 @@ public class Request implements RequestIf, Serializable {
 			if (value != null)
 				dos.write(this.value);
 			dos.writeInt(this.seqNumber);
-			dos.writeInt(sender);
+			dos.writeInt(client);
 			dos.writeInt(this.destination.length);
 			for (int dest : destination)
 				dos.writeInt(dest);
@@ -183,7 +195,7 @@ public class Request implements RequestIf, Serializable {
 			} else
 				this.value = null;
 			this.seqNumber = dis.readInt();
-			this.sender = dis.readInt();
+			this.client = dis.readInt();
 			destSize = dis.readInt();
 			this.destination = new int[destSize];
 			for (int i = 0; i < destSize; i++) {
@@ -198,8 +210,8 @@ public class Request implements RequestIf, Serializable {
 	@Override
 	public String toString() {
 		StringBuffer buf = new StringBuffer();
-		buf.append("RequestIf '" + this.type + "', key " + this.key + ", seq. number" + this.seqNumber + ", sender "
-				+ this.sender + " to groups ( ");
+		buf.append("RequestIf '" + this.type + "', key " + this.key + ", seq. number" + this.seqNumber + ", client "
+				+ this.client + " to groups ( ");
 		for (int dest : this.destination)
 			buf.append(dest + " ");
 		buf.append(')');
@@ -222,7 +234,7 @@ public class Request implements RequestIf, Serializable {
 			System.out.println("seq problem");
 			return false;
 		}
-		if (this.sender != r.sender) {
+		if (this.client != r.client) {
 			System.out.println("sender problem");
 			return false;
 		}

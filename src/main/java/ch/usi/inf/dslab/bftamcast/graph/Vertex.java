@@ -24,13 +24,12 @@ public class Vertex implements Serializable {
 	/**
 	 * 
 	 */
-	//TODO change to private most of these
 	private static final long serialVersionUID = -9019158149126879510L;
-	public transient AsynchServiceProxy proxy;
+	private transient AsynchServiceProxy proxy;
 	private String confPath;
-	public int groupId;
-	public List<Vertex> children;
-	public List<Integer> childernIDs;
+	private int groupId;
+	private List<Vertex> children;
+	private List<Integer> childernIDs;
 	// cyclic but for now it easy to have for lca
 	public Vertex parent;
 
@@ -45,14 +44,7 @@ public class Vertex implements Serializable {
 	// max load
 	// max multicast speed
 
-	/**
-	 * 
-	 * @return a list of vertices of the direct children of the current vertex (one
-	 *         depth lower)
-	 */
-	public List<Vertex> children() {
-		return children;
-	}
+
 
 	/**
 	 * 
@@ -102,5 +94,99 @@ public class Vertex implements Serializable {
 		this.proxy = new AsynchServiceProxy(groupId, confPath);
 
 	}
+
+	/**
+	 * @return the serialversionuid
+	 */
+	public static long getSerialversionuid() {
+		return serialVersionUID;
+	}
+
+	/**
+	 * @return the proxy
+	 */
+	public AsynchServiceProxy getProxy() {
+		return proxy;
+	}
+
+	/**
+	 * @return the confPath
+	 */
+	public String getConfPath() {
+		return confPath;
+	}
+
+	/**
+	 * @return the groupId
+	 */
+	public int getGroupId() {
+		return groupId;
+	}
+
+	/**
+	 * @return the children
+	 */
+	public List<Vertex> getChildren() {
+		return children;
+	}
+
+	/**
+	 * @return the childernIDs
+	 */
+	public List<Integer> getChildernIDs() {
+		return childernIDs;
+	}
+
+	/**
+	 * @return the parent
+	 */
+	public Vertex getParent() {
+		return parent;
+	}
+
+	/**
+	 * @param proxy the proxy to set
+	 */
+	public void setProxy(AsynchServiceProxy proxy) {
+		this.proxy = proxy;
+	}
+
+	/**
+	 * @param confPath the confPath to set
+	 */
+	public void setConfPath(String confPath) {
+		this.confPath = confPath;
+	}
+
+	/**
+	 * @param groupId the groupId to set
+	 */
+	public void setGroupId(int groupId) {
+		this.groupId = groupId;
+	}
+
+	/**
+	 * @param children the children to set
+	 */
+	public void setChildren(List<Vertex> children) {
+		this.children = children;
+	}
+
+	/**
+	 * @param childernIDs the childernIDs to set
+	 */
+	public void setChildernIDs(List<Integer> childernIDs) {
+		this.childernIDs = childernIDs;
+	}
+
+	/**
+	 * @param parent the parent to set
+	 */
+	public void setParent(Vertex parent) {
+		this.parent = parent;
+	}
+	
+	
+	
 
 }
