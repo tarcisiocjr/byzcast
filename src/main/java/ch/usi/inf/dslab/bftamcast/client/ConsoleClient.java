@@ -1,6 +1,8 @@
 package ch.usi.inf.dslab.bftamcast.client;
 
 import java.io.Console;
+import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
@@ -67,7 +69,7 @@ public class ConsoleClient implements ReplyListener {
 			int index;
 			AsynchServiceProxy target;
 			seqNumber++;
-			byte[] value ;
+			byte[] value;
 			int[] destinations;
 			int key;
 			RequestType type;
@@ -87,7 +89,7 @@ public class ConsoleClient implements ReplyListener {
 				}
 				destinations = n;
 				value = console.readLine("Enter the value: ").getBytes();
-				
+
 				req = new Request(type, key, value, destinations, seqNumber, clientId);
 
 				target = overlayTree.lca(n).getProxy();
@@ -144,9 +146,9 @@ public class ConsoleClient implements ReplyListener {
 				type = RequestType.SIZE;
 				key = 0;
 				value = null;
-				
+
 				destinations = new int[overlayTree.getDestinations().size()];
-				for(int i=0; i< destinations.length;i ++) {
+				for (int i = 0; i < destinations.length; i++) {
 					destinations[i] = overlayTree.getDestinations().get(i);
 				}
 				target = overlayTree.lca(destinations).getProxy();
@@ -155,8 +157,7 @@ public class ConsoleClient implements ReplyListener {
 						new RequestTracker(((int) Math.ceil((double) (target.getViewManager().getCurrentViewN()
 								+ target.getViewManager().getCurrentViewF() + 1) / 2.0)), -1, null));
 				target.invokeAsynchRequest(req.toBytes(), c, TOMMessageType.ORDERED_REQUEST);
-				
-				
+
 				// System.out.println("result size = " + result.length);
 				// for (int i = 0; i < dest.length; i++)
 				// System.out.println("Map size (group " + i + "): " + (result == null ? "NULL"
@@ -169,22 +170,39 @@ public class ConsoleClient implements ReplyListener {
 		}
 	}
 
-	
-
 	@Override
 	public void replyReceived(RequestContext context, TOMMessage reply) {
 		Request replyReq = new Request(reply.getContent());
 		RequestTracker tracker = repliesTracker.get(replyReq.getSeqNumber());
 		if (tracker != null && tracker.addReply(replyReq)) {
 			System.out.println("finish, sent up req # " + replyReq.getSeqNumber());
-			
-			//TODO switch on printing different request types
+
+			// TODO switch on printing different request types
 			repliesTracker.remove(replyReq.getSeqNumber());
-			System.out.println("previous value: " + (replyReq.getValue() == null ? "NULL" : new String(replyReq.getValue())));
+			switch (replyReq.getType()) {
+			case PUT:
+				System.out.println(
+						"previous value: " + (replyReq.getValue() == null ? "NULL" : new String(replyReq.getValue())));
+				break;
+			case GET:
+				System.out.println(
+						"value: " + (replyReq.getValue() == null ? "NULL" : new String(replyReq.getValue())));
+				break;
+			case REMOVE:
+				System.out.println("removed value: " + (replyReq.getValue()  == null ? "NULL" : new String(replyReq.getValue() )));
+				break;
+			case SIZE:
+				//TODO what???
+//				System.out.println("Map size (group " + i + "): " + (result == null ? "NULL" : ByteBuffer.wrap(Arrays.copyOfRange(result, i * 4, i * 4 + 4)).getInt()));
+				break;
+
+			default:
+				break;
+			}
 		}
 
 	}
-	
+
 	@Override
 	public void reset() {
 		// TODO Auto-generated method stub
