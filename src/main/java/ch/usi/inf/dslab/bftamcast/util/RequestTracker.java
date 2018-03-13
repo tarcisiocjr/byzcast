@@ -11,25 +11,27 @@ public class RequestTracker {
 	private Request majorityReply;
 	private TOMMessage recivedRequest;
 	private int answerTo;
+	private long startTime, endTime;
 
 	public RequestTracker(int majority, int replier, TOMMessage recivedRequest) {
 		this.recivedRequest = recivedRequest;
 		this.answerTo = replier;
 		this.majority = majority;
 		this.replies = new ConcurrentSet<>();
+		this.startTime =  System.nanoTime();
 	}
 
 	public boolean addReply(Request reply) {
 		int count = 0;
-		System.out.println();
-		System.out.println();
+//		System.out.println();
+//		System.out.println();
 		for (Request r : replies) {
-			System.out.println();
-			System.out.println(r.toString());
-			System.out.println(reply.toString());
+//			System.out.println();
+//			System.out.println(r.toString());
+//			System.out.println(reply.toString());
 			if (r.equals(reply)) {
 				count++;
-				System.out.println("same");
+//				System.out.println("same");
 			}
 		}
 
@@ -40,10 +42,15 @@ public class RequestTracker {
 			majorityReply = reply;
 		}
 		if (currentMajority >= majority) {
-			System.out.println("MajReached");
+//			System.out.println("MajReached");
+			endTime = System.nanoTime();
 			return true;
 		}
 		return false;
+	}
+	
+	public long getElapsedTime() {
+		return endTime-startTime;
 	}
 
 	public Request getMajorityReply() {

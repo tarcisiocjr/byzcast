@@ -13,6 +13,8 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.UUID;
 import java.util.Vector;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -61,11 +63,11 @@ public class ReplicaReplier implements Replier, FIFOExecutable, Serializable, Re
 	//keystore map
 	private Map<Integer, byte[]> table;
 	//trackers for replies from replicas
-	private Map<Integer, Map<Integer, RequestTracker>> repliesTracker;
+	private ConcurrentMap<Integer, ConcurrentHashMap<Integer, RequestTracker>> repliesTracker;
 	//map for finished requests replies
-	private Map<Integer, Map<Integer, Request>> processedReplies;
+	private ConcurrentMap<Integer, ConcurrentHashMap<Integer, Request>> processedReplies;
 	//map for not processed requests
-	private Map<Integer, Map<Integer, Vector<TOMMessage>>> globalReplies;
+	private ConcurrentMap<Integer, ConcurrentHashMap<Integer, Vector<TOMMessage>>> globalReplies;
 	//vertex in the overlay tree representing my group
 	private Vertex me;
 
@@ -83,9 +85,9 @@ public class ReplicaReplier implements Replier, FIFOExecutable, Serializable, Re
 
 		replyLock = new ReentrantLock();
 		contextSet = replyLock.newCondition();
-		globalReplies = new TreeMap<>();
-		repliesTracker = new HashMap<>();
-		processedReplies = new HashMap<>();
+		globalReplies = new ConcurrentHashMap<>();
+		repliesTracker = new ConcurrentHashMap<>();
+		processedReplies = new ConcurrentHashMap<>();
 
 		table = new TreeMap<>();
 	}
@@ -122,7 +124,7 @@ public class ReplicaReplier implements Replier, FIFOExecutable, Serializable, Re
 			request.reply.setContent(req.toBytes());
 			rc.getServerCommunicationSystem().send(new int[] { request.getSender() }, request.reply);
 			//create entry for client replies if not already these
-			processedReplies.computeIfAbsent(req.getClient(), k -> new HashMap<>());
+			processedReplies.computeIfAbsent(req.getClient(), k -> new ConcurrentHashMap<>());
 			//add processed reply to client replies
 			processedReplies.get(req.getClient()).put(req.getSeqNumber(), req);
 		}
@@ -163,7 +165,7 @@ public class ReplicaReplier implements Replier, FIFOExecutable, Serializable, Re
 					// the same to asnwer
 					if (destinations[i] == groupId) {
 						execute(req);
-						System.out.println(req.getValue());
+//						System.out.println(req.getValue());
 						majNeeded++;
 						addreq = true;
 					}
@@ -195,7 +197,7 @@ public class ReplicaReplier implements Replier, FIFOExecutable, Serializable, Re
 				// no other destination is in my reach, send reply back
 				if (toSend.isEmpty()) {		
 					//create entry for client replies if not already these
-					processedReplies.computeIfAbsent(req.getClient(), k -> new HashMap<>());
+					processedReplies.computeIfAbsent(req.getClient(), k -> new ConcurrentHashMap<>());
 					//add processed reply to client replies
 					processedReplies.get(req.getClient()).put(req.getSeqNumber(), req);
 					for (TOMMessage msg : msgs) {
@@ -209,7 +211,7 @@ public class ReplicaReplier implements Replier, FIFOExecutable, Serializable, Re
 
 					// else, tracker for received replies and majority needed
 					//add map for a client tracker if absent
-					repliesTracker.computeIfAbsent(req.getClient(), k -> new HashMap<>());
+					repliesTracker.computeIfAbsent(req.getClient(), k -> new ConcurrentHashMap<>());
 					repliesTracker.get(req.getClient()).put(req.getSeqNumber(), new RequestTracker(majNeeded, request.getSender(), request));
 					if (addreq) {
 						repliesTracker.get(req.getClient()).get(req.getSeqNumber()).addReply(req);
@@ -224,9 +226,9 @@ public class ReplicaReplier implements Replier, FIFOExecutable, Serializable, Re
 	}
 
 	protected void execute(Request req) {
-		System.out.println("executed");
+//		System.out.println("executed");
 		byte[] resultBytes;
-		System.out.println(req.getType().toString());
+//		System.out.println(req.getType().toString());
 		switch (req.getType()) {
 		case PUT:
 			resultBytes = table.put(req.getKey(), req.getValue());
@@ -279,7 +281,7 @@ public class ReplicaReplier implements Replier, FIFOExecutable, Serializable, Re
 	
 
 	protected Vector<TOMMessage> saveReply(TOMMessage reply, int seqNumber, int clientID) {
-		Map<Integer, Vector<TOMMessage>> map = globalReplies.computeIfAbsent(clientID, k -> new HashMap<>());
+		Map<Integer, Vector<TOMMessage>> map = globalReplies.computeIfAbsent(clientID, k -> new ConcurrentHashMap<>());
 		Vector<TOMMessage> messages = map.computeIfAbsent(seqNumber, k -> new Vector<>());
 		messages.add(reply);
 		return messages;
@@ -288,15 +290,15 @@ public class ReplicaReplier implements Replier, FIFOExecutable, Serializable, Re
 	@Override
 	public void replyReceived(RequestContext context, TOMMessage reply) {
 		// TODO check reply signature, authenticity? ie reply.signed()
-		System.out.println("reply recieved");
+//		System.out.println("reply recieved");
 		Request replyReq = new Request(reply.getContent());
 		RequestTracker tracker = repliesTracker.get(replyReq.getClient()).get(replyReq.getSeqNumber());
 
 		if (tracker != null && tracker.addReply(replyReq)) {
 			Vector<TOMMessage> msgs = globalReplies.get(replyReq.getClient()).get(replyReq.getSeqNumber());
-			System.out.println("finish, sent up req # " + replyReq.getSeqNumber());
+//			System.out.println("finish, sent up req # " + replyReq.getSeqNumber());
 			tracker.getRecivedRequest().reply.setContent(replyReq.toBytes());
-			processedReplies.computeIfAbsent(replyReq.getClient(), k -> new HashMap<>());
+			processedReplies.computeIfAbsent(replyReq.getClient(), k -> new ConcurrentHashMap<>());
 			processedReplies.get(replyReq.getClient()).put(replyReq.getSeqNumber(), replyReq);
 			for (TOMMessage msg : msgs) {
 				msg.reply.setContent(replyReq.toBytes());

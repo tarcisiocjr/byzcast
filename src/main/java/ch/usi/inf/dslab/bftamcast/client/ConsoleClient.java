@@ -177,7 +177,6 @@ public class ConsoleClient implements ReplyListener {
 		if (tracker != null && tracker.addReply(replyReq)) {
 			System.out.println("finish, sent up req # " + replyReq.getSeqNumber());
 
-			// TODO switch on printing different request types
 			repliesTracker.remove(replyReq.getSeqNumber());
 			switch (replyReq.getType()) {
 			case PUT:

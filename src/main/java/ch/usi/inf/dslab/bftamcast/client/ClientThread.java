@@ -6,8 +6,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import java.util.Timer;
 import java.util.UUID;
+import java.util.concurrent.locks.ReentrantLock;
 
 import bftsmart.communication.client.ReplyListener;
 import bftsmart.tom.AsynchServiceProxy;
@@ -24,10 +24,9 @@ import ch.usi.inf.dslab.bftamcast.util.Stats;
  * @author Paulo Coelho - paulo.coelho@usi.ch
  */
 public class ClientThread implements Runnable, ReplyListener {
-	//TODO fix statistics
 	final char[] symbols = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".toCharArray();
 	final int clientId;
-	//TODO answer to client not group right?
+	// TODO answer to client not group right?
 	final int groupId;
 	final boolean verbose;
 	final int runTime;
@@ -37,11 +36,10 @@ public class ClientThread implements Runnable, ReplyListener {
 	final Random random;
 	final Stats localStats, globalStats;
 	final Map<Integer, RequestTracker> repliesTracker;
-	// private int counter = 0;
-	// private int secs = 0;
-	long startTime, usLat, delta = 0;
+	long startTime, delta = 0, elapsed = 0;
 	private Tree overlayTree;
-
+	private long now;
+	private ReentrantLock lock = new ReentrantLock();
 
 	public ClientThread(int clientId, int groupId, boolean verbose, int runTime, int valueSize, int globalPerc,
 			boolean ng, String treeConfigPath) {
@@ -63,37 +61,23 @@ public class ClientThread implements Runnable, ReplyListener {
 		// setup
 		Random r = new Random();
 		startTime = System.nanoTime();
-		usLat = startTime;
-		long now;
-		long elapsed = 0;// delta = 0, usLat = startTime;
+
 		Request req;
-		// byte[] response;
-		// local and global ids
 
-		// TimerTask statsTask = new TimerTask() {
-		//
-		// @Override
-		// public void run() {
-		// secs++;
-		// System.out.println((counter / secs) + "req/s");
-		// }
-		// };
-
-		// And From your main() method or any other method
-		Timer timer = new Timer();
-		// timer.schedule(statsTask, 0, 1000);
-
-		
 		while (elapsed / 1e9 < runTime) {
 			try {
+
 				seqNumber++;
 				byte[] value = randomString(size).getBytes();
 				int[] destinations;
 				int key = r.nextInt(Integer.MAX_VALUE);
 				List<Integer> list = new LinkedList<Integer>(overlayTree.getDestinations());
 				Collections.shuffle(list);
-				destinations = list.subList(r.nextInt(list.size()), list.size() - 1).stream().mapToInt(i -> i).toArray();
-				RequestType type = destinations.length > 1 ? RequestType.SIZE : RequestType.PUT;
+				destinations = list.subList(r.nextInt(list.size()), list.size() - 1).stream().mapToInt(i -> i)
+						.toArray();
+				// RequestType type = destinations.length > 1 ? RequestType.SIZE :
+				// RequestType.PUT;
+				RequestType type = RequestType.GET;
 				req = new Request(type, key, value, destinations, seqNumber, clientId);
 
 				AsynchServiceProxy prox = overlayTree.lca(req.getDestination()).getProxy();
@@ -104,53 +88,28 @@ public class ClientThread implements Runnable, ReplyListener {
 						(double) (prox.getViewManager().getCurrentViewN() + prox.getViewManager().getCurrentViewF() + 1)
 								/ 2.0)),
 						-1, null));
-				// System.out.println("sent seq#" + seqNumber);
-
-				// stats code
 				now = System.nanoTime();
 				elapsed = (now - startTime);
-				//
-				// if (req.getDestination().length > 1)
-				// globalStats.store((now - usLat) / 1000);
-				// else
-				// localStats.store((now - usLat) / 1000);
-				//
-				// usLat = now;
-				// if (verbose && elapsed - delta >= 2 * 1e9) {
-				// System.out.println("Client " + clientId + " ops/second:"
-				// + (localStats.getPartialCount() + globalStats.getPartialCount())
-				// / ((float) (elapsed - delta) / 1e9));
-				// delta = elapsed;
-				// }
-
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
 
 		}
-		System.out.println("done");
-		timer.cancel();
-		if (localStats.getCount() > 0) {
-			localStats.persist("localStats-client-g" + groupId + "-" + clientId + ".txt", 15);
-			System.out.println("LOCAL STATS:" + localStats);
-		}
+		lock.lock();
+		try {
+			System.out.println("done");
+			if (localStats.getCount() > 0) {
+				localStats.persist("localStats-client-g" + groupId + "-" + clientId + ".txt", 15);
+				System.out.println("LOCAL STATS:" + localStats);
+			}
 
-		if (globalStats.getCount() > 0) {
-			globalStats.persist("globalStats-client-g" + groupId + "-" + clientId + ".txt", 15);
-			System.out.println("\nGLOBAL STATS:" + globalStats);
+			if (globalStats.getCount() > 0) {
+				globalStats.persist("globalStats-client-g" + groupId + "-" + clientId + ".txt", 15);
+				System.out.println("\nGLOBAL STATS:" + globalStats);
+			}
+		} finally {
+			lock.unlock();
 		}
-		// if (localStats.getCount() > 0) {
-		// localStats.persist("localStats-client-g" + groupId + "-" + clientId + ".txt",
-		// 15);
-		// System.out.println("LOCAL STATS:" + localStats);
-		// }
-		//
-		// if (globalStats.getCount() > 0) {
-		// globalStats.persist("globalStats-client-g" + groupId + "-" + clientId +
-		// ".txt", 15);
-		// System.out.println("\nGLOBAL STATS:" + globalStats);
-		// }
-
 	}
 
 	/**
@@ -167,19 +126,36 @@ public class ClientThread implements Runnable, ReplyListener {
 		return new String(buf);
 	}
 
-	
-	//listener for async replies
+	// listener for async replies
 	@Override
 	public void replyReceived(RequestContext context, TOMMessage reply) {
-		//TODO check replies correctness (see old code)
-		//convert reply to request object
+		if (reply == null) {
+			System.err.println("answer is null");
+			return;
+		}
+		// convert reply to request object
 		Request replyReq = new Request(reply.getContent());
-		//add it to tracker and check if majority of replies reached
-		//TODO check reply signature, authenticity? ie reply.signed()
+		// add it to tracker and check if majority of replies reached
+		// TODO check reply signature, authenticity? ie reply.signed()
 		RequestTracker tracker = repliesTracker.get(replyReq.getSeqNumber());
-		
+
 		if (tracker != null && tracker.addReply(replyReq)) {
-			System.out.println("finish, sent up req # " + replyReq.getSeqNumber());
+			lock.lock();
+			try {
+			if (replyReq.getDestination().length > 1)
+				globalStats.store(tracker.getElapsedTime() / 1000);
+			else
+				localStats.store(tracker.getElapsedTime() / 1000);
+			if (verbose && elapsed - delta >= 2 * 1e9) {
+				System.out.println("Client " + clientId + " ops/second:"
+						+ (localStats.getPartialCount() + globalStats.getPartialCount())
+								/ ((float) (elapsed - delta) / 1e9));
+				delta = elapsed;
+			}
+			}finally {
+				lock.unlock();
+			}
+//			System.out.println("finish, sent up req # " + replyReq.getSeqNumber());
 			repliesTracker.remove(replyReq.getSeqNumber());
 		}
 	}

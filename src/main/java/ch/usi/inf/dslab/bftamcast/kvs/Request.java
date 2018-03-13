@@ -221,7 +221,7 @@ public class Request implements RequestIf, Serializable {
 	// TODO if for example you put a new value on two groups, but previous values
 	// are different value will be different, also sizes will be different. what to
 	// do? append?
-	//TODO for size return true for different values??
+	// TODO for size return true for different values??
 	public boolean equals(Request r) {
 		if (this.key != r.key) {
 			System.out.println("key problem");
