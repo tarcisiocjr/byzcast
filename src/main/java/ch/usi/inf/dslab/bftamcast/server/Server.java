@@ -13,6 +13,8 @@ import java.io.ObjectOutputStream;
 import bftsmart.tom.MessageContext;
 import bftsmart.tom.ServiceReplica;
 import bftsmart.tom.server.defaultservices.DefaultRecoverable;
+import ch.usi.inf.dslab.bftamcast.kvs.Request;
+import ch.usi.inf.dslab.bftamcast.kvs.RequestType;
 import ch.usi.inf.dslab.bftamcast.util.CLIParser;
 
 /**
@@ -91,6 +93,69 @@ public class Server extends DefaultRecoverable{
 
 	@Override
 	public byte[][] appExecuteBatch(byte[][] commands, MessageContext[] msgCtxs) {
+		//TODO extract requests, make the replier handle them
+		
+//		Paulo code:
+//				ByteArrayOutputStream bos = new ByteArrayOutputStream();
+//				byte[][] replies = new byte[command.length][];
+//				Request mainReq = new Request(), auxReq = new Request();
+//				Request[] reqs = new Request[command.length];
+//
+//				try {
+//					mainReq.setType(RequestType.BATCH);
+//					mainReq.setDestination(allDest);
+//					mainReq.setSeqNumber(seqNumber++);
+//					// System.out.println("batch size = " + command.length + ", seq. number = " +
+//					// mainReq.getSeqNumber());
+//
+//					for (int i = 0; i < reqs.length; i++) {
+//						reqs[i] = new Request();
+//						reqs[i].fromBytes(command[i]);
+//						reqs[i].setSeqNumber(innerSeqNumber++);
+//					}
+//
+//					mainReq.setValue(Request.ArrayToBytes(reqs));
+//					for (int dest : allDest) {
+//						invokeThreads[dest] = new Thread(
+//								() -> invokeReplies[dest] = proxiesToLocal[dest].invokeOrdered(mainReq.toBytes()));
+//						invokeThreads[dest].start();
+//					}
+//
+//					// reset values
+//					for (int i = 0; i < command.length; i++)
+//						reqs[i].setValue(null);
+//
+//					for (int dest : allDest) {
+//						invokeThreads[dest].join();
+//						auxReq.fromBytes(invokeReplies[dest]);
+//						Request[] temp = Request.ArrayfromBytes(auxReq.getValue());
+//						// System.out.println("reply from group " + dest + ": req = " + auxReq + ",
+//						// reply size = " + temp.length);
+//						for (int i = 0; i < temp.length; i++) {
+//							bos.reset();
+//							if (temp[i].getType() != RequestType.NOP) { // message was addressed to group dest
+//								if (reqs[i].getValue() == null) { // set value initially to false
+//									reqs[i].setValue(temp[i].getValue());
+//								} else {
+//									bos.write(reqs[i].getValue());
+//									bos.write(temp[i].getValue());
+//									bos.close();
+//									reqs[i].setValue(bos.toByteArray());
+//								}
+//							}
+//						}
+//						auxReq.setValue(null);
+//					}
+//
+//					for (int i = 0; i < command.length; i++)
+//						replies[i] = reqs[i].toBytes();
+//
+//				} catch (InterruptedException | IOException | ArrayIndexOutOfBoundsException e) {
+//					e.printStackTrace();
+//					System.exit(20);
+//				}
+//
+//				return replies;
 		throw new UnsupportedOperationException("Implemented by UniversalReplier");
 	}
 
