@@ -4,34 +4,32 @@ import bftsmart.tom.core.messages.TOMMessage;
 import ch.usi.inf.dslab.bftamcast.kvs.Request;
 import io.netty.util.internal.ConcurrentSet;
 
-public class RequestTracker {
+public class GroupRequestTracker {
 	private ConcurrentSet<Request> replies;
 	private int majority;
+	private boolean majreached = false;
 	private int currentMajority = 0;
 	private Request majorityReply;
-	private TOMMessage recivedRequest;
-	private int answerTo;
+
 	private long startTime, endTime;
 
-	public RequestTracker(int majority, int replier, TOMMessage recivedRequest) {
-		this.recivedRequest = recivedRequest;
-		this.answerTo = replier;
+	public GroupRequestTracker(int majority) {
 		this.majority = majority;
 		this.replies = new ConcurrentSet<>();
-		this.startTime =  System.nanoTime();
+		this.startTime = System.nanoTime();
 	}
 
 	public boolean addReply(Request reply) {
 		int count = 0;
-//		System.out.println();
-//		System.out.println();
+		// System.out.println();
+		// System.out.println();
 		for (Request r : replies) {
-//			System.out.println();
-//			System.out.println(r.toString());
-//			System.out.println(reply.toString());
+			// System.out.println();
+			// System.out.println(r.toString());
+			// System.out.println(reply.toString());
 			if (r.equals(reply)) {
 				count++;
-//				System.out.println("same");
+				// System.out.println("same");
 			}
 		}
 
@@ -42,32 +40,33 @@ public class RequestTracker {
 			majorityReply = reply;
 		}
 		if (currentMajority >= majority) {
-//			System.out.println("MajReached");
+			// System.out.println("MajReached");
 			endTime = System.nanoTime();
+			majreached = true;
 			return true;
 		}
 		return false;
 	}
-	
+
+	public boolean getMajReached() {
+		return majreached;
+	}
+
 	public long getElapsedTime() {
-		return endTime-startTime;
+		return endTime - startTime;
 	}
 
 	public Request getMajorityReply() {
 		return majorityReply;
 	}
 
-	public TOMMessage getRecivedRequest() {
-		return recivedRequest;
-	}
+	
 
 	public ConcurrentSet<Request> getRequests() {
 		return replies;
 	}
 
-	public int getReplier() {
-		return answerTo;
-	}
+
 
 	public int getMajNeed() {
 		return majority;

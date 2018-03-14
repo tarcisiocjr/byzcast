@@ -33,6 +33,7 @@ import ch.usi.inf.dslab.bftamcast.graph.Tree;
 import ch.usi.inf.dslab.bftamcast.graph.Vertex;
 import ch.usi.inf.dslab.bftamcast.kvs.Request;
 import ch.usi.inf.dslab.bftamcast.kvs.RequestType;
+import ch.usi.inf.dslab.bftamcast.util.GroupRequestTracker;
 import ch.usi.inf.dslab.bftamcast.util.RequestTracker;
 
 /**
@@ -97,7 +98,6 @@ public class ReplicaReplier implements Replier, FIFOExecutable, Serializable, Re
 	 */
 	@Override
 	public void manageReply(TOMMessage request, MessageContext msgCtx) {
-		// TODO check reply signature, authenticity? ie reply.signed()
 		while (rc == null) {
 			try {
 				this.replyLock.lock();
@@ -110,6 +110,7 @@ public class ReplicaReplier implements Replier, FIFOExecutable, Serializable, Re
 
 		//extract request from tom message
 		req = new Request(request.getContent());
+		req.setSender(groupId);
 
 
 		// already processes and answered request to other replicas, send what has been
@@ -121,6 +122,7 @@ public class ReplicaReplier implements Replier, FIFOExecutable, Serializable, Re
 		// client contacted server directly, no majority needed
 		else if (req.getDestination().length == 1) {
 			execute(req);
+			
 			request.reply.setContent(req.toBytes());
 			rc.getServerCommunicationSystem().send(new int[] { request.getSender() }, request.reply);
 			//create entry for client replies if not already these
@@ -156,9 +158,8 @@ public class ReplicaReplier implements Replier, FIFOExecutable, Serializable, Re
 			if (count >= majReplicasOfSender && (repliesTracker.get(req.getClient()) == null || !repliesTracker.get(req.getClient()).containsKey(req.getSeqNumber()))) {
 
 				int[] destinations = req.getDestination();
-				int majNeeded = 0;
 				boolean addreq = false;
-				List<Vertex> toSend = new ArrayList<>();
+				Map<Vertex, Integer> toSend = new HashMap<>();
 				// List<Vertex>
 				for (int i = 0; i < destinations.length; i++) {
 					// I am a target, compute but wait for majority of other destination to execute
@@ -166,26 +167,22 @@ public class ReplicaReplier implements Replier, FIFOExecutable, Serializable, Re
 					if (destinations[i] == groupId) {
 						execute(req);
 //						System.out.println(req.getValue());
-						majNeeded++;
 						addreq = true;
 					}
 					// my child in tree is a destination, forward it
 					else if (me.getChildernIDs().contains(destinations[i])) {
 						Vertex v = overlayTree.findVertexById(destinations[i]);
-
-						majNeeded += (int) Math.ceil((double) (v.getProxy().getViewManager().getCurrentViewN()
-								+ v.getProxy().getViewManager().getCurrentViewF() + 1) / 2.0);
-						toSend.add(v);
+						toSend.put(v, (int) Math.ceil((double) (v.getProxy().getViewManager().getCurrentViewN()
+								+ v.getProxy().getViewManager().getCurrentViewF() + 1) / 2.0));
 					}
 					// destination must be in the path of only one of my childrens
 					else {
 
 						for (Vertex v : me.getChildren()) {
 							if (v.inReach(destinations[i])) {
-								if (!toSend.contains(v)) {
-									majNeeded += (int) Math.ceil((double) (v.getProxy().getViewManager().getCurrentViewN()
-											+ v.getProxy().getViewManager().getCurrentViewF() + 1) / 2.0);
-									toSend.add(v);
+								if (!toSend.keySet().contains(v)) {
+									toSend.put(v,(int) Math.ceil((double) (v.getProxy().getViewManager().getCurrentViewN()
+											+ v.getProxy().getViewManager().getCurrentViewF() + 1) / 2.0));
 								}
 								break;// only one path
 							}
@@ -195,7 +192,7 @@ public class ReplicaReplier implements Replier, FIFOExecutable, Serializable, Re
 				}
 
 				// no other destination is in my reach, send reply back
-				if (toSend.isEmpty()) {		
+				if (toSend.keySet().isEmpty()) {		
 					//create entry for client replies if not already these
 					processedReplies.computeIfAbsent(req.getClient(), k -> new ConcurrentHashMap<>());
 					//add processed reply to client replies
@@ -212,11 +209,11 @@ public class ReplicaReplier implements Replier, FIFOExecutable, Serializable, Re
 					// else, tracker for received replies and majority needed
 					//add map for a client tracker if absent
 					repliesTracker.computeIfAbsent(req.getClient(), k -> new ConcurrentHashMap<>());
-					repliesTracker.get(req.getClient()).put(req.getSeqNumber(), new RequestTracker(majNeeded, request.getSender(), request));
-					if (addreq) {
-						repliesTracker.get(req.getClient()).get(req.getSeqNumber()).addReply(req);
-					}
-					for (Vertex v : toSend) {
+		
+					repliesTracker.get(req.getClient()).put(req.getSeqNumber(), new RequestTracker(toSend, request, request.getSender(),addreq,  req) );
+				
+
+					for (Vertex v : toSend.keySet()) {
 						v.getProxy().invokeAsynchRequest(request.getContent(), this, TOMMessageType.ORDERED_REQUEST);
 					}
 				}
@@ -289,15 +286,13 @@ public class ReplicaReplier implements Replier, FIFOExecutable, Serializable, Re
 
 	@Override
 	public void replyReceived(RequestContext context, TOMMessage reply) {
-		// TODO check reply signature, authenticity? ie reply.signed()
-//		System.out.println("reply recieved");
+		// TODO check for every group
+//		System.out.println("reply received");
 		Request replyReq = new Request(reply.getContent());
 		RequestTracker tracker = repliesTracker.get(replyReq.getClient()).get(replyReq.getSeqNumber());
-
 		if (tracker != null && tracker.addReply(replyReq)) {
 			Vector<TOMMessage> msgs = globalReplies.get(replyReq.getClient()).get(replyReq.getSeqNumber());
-//			System.out.println("finish, sent up req # " + replyReq.getSeqNumber());
-			tracker.getRecivedRequest().reply.setContent(replyReq.toBytes());
+//			System.out.println("finish, sent up req # " + replyReq.getSeqNumber());//TODO merge,combine values in majority reply
 			processedReplies.computeIfAbsent(replyReq.getClient(), k -> new ConcurrentHashMap<>());
 			processedReplies.get(replyReq.getClient()).put(replyReq.getSeqNumber(), replyReq);
 			for (TOMMessage msg : msgs) {
@@ -313,7 +308,7 @@ public class ReplicaReplier implements Replier, FIFOExecutable, Serializable, Re
 	
 	@Override
 	public void reset() {
-		// TODO Auto-generated method stub
+		// TODO reset for reply receiver
 
 	}
 }

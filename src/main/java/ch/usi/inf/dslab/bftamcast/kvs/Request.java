@@ -15,6 +15,7 @@ public class Request implements RequestIf, Serializable {
 	private RequestType type;
 	private int key;
 	private int client;
+	private int sender;
 	private byte[] value;
 	private int[] destination;
 	private int seqNumber;
@@ -43,8 +44,9 @@ public class Request implements RequestIf, Serializable {
 	 * @param seqNumber
 	 * @param sender
 	 */
-	public Request(RequestType type, int key, byte[] value, int[] destination, int seqNumber, int sender) {
-		this.client = sender;
+	public Request(RequestType type, int key, byte[] value, int[] destination, int seqNumber, int client, int sender) {
+		this.client = client;
+		this.sender = sender;
 		this.type = type;
 		this.key = key;
 		this.value = value;
@@ -145,9 +147,17 @@ public class Request implements RequestIf, Serializable {
 	public int getClient() {
 		return client;
 	}
+	
+	public int getSender() {
+		return sender;
+	}
 
-	public void setClient(int sender) {
-		this.client = sender;
+	public void setClient(int client) {
+		this.client = client;
+	}
+	
+	public void setSender(int sender) {
+		this.sender = sender;
 	}
 
 	/**
@@ -164,7 +174,8 @@ public class Request implements RequestIf, Serializable {
 			if (value != null)
 				dos.write(this.value);
 			dos.writeInt(this.seqNumber);
-			dos.writeInt(client);
+			dos.writeInt(this.client);
+			dos.writeInt(this.sender);
 			dos.writeInt(this.destination.length);
 			for (int dest : destination)
 				dos.writeInt(dest);
@@ -196,6 +207,7 @@ public class Request implements RequestIf, Serializable {
 				this.value = null;
 			this.seqNumber = dis.readInt();
 			this.client = dis.readInt();
+			this.sender = dis.readInt();
 			destSize = dis.readInt();
 			this.destination = new int[destSize];
 			for (int i = 0; i < destSize; i++) {
@@ -218,10 +230,6 @@ public class Request implements RequestIf, Serializable {
 		return buf.toString();
 	}
 
-	// TODO if for example you put a new value on two groups, but previous values
-	// are different value will be different, also sizes will be different. what to
-	// do? append?
-	// TODO for size return true for different values??
 	public boolean equals(Request r) {
 		if (this.key != r.key) {
 			System.out.println("key problem");

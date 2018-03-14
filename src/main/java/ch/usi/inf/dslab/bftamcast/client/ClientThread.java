@@ -17,7 +17,7 @@ import bftsmart.tom.core.messages.TOMMessageType;
 import ch.usi.inf.dslab.bftamcast.graph.Tree;
 import ch.usi.inf.dslab.bftamcast.kvs.Request;
 import ch.usi.inf.dslab.bftamcast.kvs.RequestType;
-import ch.usi.inf.dslab.bftamcast.util.RequestTracker;
+import ch.usi.inf.dslab.bftamcast.util.GroupRequestTracker;
 import ch.usi.inf.dslab.bftamcast.util.Stats;
 
 /**
@@ -26,7 +26,6 @@ import ch.usi.inf.dslab.bftamcast.util.Stats;
 public class ClientThread implements Runnable, ReplyListener {
 	final char[] symbols = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".toCharArray();
 	final int clientId;
-	// TODO answer to client not group right?
 	final int groupId;
 	final boolean verbose;
 	final int runTime;
@@ -35,7 +34,7 @@ public class ClientThread implements Runnable, ReplyListener {
 	private int seqNumber = 0;
 	final Random random;
 	final Stats localStats, globalStats;
-	final Map<Integer, RequestTracker> repliesTracker;
+	final Map<Integer, GroupRequestTracker> repliesTracker;
 	long startTime, delta = 0, elapsed = 0;
 	private Tree overlayTree;
 	private long now;
@@ -63,6 +62,7 @@ public class ClientThread implements Runnable, ReplyListener {
 		startTime = System.nanoTime();
 
 		Request req;
+		//TODO map keys to replicas, in order to not have conflicting readings
 
 		while (elapsed / 1e9 < runTime) {
 			try {
@@ -78,16 +78,15 @@ public class ClientThread implements Runnable, ReplyListener {
 				// RequestType type = destinations.length > 1 ? RequestType.SIZE :
 				// RequestType.PUT;
 				RequestType type = RequestType.GET;
-				req = new Request(type, key, value, destinations, seqNumber, clientId);
+				req = new Request(type, key, value, destinations, seqNumber, clientId, clientId);
 
 				AsynchServiceProxy prox = overlayTree.lca(req.getDestination()).getProxy();
 				prox.invokeAsynchRequest(req.toBytes(), this, TOMMessageType.ORDERED_REQUEST);
-				// TODO ask why do this when recieved majority
+				// TODO maybe needed to cancel requests, but will check later for performance
 				// prox.cleanAsynchRequest(requestId);
-				repliesTracker.put(seqNumber, new RequestTracker(((int) Math.ceil(
+				repliesTracker.put(seqNumber, new GroupRequestTracker(((int) Math.ceil(
 						(double) (prox.getViewManager().getCurrentViewN() + prox.getViewManager().getCurrentViewF() + 1)
-								/ 2.0)),
-						-1, null));
+								/ 2.0))));
 				now = System.nanoTime();
 				elapsed = (now - startTime);
 			} catch (Exception e) {
@@ -136,8 +135,7 @@ public class ClientThread implements Runnable, ReplyListener {
 		// convert reply to request object
 		Request replyReq = new Request(reply.getContent());
 		// add it to tracker and check if majority of replies reached
-		// TODO check reply signature, authenticity? ie reply.signed()
-		RequestTracker tracker = repliesTracker.get(replyReq.getSeqNumber());
+		GroupRequestTracker tracker = repliesTracker.get(replyReq.getSeqNumber());
 
 		if (tracker != null && tracker.addReply(replyReq)) {
 			lock.lock();
@@ -162,7 +160,7 @@ public class ClientThread implements Runnable, ReplyListener {
 
 	@Override
 	public void reset() {
-		// TODO Auto-generated method stub
+		// TODO reset for reply receiver
 
 	}
 }

@@ -25,10 +25,10 @@ import ch.usi.inf.dslab.bftamcast.graph.Tree;
 import ch.usi.inf.dslab.bftamcast.kvs.Request;
 import ch.usi.inf.dslab.bftamcast.kvs.RequestType;
 import ch.usi.inf.dslab.bftamcast.util.CLIParser;
-import ch.usi.inf.dslab.bftamcast.util.RequestTracker;
+import ch.usi.inf.dslab.bftamcast.util.GroupRequestTracker;
 
 public class ConsoleClient implements ReplyListener {
-	final Map<Integer, RequestTracker> repliesTracker = new HashMap<>();
+	final Map<Integer, GroupRequestTracker> repliesTracker = new HashMap<>();
 	// private int counter = 0;
 	// private int secs = 0;
 	long startTime, usLat, delta = 0;
@@ -90,13 +90,13 @@ public class ConsoleClient implements ReplyListener {
 				destinations = n;
 				value = console.readLine("Enter the value: ").getBytes();
 
-				req = new Request(type, key, value, destinations, seqNumber, clientId);
+				req = new Request(type, key, value, destinations, seqNumber, clientId,clientId);
 
 				target = overlayTree.lca(n).getProxy();
 				System.out.println("seqn =    " + seqNumber);
 				c.repliesTracker.put(seqNumber,
-						new RequestTracker(((int) Math.ceil((double) (target.getViewManager().getCurrentViewN()
-								+ target.getViewManager().getCurrentViewF() + 1) / 2.0)), -1, null));
+						new GroupRequestTracker(((int) Math.ceil((double) (target.getViewManager().getCurrentViewN()
+								+ target.getViewManager().getCurrentViewF() + 1) / 2.0))));
 
 				target.invokeAsynchRequest(req.toBytes(), c, TOMMessageType.ORDERED_REQUEST);
 				System.out.println("sent");
@@ -115,10 +115,10 @@ public class ConsoleClient implements ReplyListener {
 				}
 				destinations = n;
 				target = overlayTree.lca(n).getProxy();
-				req = new Request(type, key, value, destinations, seqNumber, clientId);
+				req = new Request(type, key, value, destinations, seqNumber, clientId,clientId);
 				c.repliesTracker.put(seqNumber,
-						new RequestTracker(((int) Math.ceil((double) (target.getViewManager().getCurrentViewN()
-								+ target.getViewManager().getCurrentViewF() + 1) / 2.0)), -1, null));
+						new GroupRequestTracker(((int) Math.ceil((double) (target.getViewManager().getCurrentViewN()
+								+ target.getViewManager().getCurrentViewF() + 1) / 2.0))));
 				target.invokeAsynchRequest(req.toBytes(), c, TOMMessageType.ORDERED_REQUEST);
 				break;
 			case 3:
@@ -135,10 +135,10 @@ public class ConsoleClient implements ReplyListener {
 				}
 				destinations = n;
 				target = overlayTree.lca(n).getProxy();
-				req = new Request(type, key, value, destinations, seqNumber, clientId);
+				req = new Request(type, key, value, destinations, seqNumber, clientId, clientId);
 				c.repliesTracker.put(seqNumber,
-						new RequestTracker(((int) Math.ceil((double) (target.getViewManager().getCurrentViewN()
-								+ target.getViewManager().getCurrentViewF() + 1) / 2.0)), -1, null));
+						new GroupRequestTracker(((int) Math.ceil((double) (target.getViewManager().getCurrentViewN()
+								+ target.getViewManager().getCurrentViewF() + 1) / 2.0))));
 				target.invokeAsynchRequest(req.toBytes(), c, TOMMessageType.ORDERED_REQUEST);
 				break;
 			case 4:
@@ -152,10 +152,10 @@ public class ConsoleClient implements ReplyListener {
 					destinations[i] = overlayTree.getDestinations().get(i);
 				}
 				target = overlayTree.lca(destinations).getProxy();
-				req = new Request(type, key, value, destinations, seqNumber, clientId);
+				req = new Request(type, key, value, destinations, seqNumber, clientId,clientId);
 				c.repliesTracker.put(seqNumber,
-						new RequestTracker(((int) Math.ceil((double) (target.getViewManager().getCurrentViewN()
-								+ target.getViewManager().getCurrentViewF() + 1) / 2.0)), -1, null));
+						new GroupRequestTracker(((int) Math.ceil((double) (target.getViewManager().getCurrentViewN()
+								+ target.getViewManager().getCurrentViewF() + 1) / 2.0))));
 				target.invokeAsynchRequest(req.toBytes(), c, TOMMessageType.ORDERED_REQUEST);
 
 				// System.out.println("result size = " + result.length);
@@ -173,7 +173,7 @@ public class ConsoleClient implements ReplyListener {
 	@Override
 	public void replyReceived(RequestContext context, TOMMessage reply) {
 		Request replyReq = new Request(reply.getContent());
-		RequestTracker tracker = repliesTracker.get(replyReq.getSeqNumber());
+		GroupRequestTracker tracker = repliesTracker.get(replyReq.getSeqNumber());
 		if (tracker != null && tracker.addReply(replyReq)) {
 			System.out.println("finish, sent up req # " + replyReq.getSeqNumber());
 
@@ -204,7 +204,7 @@ public class ConsoleClient implements ReplyListener {
 
 	@Override
 	public void reset() {
-		// TODO Auto-generated method stub
+		// TODO reset for reply receiver
 
 	}
 }
