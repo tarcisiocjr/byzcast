@@ -5,11 +5,8 @@ package ch.usi.inf.dslab.bftamcast.server;
 
 import java.io.Serializable;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.UUID;
 import java.util.Vector;
@@ -32,8 +29,6 @@ import bftsmart.tom.server.Replier;
 import ch.usi.inf.dslab.bftamcast.graph.Tree;
 import ch.usi.inf.dslab.bftamcast.graph.Vertex;
 import ch.usi.inf.dslab.bftamcast.kvs.Request;
-import ch.usi.inf.dslab.bftamcast.kvs.RequestType;
-import ch.usi.inf.dslab.bftamcast.util.GroupRequestTracker;
 import ch.usi.inf.dslab.bftamcast.util.RequestTracker;
 
 /**
@@ -214,23 +209,21 @@ public class ReplicaReplier implements Replier, FIFOExecutable, Serializable, Re
 					// else, tracker for received replies and majority needed
 					// add map for a client tracker if absent
 					repliesTracker.computeIfAbsent(req.getClient(), k -> new ConcurrentHashMap<>());
+
 					if (addreq) {
-						toSend.put(me, 1);
 						repliesTracker.get(req.getClient()).put(req.getSeqNumber(),
-								new RequestTracker(toSend, request, request.getSender()));
-						repliesTracker.get(req.getClient()).get(req.getSeqNumber()).addReply(req);
+								new RequestTracker(toSend, request, request.getSender(), req));
 					} else {
 						repliesTracker.get(req.getClient()).put(req.getSeqNumber(),
-								new RequestTracker(toSend, request, request.getSender()));
+								new RequestTracker(toSend, request, request.getSender(), null));
 					}
+				}
 
-					for (Vertex v : toSend.keySet()) {
-						v.getProxy().invokeAsynchRequest(request.getContent(), this, TOMMessageType.ORDERED_REQUEST);
-					}
+				for (Vertex v : toSend.keySet()) {
+					v.getProxy().invokeAsynchRequest(request.getContent(), this, TOMMessageType.ORDERED_REQUEST);
 				}
 			}
 		}
-
 	}
 
 	protected void execute(Request req) {
@@ -248,14 +241,14 @@ public class ReplicaReplier implements Replier, FIFOExecutable, Serializable, Re
 			resultBytes = table.remove(req.getKey());
 			break;
 		case SIZE:
-			resultBytes = ByteBuffer.allocate(4).putInt(table.size()).array();
+			resultBytes = String.valueOf(table.size()).getBytes();
 			break;
 		default:
 			resultBytes = null;
 			System.err.println("Unknown request type: " + req.getType());
 		}
 
-		req.setValue(resultBytes);
+		req.setResult(resultBytes, groupId);
 	}
 
 	@Override
@@ -300,21 +293,17 @@ public class ReplicaReplier implements Replier, FIFOExecutable, Serializable, Re
 		Request replyReq = new Request(reply.getContent());
 		RequestTracker tracker = repliesTracker.get(replyReq.getClient()).get(replyReq.getSeqNumber());
 		if (tracker != null && tracker.addReply(replyReq)) {
+			Request sendReply = tracker.getMergedReply();
 			Vector<TOMMessage> msgs = globalReplies.get(replyReq.getClient()).get(replyReq.getSeqNumber());
-			// System.out.println("finish, sent up req # " + replyReq.getSeqNumber());//TODO
-			// merge,combine values in majority reply
-			// i.e message read to grop 1 and 2, lca = g1, g1 execute, waits for f+1 replies
-			// from g2, it has to put it's execution result and g2 execution result into
-			// value
-			// so if there are 5 destinations value will be a byte[5][]
-			processedReplies.computeIfAbsent(replyReq.getClient(), k -> new ConcurrentHashMap<>());
-			processedReplies.get(replyReq.getClient()).put(replyReq.getSeqNumber(), replyReq);
+
+			processedReplies.computeIfAbsent(sendReply.getClient(), k -> new ConcurrentHashMap<>());
+			processedReplies.get(sendReply.getClient()).put(sendReply.getSeqNumber(), sendReply);
 			for (TOMMessage msg : msgs) {
-				msg.reply.setContent(replyReq.toBytes());
+				msg.reply.setContent(sendReply.toBytes());
 				rc.getServerCommunicationSystem().send(new int[] { msg.getSender() }, msg.reply);
 			}
-			globalReplies.get(req.getClient()).remove(replyReq.getSeqNumber());
-			repliesTracker.get(req.getClient()).remove(replyReq.getSeqNumber());
+			globalReplies.get(req.getClient()).remove(sendReply.getSeqNumber());
+			repliesTracker.get(req.getClient()).remove(sendReply.getSeqNumber());
 
 		}
 	}

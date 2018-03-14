@@ -3,6 +3,7 @@ package ch.usi.inf.dslab.bftamcast.kvs;
 import ch.usi.inf.dslab.bftamcast.RequestIf;
 
 import java.io.*;
+import java.util.Arrays;
 
 /**
  * @author Paulo Coelho - paulo.coelho@usi.ch
@@ -17,21 +18,24 @@ public class Request implements RequestIf, Serializable {
 	private int client;
 	private int sender;
 	private byte[] value;
+	private byte[][] result;
 	private int[] destination;
 	private int seqNumber;
 
 	/**
-	 * empty request constructor, remove empty constructor and only use real contructors to ensure setting of parameters
+	 * empty request constructor, remove empty constructor and only use real
+	 * contructors to ensure setting of parameters
 	 */
-//	public Request() {
-//		this(RequestType.NOP, -1, null, null, -1, -1);
-//	}
-	
+	// public Request() {
+	// this(RequestType.NOP, -1, null, null, -1, -1);
+	// }
+
 	/**
 	 * create a request object from a byte[]
+	 * 
 	 * @param reqBytes
 	 */
-	public Request (byte[] reqBytes) {
+	public Request(byte[] reqBytes) {
 		fromBytes(reqBytes);
 	}
 
@@ -51,6 +55,7 @@ public class Request implements RequestIf, Serializable {
 		this.key = key;
 		this.value = value;
 		this.destination = destination;
+		this.result = new byte[destination.length][];
 		this.seqNumber = seqNumber;
 	}
 
@@ -108,54 +113,50 @@ public class Request implements RequestIf, Serializable {
 		return type;
 	}
 
-	public void setType(RequestType type) {
-		this.type = type;
+	public void setResult(byte[] eval, int groupID) {
+		for (int i = 0; i < destination.length; i++) {
+			if (destination[i] == groupID) {
+				this.result[i] = eval;
+			}
+		}
 	}
 
+	public byte[] getGroupResult(int groupID) {
+		for (int i = 0; i < destination.length; i++) {
+			if (destination[i] == groupID) {
+				return result[i];
+			}
+		}
+		return null;
+	}
 	public int getKey() {
 		return key;
-	}
-
-	public void setKey(int key) {
-		this.key = key;
 	}
 
 	public byte[] getValue() {
 		return value;
 	}
 
-	public void setValue(byte[] value) {
-		this.value = value;
+	public byte[][] getResult() {
+		return result;
 	}
 
 	public int[] getDestination() {
 		return destination;
 	}
 
-	public void setDestination(int[] destination) {
-		this.destination = destination;
-	}
-
 	public int getSeqNumber() {
 		return seqNumber;
-	}
-
-	public void setSeqNumber(int seqNumber) {
-		this.seqNumber = seqNumber;
 	}
 
 	public int getClient() {
 		return client;
 	}
-	
+
 	public int getSender() {
 		return sender;
 	}
 
-	public void setClient(int client) {
-		this.client = client;
-	}
-	
 	public void setSender(int sender) {
 		this.sender = sender;
 	}
@@ -179,6 +180,14 @@ public class Request implements RequestIf, Serializable {
 			dos.writeInt(this.destination.length);
 			for (int dest : destination)
 				dos.writeInt(dest);
+			dos.writeInt(this.result == null ? 0 : this.result.length);
+			if (result != null) {
+				for (byte[] groupRes : result) {
+					dos.writeInt(groupRes == null ? 0 : groupRes.length);
+					if (groupRes != null)
+						dos.write(groupRes);
+				}
+			}
 
 		} catch (IOException e) {
 			System.err.println("Unable to convert RequestIf to bytes");
@@ -194,7 +203,7 @@ public class Request implements RequestIf, Serializable {
 	public void fromBytes(byte[] b) {
 		ByteArrayInputStream in = new ByteArrayInputStream(b);
 		DataInputStream dis = new DataInputStream(in);
-		int destSize, vSize;
+		int destSize, vSize, resultSize, groupResultSize;
 
 		try {
 			this.type = RequestType.valueOf(dis.readUTF());
@@ -213,6 +222,18 @@ public class Request implements RequestIf, Serializable {
 			for (int i = 0; i < destSize; i++) {
 				this.destination[i] = dis.readInt();
 			}
+			resultSize = dis.readInt();
+			if (resultSize > 0) {
+				this.result = new byte[resultSize][];
+				for (int i = 0; i < resultSize; i++) {
+					groupResultSize = dis.readInt();
+					if (groupResultSize > 0) {
+						this.result[i] = new byte[groupResultSize];
+						dis.read(this.result[i]);
+					}
+				}
+			}
+
 		} catch (IOException e) {
 			System.err.println("Unable to convert bytes to RequestIf");
 			e.printStackTrace();
@@ -272,29 +293,36 @@ public class Request implements RequestIf, Serializable {
 			}
 		}
 		if (value != null) {
-			if (this.value.length != r.getValue().length) {
-				System.out.println("value problem2");
+			if (!Arrays.equals(value, r.value)) {
 				return false;
-			}
-			for (int i = 0; i < value.length; i++) {
-				if (value[i] != r.getValue()[i]) {
-					System.out.println("value problem3");
-					return false;
-				}
 			}
 		}
 		if (destination != null) {
 
-			if (this.destination.length != r.getDestination().length) {
-				System.out.println("destination problem2");
+			if (!Arrays.equals(destination, r.destination)) {
 				return false;
 			}
-			for (int i = 0; i < destination.length; i++) {
-				if (destination[i] != r.getDestination()[i]) {
-					System.out.println("destination problem3");
+		}
+		if (result == null && r.result != null) {
+			return false;
+		}
+		if (r.result == null && result != null) {
+			return false;
+		}
+		if (result != null) {
+
+			for (int i = 0; i < result.length; i++) {
+				if (result[i] == null && r.result[i] != null) {
+					return false;
+				}
+				if (r.result[i] == null && result[i] != null) {
+					return false;
+				}
+				if (result[i] != null && !Arrays.equals(result[i], r.result[i])) {
 					return false;
 				}
 			}
+
 		}
 
 		return true;

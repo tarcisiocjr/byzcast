@@ -1,6 +1,5 @@
 package ch.usi.inf.dslab.bftamcast.util;
 
-import bftsmart.tom.core.messages.TOMMessage;
 import ch.usi.inf.dslab.bftamcast.kvs.Request;
 import io.netty.util.internal.ConcurrentSet;
 

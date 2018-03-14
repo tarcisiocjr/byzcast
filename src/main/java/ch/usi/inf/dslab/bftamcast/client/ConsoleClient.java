@@ -180,19 +180,35 @@ public class ConsoleClient implements ReplyListener {
 			repliesTracker.remove(replyReq.getSeqNumber());
 			switch (replyReq.getType()) {
 			case PUT:
-				System.out.println(
-						"previous value: " + (replyReq.getValue() == null ? "NULL" : new String(replyReq.getValue())));
+				for(int i =0; i < replyReq.getResult().length; i++) {
+					System.out.println(
+							
+							"previous value at replica " +replyReq.getDestination()[i]+" : " + (replyReq.getResult()[i] == null ? "NULL" : new String(replyReq.getResult()[i])));
+				}
+				
 				break;
 			case GET:
-				System.out.println(
-						"value: " + (replyReq.getValue() == null ? "NULL" : new String(replyReq.getValue())));
+				for(int i =0; i < replyReq.getResult().length; i++) {
+					System.out.println(
+							
+							"value at replica " +replyReq.getDestination()[i]+" : " + (replyReq.getResult()[i] == null ? "NULL" : new String(replyReq.getResult()[i])));
+				}
+			
 				break;
 			case REMOVE:
-				System.out.println("removed value: " + (replyReq.getValue()  == null ? "NULL" : new String(replyReq.getValue() )));
+				for(int i =0; i < replyReq.getResult().length; i++) {
+					System.out.println(
+							
+							"removed value at replica " +replyReq.getDestination()[i]+" : " + (replyReq.getResult()[i] == null ? "NULL" : new String(replyReq.getResult()[i])));
+				}
 				break;
 			case SIZE:
-				//TODO what???
-//				System.out.println("Map size (group " + i + "): " + (result == null ? "NULL" : ByteBuffer.wrap(Arrays.copyOfRange(result, i * 4, i * 4 + 4)).getInt()));
+				for(int i =0; i < replyReq.getResult().length; i++) {
+					System.out.println(
+							
+							"map size at replica " +replyReq.getDestination()[i]+" : " + (replyReq.getResult()[i] == null ? "NULL" : new String(replyReq.getResult()[i])));
+				}
+				
 				break;
 
 			default:

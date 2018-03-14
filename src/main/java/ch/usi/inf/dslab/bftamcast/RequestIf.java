@@ -6,11 +6,11 @@ package ch.usi.inf.dslab.bftamcast;
 public interface RequestIf {
     public byte[] getValue();
 
-    public void setValue(byte[] value);
+//    public void setValue(byte[] value);
 
     public int[] getDestination();
 
-    public void setDestination(int[] destination);
+//    public void setDestination(int[] destination);
 
     public byte[] toBytes();
 
