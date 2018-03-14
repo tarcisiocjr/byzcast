@@ -22,19 +22,14 @@ public class RequestTracker {
 	private TOMMessage recivedRequest;
 	private int answerTo;
 
-	public RequestTracker(Map<Vertex, Integer> groups, TOMMessage original, int replier, boolean plusOne,
-			Request senderComputation) {
+	public RequestTracker(Map<Vertex, Integer> groups, TOMMessage original, int replier) {
 		tracker = new ConcurrentHashMap<>();
 		answerTo = replier;
 		recivedRequest = original;
 		for (Vertex groupId : groups.keySet()) {
-			if (plusOne) {
-				tracker.put(groupId.getGroupId(), new GroupRequestTracker(groups.get(groupId)+1));
-				//TODO ask what to do when sender is also destination, have to check answers?
-				tracker.get(groupId.getGroupId()).addReply(senderComputation);
-			}else {
-				tracker.put(groupId.getGroupId(), new GroupRequestTracker(groups.get(groupId)));
-			}
+
+			tracker.put(groupId.getGroupId(), new GroupRequestTracker(groups.get(groupId)));
+
 		}
 	}
 
@@ -51,7 +46,7 @@ public class RequestTracker {
 		}
 		return true;
 	}
-	
+
 	public TOMMessage getRecivedRequest() {
 		return recivedRequest;
 	}
