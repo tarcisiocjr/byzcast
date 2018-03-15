@@ -29,7 +29,7 @@ public class Tree implements Serializable {
 	 *            none
 	 */
 	public static void main(String[] args) {
-		new Tree("config/tree.conf",0);
+		new Tree("config/tree.conf", 0);
 	}
 
 	/**
@@ -50,7 +50,7 @@ public class Tree implements Serializable {
 	 *            smart and connection between them
 	 */
 	public Tree(String configFile, int proxyID) {
-		
+
 		destinations = new ArrayList<>();
 		List<Vertex> vertices = new ArrayList<>();
 		FileReader fr;
@@ -65,18 +65,18 @@ public class Tree implements Serializable {
 					// TODO instead of reading nodes and then tree, read nodes and specs (througput
 					// etc and build optimal tree)
 					StringTokenizer str = new StringTokenizer(line, " ");
-					//vertex declaration (group)
+					// vertex declaration (group)
 					if (str.countTokens() == 2) {
 						vertices.add(new Vertex(Integer.valueOf(str.nextToken()), str.nextToken(), proxyID));
 						destinations.add(vertices.get(vertices.size() - 1).getGroupId());
 					}
-					//connection declaration
+					// connection declaration
 					if (str.countTokens() == 3) {
 						int from = Integer.valueOf(str.nextToken());
 						str.nextToken();// throw away "->"
 						int to = Integer.valueOf(str.nextToken());
 
-						//add connections in vertices
+						// add connections in vertices
 						for (Vertex v1 : vertices) {
 							if (v1.getGroupId() == from) {
 								for (Vertex v2 : vertices) {
@@ -89,7 +89,7 @@ public class Tree implements Serializable {
 							}
 						}
 
-						//the vertex  with no parent is the root vertex of the tree
+						// the vertex with no parent is the root vertex of the tree
 						for (Vertex v : vertices) {
 							if (v.getParent() == null) {
 								root = v;
@@ -116,6 +116,7 @@ public class Tree implements Serializable {
 	 */
 	public Vertex lca(int[] ids) {
 
+		
 		List<Vertex> vertices = new ArrayList<>();
 		for (int i = 0; i < ids.length; i++) {
 			vertices.add(findVertexById(ids[i]));
@@ -155,6 +156,7 @@ public class Tree implements Serializable {
 
 	/**
 	 * find vertex in tree from it's id
+	 * 
 	 * @param id
 	 * @return vertex with specified id or null
 	 */

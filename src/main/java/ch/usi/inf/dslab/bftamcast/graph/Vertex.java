@@ -10,10 +10,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-import bftsmart.communication.client.ReplyListener;
 import bftsmart.tom.AsynchServiceProxy;
-import bftsmart.tom.core.messages.TOMMessageType;
-import ch.usi.inf.dslab.bftamcast.RequestIf;
 
 /**
  * @author Christian Vuerich - christian.vuerich@usi.ch
@@ -30,6 +27,7 @@ public class Vertex implements Serializable {
 	private int groupId;
 	private List<Vertex> children;
 	private List<Integer> childernIDs;
+	private List<Integer> inReach;
 	// cyclic but for now it easy to have for lca
 	private Vertex parent;
 
@@ -37,6 +35,7 @@ public class Vertex implements Serializable {
 		this.confPath = configPath;
 		children = new ArrayList<>();
 		childernIDs = new ArrayList<>();
+		inReach = new ArrayList<>();
 		this.groupId = ID;
 		this.proxy = new AsynchServiceProxy(proxyID, confPath);
 	}
@@ -56,10 +55,14 @@ public class Vertex implements Serializable {
 		if (this.groupId == groupId) {
 			return true;
 		}
+		if(inReach.contains(groupId)) {
+			return true;
+		}
 		boolean ret = false;
 		for (Vertex v : children) {
 			ret = v.inReach(groupId);
 			if (ret) {
+				inReach.add(groupId);
 				return true;
 			}
 		}
@@ -68,7 +71,7 @@ public class Vertex implements Serializable {
 
 
 	/**
-	 * check itself and all childrens (subtree) to find a vertex with a given id
+	 * check itself and all children (subtree) to find a vertex with a given id
 	 * @param id of the vertex you search
 	 * @return the vertex if found or null
 	 */
@@ -104,7 +107,7 @@ public class Vertex implements Serializable {
 	 * @throws IOException
 	 */
 	private void readObject(ObjectInputStream ois) throws ClassNotFoundException, IOException {
-		// default deserialization
+		// default de-serialization
 		ois.defaultReadObject();
 		this.proxy = new AsynchServiceProxy(groupId, confPath);
 

@@ -277,6 +277,7 @@ public class ReplicaReplier implements Replier, FIFOExecutable, Serializable, Re
 		if (tracker != null && tracker.addReply(replyReq)) {
 			//get reply with all groups replies
 			Request sendReply = tracker.getMergedReply();
+			sendReply.setSender(groupId);
 			//get all requests waiting for this answer
 			Vector<TOMMessage> msgs = globalReplies.get(replyReq.getClient()).get(replyReq.getSeqNumber());
 			//add finished request result to map, for storage and eventual later re-submission

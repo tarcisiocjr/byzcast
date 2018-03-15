@@ -1,40 +1,30 @@
 #!/usr/bin/env bash
 
 if [ $# -lt 1 ]; then
-    echo "$0 <GROUPS-NUMBER>"
+    echo "$0 <GROUPS-ID>"
     exit 1
 fi
 
-G=$1
+G=$1 
 N=4
 ARGS="${@:2}"
 
-tmux new-session -d -s bftamcast
+tmux new-session -d -s bftamcast$G
 
-for (( i = 1; i <= $N; i++ )); do
-    for (( j = 1; j <=$(( G )); j++ )); do
-            tmux split -h -t bftamcast
-    done
-    tmux select-layout -t bftamcast tiled
+for (( i = 1; i < $N; i++ )); do
+    tmux split -h -t bftamcast$G
 done
 
-LCS="-lcs"
-for (( i = 0; i < $(( G )); i++ )); do
-    LCS="$LCS config/local$i"
-done
+tmux select-layout -t bftamcast$G tiled
 
 JAVA="java -cp 'lib/*:target/*' ch.usi.inf.dslab.bftamcast"
 
-for (( j = 1; j <=$(( G )); j++ )); do
-    for (( i = 1; i <= $N; i++ )); do
-        PANE=$(( (j-1)*N + i ))
-        
-        tmux send-keys -t bftamcast.$PANE "$JAVA.server.Server -t config/tree.conf -i $(( i-1 )) -g $(( j-1 )) -G config/local$(( j-1 )) $ARGS" C-m
-        
-    done
+for (( j = 1; j <=$N; j++ )); do
+
+        tmux send-keys -t bftamcast$G.$j "$JAVA.server.Server -t config/tree.conf -i $(( j-1 )) -g $G -G config/local$G $ARGS" C-m  
 done
 
-tmux attach-session -t bftamcast
+tmux attach-session -t bftamcast$G
 
 
 # java -cp 'lib/*:target/*' ch.usi.inf.dslab.bftamcast.server.Server -t config/tree.conf -i 0 -g 0 -G config/local0 $ARGS C-m

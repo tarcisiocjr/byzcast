@@ -125,6 +125,17 @@ public class Request implements RequestIf, Serializable {
 			}
 		}
 	}
+	
+	public void  mergeReplies(byte[][] replies) {
+		if(replies.length != result.length) {
+			System.err.println("Error merging results");
+		}
+		for (int i = 0; i < replies.length; i++) {
+			if(replies[i] != null) {
+				result[i] = replies[i];
+			}
+		}
+	}
 
 	/**
 	 * return the result byte[] at the same index groupID has in destinations

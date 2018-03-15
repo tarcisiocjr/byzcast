@@ -1,8 +1,6 @@
 package ch.usi.inf.dslab.bftamcast.client;
 
 import java.io.Console;
-import java.nio.ByteBuffer;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
@@ -83,7 +81,7 @@ public class ConsoleClient implements ReplyListener {
 				req = new Request(type, key, value, destinations, seqNumber, clientId, clientId);
 
 				target = overlayTree.lca(n).getProxy();
-				System.out.println("seqn =    " + seqNumber);
+				System.out.println("id ==    " + overlayTree.lca(n).getGroupId());
 				c.repliesTracker.put(seqNumber, new GroupRequestTracker(target.getViewManager().getCurrentViewF() + 1));
 				target.invokeAsynchRequest(req.toBytes(), c, TOMMessageType.ORDERED_REQUEST);
 				System.out.println("sent");
@@ -102,6 +100,7 @@ public class ConsoleClient implements ReplyListener {
 				}
 				destinations = n;
 				target = overlayTree.lca(n).getProxy();
+				System.out.println("id ==    " + overlayTree.lca(n).getGroupId());
 				req = new Request(type, key, value, destinations, seqNumber, clientId, clientId);
 				c.repliesTracker.put(seqNumber, new GroupRequestTracker(target.getViewManager().getCurrentViewF() + 1));
 				target.invokeAsynchRequest(req.toBytes(), c, TOMMessageType.ORDERED_REQUEST);
@@ -120,6 +119,7 @@ public class ConsoleClient implements ReplyListener {
 				}
 				destinations = n;
 				target = overlayTree.lca(n).getProxy();
+				System.out.println("id ==    " + overlayTree.lca(n).getGroupId());
 				req = new Request(type, key, value, destinations, seqNumber, clientId, clientId);
 				c.repliesTracker.put(seqNumber, new GroupRequestTracker(target.getViewManager().getCurrentViewF() + 1));
 				target.invokeAsynchRequest(req.toBytes(), c, TOMMessageType.ORDERED_REQUEST);
@@ -135,6 +135,7 @@ public class ConsoleClient implements ReplyListener {
 					destinations[i] = overlayTree.getDestinations().get(i);
 				}
 				target = overlayTree.lca(destinations).getProxy();
+				System.out.println("id ==    " + overlayTree.lca(destinations).getGroupId());
 				req = new Request(type, key, value, destinations, seqNumber, clientId, clientId);
 				c.repliesTracker.put(seqNumber, new GroupRequestTracker(target.getViewManager().getCurrentViewF() + 1));
 				target.invokeAsynchRequest(req.toBytes(), c, TOMMessageType.ORDERED_REQUEST);

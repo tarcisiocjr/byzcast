@@ -32,6 +32,7 @@ public class RequestTracker {
 	}
 
 	public boolean addReply(Request req) {
+		System.out.println(req.getSender());
 		tracker.get(req.getSender()).addReply(req);
 		return checkAll();
 	}
@@ -56,7 +57,8 @@ public class RequestTracker {
 			if (myreply == null) {
 				myreply = tmp;
 			} else {
-				myreply.setResult(tmp.getGroupResult(groupID), groupID);
+//				myreply.setResult(tmp.getGroupResult(groupID), groupID);
+				myreply.mergeReplies(tmp.getResult());
 			}
 		}
 		return myreply;
