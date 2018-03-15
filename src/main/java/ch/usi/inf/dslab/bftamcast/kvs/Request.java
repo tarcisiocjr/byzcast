@@ -7,6 +7,7 @@ import java.util.Arrays;
 
 /**
  * @author Paulo Coelho - paulo.coelho@usi.ch
+ * @author Christian Vuerich - christian.vuerich@usi.ch
  */
 public class Request implements RequestIf, Serializable {
 	/**
@@ -22,13 +23,6 @@ public class Request implements RequestIf, Serializable {
 	private int[] destination;
 	private int seqNumber;
 
-	/**
-	 * empty request constructor, remove empty constructor and only use real
-	 * contructors to ensure setting of parameters
-	 */
-	// public Request() {
-	// this(RequestType.NOP, -1, null, null, -1, -1);
-	// }
 
 	/**
 	 * create a request object from a byte[]
@@ -109,18 +103,34 @@ public class Request implements RequestIf, Serializable {
 		return reqs;
 	}
 
+	/**
+	 * getter for Type field
+	 * @return
+	 */
 	public RequestType getType() {
 		return type;
 	}
 
+	/**
+	 * set the result for a groupiD, at the same index of the groupID in destinations
+	 * @param eval
+	 * @param groupID
+	 */
 	public void setResult(byte[] eval, int groupID) {
+		//look for index in destinations of groupID
 		for (int i = 0; i < destination.length; i++) {
 			if (destination[i] == groupID) {
+				//set result
 				this.result[i] = eval;
 			}
 		}
 	}
 
+	/**
+	 * return the result byte[] at the same index groupID has in destinations
+	 * @param groupID
+	 * @return
+	 */
 	public byte[] getGroupResult(int groupID) {
 		for (int i = 0; i < destination.length; i++) {
 			if (destination[i] == groupID) {
@@ -130,34 +140,66 @@ public class Request implements RequestIf, Serializable {
 		return null;
 	}
 	
+	/**
+	 * Getter for key field
+	 * @return
+	 */
 	public int getKey() {
 		return key;
 	}
 
+	/**
+	 * Getter for value field
+	 * @return
+	 */
 	public byte[] getValue() {
 		return value;
 	}
 
+	/**
+	 * Getter for value result
+	 * @return
+	 */
 	public byte[][] getResult() {
 		return result;
 	}
 
+	/**
+	 * Getter for value destination
+	 * @return
+	 */
 	public int[] getDestination() {
 		return destination;
 	}
 
+	/**
+	 * Getter for sequence number field
+	 * @return
+	 */
 	public int getSeqNumber() {
 		return seqNumber;
 	}
 
+	/**
+	 * Getter for clientID field
+	 * @return
+	 */
 	public int getClient() {
 		return client;
 	}
 
+	/**
+	 * Getter for sender field
+	 * @return
+	 */
 	public int getSender() {
 		return sender;
 	}
 
+	/**
+	 * Setter for sender field
+	 * @return
+	 */
 	public void setSender(int sender) {
 		this.sender = sender;
 	}
@@ -199,7 +241,7 @@ public class Request implements RequestIf, Serializable {
 	}
 
 	/**
-	 * fill request object from byte[]representing the data inside the oject
+	 * fill request object from byte[]representing the data inside the object
 	 */
 	public void fromBytes(byte[] b) {
 		ByteArrayInputStream in = new ByteArrayInputStream(b);
@@ -241,6 +283,9 @@ public class Request implements RequestIf, Serializable {
 		}
 	}
 
+	/**
+	 * output the object as a string
+	 */
 	@Override
 	public String toString() {
 		StringBuffer buf = new StringBuffer();
@@ -252,6 +297,11 @@ public class Request implements RequestIf, Serializable {
 		return buf.toString();
 	}
 
+	/**
+	 * compare a input request to this object, return true if all content is the same
+	 * @param r
+	 * @return
+	 */
 	public boolean equals(Request r) {
 		if (this.key != r.key) {
 			System.out.println("key problem");

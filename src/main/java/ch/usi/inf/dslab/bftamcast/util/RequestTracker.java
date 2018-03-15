@@ -13,18 +13,16 @@ import ch.usi.inf.dslab.bftamcast.kvs.Request;
 
 /**
  * @author Christian Vuerich - christian.vuerich@usi.ch
- *
+ * Tracker for replies for a given set of groups
  */
 public class RequestTracker {
 	private ConcurrentMap<Integer, GroupRequestTracker> tracker;
 	private TOMMessage recivedRequest;
-	private int answerTo;
 	private Request myreply;
 
-	public RequestTracker(Map<Vertex, Integer> groups, TOMMessage original, int replier, Request myreply) {
+	public RequestTracker(Map<Vertex, Integer> groups, TOMMessage original, Request myreply) {
 		this.myreply = myreply;
 		tracker = new ConcurrentHashMap<>();
-		answerTo = replier;
 		recivedRequest = original;
 		for (Vertex groupId : groups.keySet()) {
 

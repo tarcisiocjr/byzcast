@@ -65,14 +65,13 @@ public class Tree implements Serializable {
 					// TODO instead of reading nodes and then tree, read nodes and specs (througput
 					// etc and build optimal tree)
 					StringTokenizer str = new StringTokenizer(line, " ");
+					//vertex declaration (group)
 					if (str.countTokens() == 2) {
-						// throw away in config file (temporary to distinguish between vertex
-						// declaration and edges)
 						vertices.add(new Vertex(Integer.valueOf(str.nextToken()), str.nextToken(), proxyID));
 						destinations.add(vertices.get(vertices.size() - 1).getGroupId());
 					}
+					//connection declaration
 					if (str.countTokens() == 3) {
-
 						int from = Integer.valueOf(str.nextToken());
 						str.nextToken();// throw away "->"
 						int to = Integer.valueOf(str.nextToken());
@@ -84,7 +83,7 @@ public class Tree implements Serializable {
 									if (v2.getGroupId() == to) {
 										v1.getChildren().add(v2);
 										v1.getChildernIDs().add(v2.getGroupId());
-										v2.parent = v1;
+										v2.setParent(v1);
 									}
 								}
 							}
@@ -92,7 +91,7 @@ public class Tree implements Serializable {
 
 						//the vertex  with no parent is the root vertex of the tree
 						for (Vertex v : vertices) {
-							if (v.parent == null) {
+							if (v.getParent() == null) {
 								root = v;
 							}
 						}

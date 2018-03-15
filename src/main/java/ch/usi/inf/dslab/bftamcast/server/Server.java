@@ -13,8 +13,6 @@ import java.io.ObjectOutputStream;
 import bftsmart.tom.MessageContext;
 import bftsmart.tom.ServiceReplica;
 import bftsmart.tom.server.defaultservices.DefaultRecoverable;
-import ch.usi.inf.dslab.bftamcast.kvs.Request;
-import ch.usi.inf.dslab.bftamcast.kvs.RequestType;
 import ch.usi.inf.dslab.bftamcast.util.CLIParser;
 
 /**
@@ -25,14 +23,23 @@ public class Server extends DefaultRecoverable{
 	private ReplicaReplier replier;
 	private int id, groupId, nextTS;
 	
+	/**
+	 * main for launching group member
+	 * @param args
+	 */
 	public static void main(String[] args) {
         CLIParser p = CLIParser.getServerParser(args);
         new Server(p.getId(), p.getGroup(), p.getGroupConfig(), p.getTreeConfig());
     }
 	
-	
-	
-	
+		
+	/**
+	 * constructor
+	 * @param id  of the replica
+	 * @param group id the replica belongs to
+	 * @param configPath path for bftsmart for the replica (//TODO could extract that from tree config)
+	 * @param treeConfigPath path of the configuration file representing the overlay tree of groups
+	 */
 	public Server(int id, int group, String configPath, String treeConfigPath) {
 		this.id = id;
         this.groupId = group;
@@ -50,6 +57,9 @@ public class Server extends DefaultRecoverable{
         new ServiceReplica(this.id, configPath, replier, this, null, replier);
 	}
 
+	/**
+	 * install snapshot for this replica //TODO add needed fields when batching is done
+	 */
 	@Override
 	public void installSnapshot(byte[] state) {
 		ByteArrayInputStream bis = new ByteArrayInputStream(state);
@@ -70,6 +80,9 @@ public class Server extends DefaultRecoverable{
         }
 	}
 
+	/**
+	 * get snapshot for this replica //TODO add needed fields when batching is done
+	 */
 	@Override
 	public byte[] getSnapshot() {
 		try {
@@ -91,6 +104,9 @@ public class Server extends DefaultRecoverable{
         }
 	}
 
+	/**
+	 * Execute batch of requests, not sure it make sense, but I still have to read how it works and check what paulo did
+	 */
 	@Override
 	public byte[][] appExecuteBatch(byte[][] commands, MessageContext[] msgCtxs) {
 		//TODO extract requests, make the replier handle them
@@ -159,6 +175,7 @@ public class Server extends DefaultRecoverable{
 		throw new UnsupportedOperationException("Implemented by UniversalReplier");
 	}
 
+	
 	@Override
 	public byte[] appExecuteUnordered(byte[] command, MessageContext msgCtx) {
 		throw new UnsupportedOperationException("Implemented by UniversalReplier");

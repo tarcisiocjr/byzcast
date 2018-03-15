@@ -31,7 +31,7 @@ public class Vertex implements Serializable {
 	private List<Vertex> children;
 	private List<Integer> childernIDs;
 	// cyclic but for now it easy to have for lca
-	public Vertex parent;
+	private Vertex parent;
 
 	public Vertex(int ID, String configPath, int proxyID) {
 		this.confPath = configPath;
@@ -67,6 +67,11 @@ public class Vertex implements Serializable {
 	}
 
 
+	/**
+	 * check itself and all childrens (subtree) to find a vertex with a given id
+	 * @param id of the vertex you search
+	 * @return the vertex if found or null
+	 */
 	public Vertex findVertexByID(int id) {
 		if (id == groupId) {
 			return this;
@@ -81,13 +86,23 @@ public class Vertex implements Serializable {
 		return ret;
 	}
  
-	//Service proxy is not serialazable, so ignore with transient and while doing "readObject" create new proxy (I hope it works)
+	/**
+	 * Service proxy is not serialazable, so ignore with transient and while doing "readObject" create new proxy 
+	 * @param oos
+	 * @throws IOException
+	 */
 	private void writeObject(ObjectOutputStream oos) throws IOException {
 		// default serialization
 		oos.defaultWriteObject();
 
 	}
 
+	/**
+	 * Service proxy is not serialazable, so ignore with transient and while doing "readObject" create new proxy 
+	 * @param ois
+	 * @throws ClassNotFoundException
+	 * @throws IOException
+	 */
 	private void readObject(ObjectInputStream ois) throws ClassNotFoundException, IOException {
 		// default deserialization
 		ois.defaultReadObject();
@@ -96,7 +111,7 @@ public class Vertex implements Serializable {
 	}
 
 	/**
-	 * @return the serialversionuid
+	 * @return the serial version uid
 	 */
 	public static long getSerialversionuid() {
 		return serialVersionUID;
@@ -109,12 +124,7 @@ public class Vertex implements Serializable {
 		return proxy;
 	}
 
-	/**
-	 * @return the confPath
-	 */
-	public String getConfPath() {
-		return confPath;
-	}
+
 
 	/**
 	 * @return the groupId
@@ -144,40 +154,6 @@ public class Vertex implements Serializable {
 		return parent;
 	}
 
-	/**
-	 * @param proxy the proxy to set
-	 */
-	public void setProxy(AsynchServiceProxy proxy) {
-		this.proxy = proxy;
-	}
-
-	/**
-	 * @param confPath the confPath to set
-	 */
-	public void setConfPath(String confPath) {
-		this.confPath = confPath;
-	}
-
-	/**
-	 * @param groupId the groupId to set
-	 */
-	public void setGroupId(int groupId) {
-		this.groupId = groupId;
-	}
-
-	/**
-	 * @param children the children to set
-	 */
-	public void setChildren(List<Vertex> children) {
-		this.children = children;
-	}
-
-	/**
-	 * @param childernIDs the childernIDs to set
-	 */
-	public void setChildernIDs(List<Integer> childernIDs) {
-		this.childernIDs = childernIDs;
-	}
 
 	/**
 	 * @param parent the parent to set

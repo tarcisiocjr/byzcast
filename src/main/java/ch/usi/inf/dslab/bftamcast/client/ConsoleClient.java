@@ -20,6 +20,7 @@ import ch.usi.inf.dslab.bftamcast.graph.Tree;
 /**
  * @author Tarcisio Ceolin - tarcisio.ceolin.junior@usi.ch
  * @author Paulo Coelho - paulo.coelho@usi.ch
+ * @author Christian Vuerich - christian.vuerich@usi.ch
  */
 
 import ch.usi.inf.dslab.bftamcast.kvs.Request;
@@ -29,9 +30,6 @@ import ch.usi.inf.dslab.bftamcast.util.GroupRequestTracker;
 
 public class ConsoleClient implements ReplyListener {
 	final Map<Integer, GroupRequestTracker> repliesTracker = new HashMap<>();
-	// private int counter = 0;
-	// private int secs = 0;
-	long startTime, usLat, delta = 0;
 	private static Scanner scanner;
 
 	public static void main(String[] args) {
@@ -39,19 +37,11 @@ public class ConsoleClient implements ReplyListener {
 		ConsoleClient c = new ConsoleClient();
 		CLIParser p = CLIParser.getClientParser(args);
 		Random r = new Random();
-		int groupId = p.getGroup();
 		int clientId = p.getId() == 0 ? r.nextInt(Integer.MAX_VALUE) : p.getId();
-		// String globalConfigPath = p.getGlobalConfig();
-		// String[] localConfigPaths = p.getLocalConfigs();
 		String treeConfigPath = p.getTreeConfig();
-
 		Tree overlayTree = new Tree(treeConfigPath, UUID.randomUUID().hashCode());
-		// int numGroups = localConfigPaths == null ? 1 : localConfigPaths.length;
-		// ProxyIf proxy = new Proxy(idClient + 1000 * idGroup, globalConfigPath,
-		// localConfigPaths);
 		Request req;
-		// int[] dest;
-		// byte[] result = null;
+
 
 		Console console = System.console();
 		scanner = new Scanner(System.in);
@@ -90,14 +80,11 @@ public class ConsoleClient implements ReplyListener {
 				destinations = n;
 				value = console.readLine("Enter the value: ").getBytes();
 
-				req = new Request(type, key, value, destinations, seqNumber, clientId,clientId);
+				req = new Request(type, key, value, destinations, seqNumber, clientId, clientId);
 
 				target = overlayTree.lca(n).getProxy();
 				System.out.println("seqn =    " + seqNumber);
-				c.repliesTracker.put(seqNumber,
-						new GroupRequestTracker(((int) Math.ceil((double) (target.getViewManager().getCurrentViewN()
-								+ target.getViewManager().getCurrentViewF() + 1) / 2.0))));
-
+				c.repliesTracker.put(seqNumber, new GroupRequestTracker(target.getViewManager().getCurrentViewF() + 1));
 				target.invokeAsynchRequest(req.toBytes(), c, TOMMessageType.ORDERED_REQUEST);
 				System.out.println("sent");
 				break;
@@ -115,10 +102,8 @@ public class ConsoleClient implements ReplyListener {
 				}
 				destinations = n;
 				target = overlayTree.lca(n).getProxy();
-				req = new Request(type, key, value, destinations, seqNumber, clientId,clientId);
-				c.repliesTracker.put(seqNumber,
-						new GroupRequestTracker(((int) Math.ceil((double) (target.getViewManager().getCurrentViewN()
-								+ target.getViewManager().getCurrentViewF() + 1) / 2.0))));
+				req = new Request(type, key, value, destinations, seqNumber, clientId, clientId);
+				c.repliesTracker.put(seqNumber, new GroupRequestTracker(target.getViewManager().getCurrentViewF() + 1));
 				target.invokeAsynchRequest(req.toBytes(), c, TOMMessageType.ORDERED_REQUEST);
 				break;
 			case 3:
@@ -136,9 +121,7 @@ public class ConsoleClient implements ReplyListener {
 				destinations = n;
 				target = overlayTree.lca(n).getProxy();
 				req = new Request(type, key, value, destinations, seqNumber, clientId, clientId);
-				c.repliesTracker.put(seqNumber,
-						new GroupRequestTracker(((int) Math.ceil((double) (target.getViewManager().getCurrentViewN()
-								+ target.getViewManager().getCurrentViewF() + 1) / 2.0))));
+				c.repliesTracker.put(seqNumber, new GroupRequestTracker(target.getViewManager().getCurrentViewF() + 1));
 				target.invokeAsynchRequest(req.toBytes(), c, TOMMessageType.ORDERED_REQUEST);
 				break;
 			case 4:
@@ -152,17 +135,9 @@ public class ConsoleClient implements ReplyListener {
 					destinations[i] = overlayTree.getDestinations().get(i);
 				}
 				target = overlayTree.lca(destinations).getProxy();
-				req = new Request(type, key, value, destinations, seqNumber, clientId,clientId);
-				c.repliesTracker.put(seqNumber,
-						new GroupRequestTracker(((int) Math.ceil((double) (target.getViewManager().getCurrentViewN()
-								+ target.getViewManager().getCurrentViewF() + 1) / 2.0))));
+				req = new Request(type, key, value, destinations, seqNumber, clientId, clientId);
+				c.repliesTracker.put(seqNumber, new GroupRequestTracker(target.getViewManager().getCurrentViewF() + 1));
 				target.invokeAsynchRequest(req.toBytes(), c, TOMMessageType.ORDERED_REQUEST);
-
-				// System.out.println("result size = " + result.length);
-				// for (int i = 0; i < dest.length; i++)
-				// System.out.println("Map size (group " + i + "): " + (result == null ? "NULL"
-				// : ByteBuffer.wrap(Arrays.copyOfRange(result, i * 4, i * 4 + 4)).getInt()));
-
 				break;
 			default:
 				System.err.println("Invalid option...");
@@ -170,6 +145,9 @@ public class ConsoleClient implements ReplyListener {
 		}
 	}
 
+	/**
+	 * Async reply reciever 
+	 */
 	@Override
 	public void replyReceived(RequestContext context, TOMMessage reply) {
 		Request replyReq = new Request(reply.getContent());
@@ -180,35 +158,39 @@ public class ConsoleClient implements ReplyListener {
 			repliesTracker.remove(replyReq.getSeqNumber());
 			switch (replyReq.getType()) {
 			case PUT:
-				for(int i =0; i < replyReq.getResult().length; i++) {
+				for (int i = 0; i < replyReq.getResult().length; i++) {
 					System.out.println(
-							
-							"previous value at replica " +replyReq.getDestination()[i]+" : " + (replyReq.getResult()[i] == null ? "NULL" : new String(replyReq.getResult()[i])));
+
+							"previous value at replica " + replyReq.getDestination()[i] + " : "
+									+ (replyReq.getResult()[i] == null ? "NULL" : new String(replyReq.getResult()[i])));
 				}
-				
+
 				break;
 			case GET:
-				for(int i =0; i < replyReq.getResult().length; i++) {
+				for (int i = 0; i < replyReq.getResult().length; i++) {
 					System.out.println(
-							
-							"value at replica " +replyReq.getDestination()[i]+" : " + (replyReq.getResult()[i] == null ? "NULL" : new String(replyReq.getResult()[i])));
+
+							"value at replica " + replyReq.getDestination()[i] + " : "
+									+ (replyReq.getResult()[i] == null ? "NULL" : new String(replyReq.getResult()[i])));
 				}
-			
+
 				break;
 			case REMOVE:
-				for(int i =0; i < replyReq.getResult().length; i++) {
+				for (int i = 0; i < replyReq.getResult().length; i++) {
 					System.out.println(
-							
-							"removed value at replica " +replyReq.getDestination()[i]+" : " + (replyReq.getResult()[i] == null ? "NULL" : new String(replyReq.getResult()[i])));
+
+							"removed value at replica " + replyReq.getDestination()[i] + " : "
+									+ (replyReq.getResult()[i] == null ? "NULL" : new String(replyReq.getResult()[i])));
 				}
 				break;
 			case SIZE:
-				for(int i =0; i < replyReq.getResult().length; i++) {
+				for (int i = 0; i < replyReq.getResult().length; i++) {
 					System.out.println(
-							
-							"map size at replica " +replyReq.getDestination()[i]+" : " + (replyReq.getResult()[i] == null ? "NULL" : new String(replyReq.getResult()[i])));
+
+							"map size at replica " + replyReq.getDestination()[i] + " : "
+									+ (replyReq.getResult()[i] == null ? "NULL" : new String(replyReq.getResult()[i])));
 				}
-				
+
 				break;
 
 			default:

@@ -22,6 +22,7 @@ import ch.usi.inf.dslab.bftamcast.util.Stats;
 
 /**
  * @author Paulo Coelho - paulo.coelho@usi.ch
+ * @author Christian Vuerich - christian.vuerich@usi.ch
  */
 public class ClientThread implements Runnable, ReplyListener {
 	final char[] symbols = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".toCharArray();
@@ -75,18 +76,16 @@ public class ClientThread implements Runnable, ReplyListener {
 				Collections.shuffle(list);
 				destinations = list.subList(r.nextInt(list.size()), list.size() - 1).stream().mapToInt(i -> i)
 						.toArray();
-				// RequestType type = destinations.length > 1 ? RequestType.SIZE :
-				// RequestType.PUT;
-				RequestType type = RequestType.GET;
+				 RequestType type = destinations.length > 1 ? RequestType.SIZE :
+				 RequestType.PUT;
+
 				req = new Request(type, key, value, destinations, seqNumber, clientId, clientId);
 
 				AsynchServiceProxy prox = overlayTree.lca(req.getDestination()).getProxy();
 				prox.invokeAsynchRequest(req.toBytes(), this, TOMMessageType.ORDERED_REQUEST);
 				// TODO maybe needed to cancel requests, but will check later for performance
 				// prox.cleanAsynchRequest(requestId);
-				repliesTracker.put(seqNumber, new GroupRequestTracker(((int) Math.ceil(
-						(double) (prox.getViewManager().getCurrentViewN() + prox.getViewManager().getCurrentViewF() + 1)
-								/ 2.0))));
+				repliesTracker.put(seqNumber, new GroupRequestTracker(prox.getViewManager().getCurrentViewF()+1));
 				now = System.nanoTime();
 				elapsed = (now - startTime);
 			} catch (Exception e) {
@@ -125,7 +124,9 @@ public class ClientThread implements Runnable, ReplyListener {
 		return new String(buf);
 	}
 
-	// listener for async replies
+	/**
+	 * Async reply reciever 
+	 */
 	@Override
 	public void replyReceived(RequestContext context, TOMMessage reply) {
 		if (reply == null) {
@@ -153,7 +154,8 @@ public class ClientThread implements Runnable, ReplyListener {
 			}finally {
 				lock.unlock();
 			}
-//			System.out.println("finish, sent up req # " + replyReq.getSeqNumber());
+			
+			//remove finished request tracker
 			repliesTracker.remove(replyReq.getSeqNumber());
 		}
 	}

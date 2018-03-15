@@ -3,6 +3,10 @@ package ch.usi.inf.dslab.bftamcast.util;
 import ch.usi.inf.dslab.bftamcast.kvs.Request;
 import io.netty.util.internal.ConcurrentSet;
 
+/**
+ * @author Christian Vuerich - christian.vuerich@usi.ch
+ * Tracker for the replies from a single group
+ */
 public class GroupRequestTracker {
 	private ConcurrentSet<Request> replies;
 	private int majority;
@@ -20,15 +24,9 @@ public class GroupRequestTracker {
 
 	public boolean addReply(Request reply) {
 		int count = 0;
-		// System.out.println();
-		// System.out.println();
 		for (Request r : replies) {
-			// System.out.println();
-			// System.out.println(r.toString());
-			// System.out.println(reply.toString());
 			if (r.equals(reply)) {
 				count++;
-				// System.out.println("same");
 			}
 		}
 
@@ -39,7 +37,6 @@ public class GroupRequestTracker {
 			majorityReply = reply;
 		}
 		if (currentMajority >= majority) {
-			// System.out.println("MajReached");
 			endTime = System.nanoTime();
 			majreached = true;
 			return true;
@@ -59,13 +56,9 @@ public class GroupRequestTracker {
 		return majorityReply;
 	}
 
-	
-
 	public ConcurrentSet<Request> getRequests() {
 		return replies;
 	}
-
-
 
 	public int getMajNeed() {
 		return majority;

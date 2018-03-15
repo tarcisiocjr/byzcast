@@ -1,10 +1,7 @@
-/**
- * 
- */
+
 package ch.usi.inf.dslab.bftamcast.server;
 
 import java.io.Serializable;
-import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
@@ -34,29 +31,19 @@ import ch.usi.inf.dslab.bftamcast.util.RequestTracker;
 /**
  * @author Christian Vuerich - christian.vuerich@usi.ch
  *
- *         Temporary class to start experimenting and understanding byzcast
- * 
- *         - understand byzcast structure - make server and clients non blocking
- *         (asynchronous) - remove auxiliary groups and use target groups to
- *         build the overlay tree
  */
 public class ReplicaReplier implements Replier, FIFOExecutable, Serializable, ReplyListener {
 
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = 1L;
-	// keep the proxy of all groups and comput lca etc/
+	// keep the proxy of all groups and compute lca etc/
 	private Tree overlayTree;
 	private int groupId;
 	protected transient Lock replyLock;
 	protected transient Condition contextSet;
 	protected transient ReplicaContext rc;
-
-	// request container, put received message here
 	protected Request req;
 
-	// keystore map
+	// key store map
 	private Map<Integer, byte[]> table;
 	// trackers for replies from replicas
 	private ConcurrentMap<Integer, ConcurrentHashMap<Integer, RequestTracker>> repliesTracker;
@@ -79,7 +66,6 @@ public class ReplicaReplier implements Replier, FIFOExecutable, Serializable, Re
 		this.overlayTree = new Tree(treeConfig, UUID.randomUUID().hashCode());
 		this.groupId = groupID;
 		me = overlayTree.findVertexById(groupID);
-
 		replyLock = new ReentrantLock();
 		contextSet = replyLock.newCondition();
 		globalReplies = new ConcurrentHashMap<>();
@@ -133,12 +119,11 @@ public class ReplicaReplier implements Replier, FIFOExecutable, Serializable, Re
 			int majReplicasOfSender = 0;
 			// this group is not the lcs, so not contacted directly from client
 			if (groupId != lca.getGroupId()) {
-				majReplicasOfSender = (int) Math.ceil((double) (me.parent.getProxy().getViewManager().getCurrentViewN()
-						+ me.parent.getProxy().getViewManager().getCurrentViewF() + 1) / 2.0);
+				majReplicasOfSender = me.getParent().getProxy().getViewManager().getCurrentViewF() + 1;
 			}
 
 			// save message
-			Vector<TOMMessage> msgs = saveReply(request, req.getSeqNumber(), req.getClient());
+			Vector<TOMMessage> msgs = saveRequest(request, req.getSeqNumber(), req.getClient());
 			// check if majority of parent contacted me, and request is the same
 			// -1 because the request used to compare other is already in msgs
 			int count = -1;
@@ -170,8 +155,7 @@ public class ReplicaReplier implements Replier, FIFOExecutable, Serializable, Re
 					// my child in tree is a destination, forward it
 					else if (me.getChildernIDs().contains(destinations[i])) {
 						Vertex v = overlayTree.findVertexById(destinations[i]);
-						toSend.put(v, (int) Math.ceil((double) (v.getProxy().getViewManager().getCurrentViewN()
-								+ v.getProxy().getViewManager().getCurrentViewF() + 1) / 2.0));
+						toSend.put(v, v.getProxy().getViewManager().getCurrentViewF() + 1);
 					}
 					// destination must be in the path of only one of my childrens
 					else {
@@ -179,9 +163,7 @@ public class ReplicaReplier implements Replier, FIFOExecutable, Serializable, Re
 						for (Vertex v : me.getChildren()) {
 							if (v.inReach(destinations[i])) {
 								if (!toSend.keySet().contains(v)) {
-									toSend.put(v,
-											(int) Math.ceil((double) (v.getProxy().getViewManager().getCurrentViewN()
-													+ v.getProxy().getViewManager().getCurrentViewF() + 1) / 2.0));
+									toSend.put(v,v.getProxy().getViewManager().getCurrentViewF() + 1);
 								}
 								break;// only one path
 							}
@@ -212,10 +194,10 @@ public class ReplicaReplier implements Replier, FIFOExecutable, Serializable, Re
 
 					if (addreq) {
 						repliesTracker.get(req.getClient()).put(req.getSeqNumber(),
-								new RequestTracker(toSend, request, request.getSender(), req));
+								new RequestTracker(toSend, request, req));
 					} else {
 						repliesTracker.get(req.getClient()).put(req.getSeqNumber(),
-								new RequestTracker(toSend, request, request.getSender(), null));
+								new RequestTracker(toSend, request, null));
 					}
 				}
 
@@ -226,10 +208,13 @@ public class ReplicaReplier implements Replier, FIFOExecutable, Serializable, Re
 		}
 	}
 
+	
+	/**
+	 * execute the request give as parameter and put the resulting byte[] in the request result[groupid][]
+	 * @param req
+	 */
 	protected void execute(Request req) {
-		// System.out.println("executed");
 		byte[] resultBytes;
-		// System.out.println(req.getType().toString());
 		switch (req.getType()) {
 		case PUT:
 			resultBytes = table.put(req.getKey(), req.getValue());
@@ -248,9 +233,13 @@ public class ReplicaReplier implements Replier, FIFOExecutable, Serializable, Re
 			System.err.println("Unknown request type: " + req.getType());
 		}
 
+		//set result for this group
 		req.setResult(resultBytes, groupId);
 	}
 
+	/**
+	 * extract the replica context
+	 */
 	@Override
 	public void setReplicaContext(ReplicaContext rc) {
 		this.replyLock.lock();
@@ -259,6 +248,61 @@ public class ReplicaReplier implements Replier, FIFOExecutable, Serializable, Re
 		this.replyLock.unlock();
 	}
 
+	
+
+	/**
+	 *  save TomMessage for each client and seq#, to track how many requests have been received (target f+1 identical)
+	 * @param request
+	 * @param seqNumber
+	 * @param clientID
+	 * @return the vector of received request for a given client and sequence number, used to check f+1
+	 */
+	protected Vector<TOMMessage> saveRequest(TOMMessage request, int seqNumber, int clientID) {
+		Map<Integer, Vector<TOMMessage>> map = globalReplies.computeIfAbsent(clientID, k -> new ConcurrentHashMap<>());
+		Vector<TOMMessage> messages = map.computeIfAbsent(seqNumber, k -> new Vector<>());
+		messages.add(request);
+		return messages;
+	}
+	
+	/**
+	 * Async reply reciever 
+	 */
+	@Override
+	public void replyReceived(RequestContext context, TOMMessage reply) {
+		//unpack request from reply
+		Request replyReq = new Request(reply.getContent());
+		//get the tracker for that request
+		RequestTracker tracker = repliesTracker.get(replyReq.getClient()).get(replyReq.getSeqNumber());
+		//add the reply to tracker and if all involved groups reached their f+1 quota
+		if (tracker != null && tracker.addReply(replyReq)) {
+			//get reply with all groups replies
+			Request sendReply = tracker.getMergedReply();
+			//get all requests waiting for this answer
+			Vector<TOMMessage> msgs = globalReplies.get(replyReq.getClient()).get(replyReq.getSeqNumber());
+			//add finished request result to map, for storage and eventual later re-submission
+			processedReplies.computeIfAbsent(sendReply.getClient(), k -> new ConcurrentHashMap<>());
+			processedReplies.get(sendReply.getClient()).put(sendReply.getSeqNumber(), sendReply);
+			//reply to all
+			for (TOMMessage msg : msgs) {
+				msg.reply.setContent(sendReply.toBytes());
+				rc.getServerCommunicationSystem().send(new int[] { msg.getSender() }, msg.reply);
+			}
+			//remove entries for processed and save reply
+			globalReplies.get(req.getClient()).remove(sendReply.getSeqNumber());
+			repliesTracker.get(req.getClient()).remove(sendReply.getSeqNumber());
+
+		}
+	}
+
+	
+	/////// TODO Override methods, maybe to fix, will look into it later 
+	
+	
+	@Override
+	public void reset() {
+
+	}
+	
 	@Override
 	public byte[] executeOrderedFIFO(byte[] bytes, MessageContext messageContext, int i, int i1) {
 		return bytes;
@@ -277,40 +321,5 @@ public class ReplicaReplier implements Replier, FIFOExecutable, Serializable, Re
 	@Override
 	public byte[] executeUnordered(byte[] bytes, MessageContext messageContext) {
 		throw new UnsupportedOperationException("All ordered messages should be FIFO");
-	}
-
-	protected Vector<TOMMessage> saveReply(TOMMessage reply, int seqNumber, int clientID) {
-		Map<Integer, Vector<TOMMessage>> map = globalReplies.computeIfAbsent(clientID, k -> new ConcurrentHashMap<>());
-		Vector<TOMMessage> messages = map.computeIfAbsent(seqNumber, k -> new Vector<>());
-		messages.add(reply);
-		return messages;
-	}
-
-	@Override
-	public void replyReceived(RequestContext context, TOMMessage reply) {
-		// TODO check for every group
-		// System.out.println("reply received");
-		Request replyReq = new Request(reply.getContent());
-		RequestTracker tracker = repliesTracker.get(replyReq.getClient()).get(replyReq.getSeqNumber());
-		if (tracker != null && tracker.addReply(replyReq)) {
-			Request sendReply = tracker.getMergedReply();
-			Vector<TOMMessage> msgs = globalReplies.get(replyReq.getClient()).get(replyReq.getSeqNumber());
-
-			processedReplies.computeIfAbsent(sendReply.getClient(), k -> new ConcurrentHashMap<>());
-			processedReplies.get(sendReply.getClient()).put(sendReply.getSeqNumber(), sendReply);
-			for (TOMMessage msg : msgs) {
-				msg.reply.setContent(sendReply.toBytes());
-				rc.getServerCommunicationSystem().send(new int[] { msg.getSender() }, msg.reply);
-			}
-			globalReplies.get(req.getClient()).remove(sendReply.getSeqNumber());
-			repliesTracker.get(req.getClient()).remove(sendReply.getSeqNumber());
-
-		}
-	}
-
-	@Override
-	public void reset() {
-		// TODO reset for reply receiver
-
 	}
 }
