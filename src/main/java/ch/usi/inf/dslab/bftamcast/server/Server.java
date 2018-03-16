@@ -9,10 +9,15 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import bftsmart.tom.MessageContext;
 import bftsmart.tom.ServiceReplica;
 import bftsmart.tom.server.defaultservices.DefaultRecoverable;
+import ch.usi.inf.dslab.bftamcast.kvs.Request;
 import ch.usi.inf.dslab.bftamcast.util.CLIParser;
 
 /**
@@ -110,6 +115,17 @@ public class Server extends DefaultRecoverable{
 	@Override
 	public byte[][] appExecuteBatch(byte[][] commands, MessageContext[] msgCtxs) {
 		//TODO extract requests, make the replier handle them
+		ByteArrayOutputStream bos = new ByteArrayOutputStream();
+		byte[][] replies = new byte[commands.length][];
+		Request[] reqs = new Request[commands.length];
+		for (int i = 0; i < reqs.length; i++) {
+			reqs[i] = new Request(commands[i]);
+		}
+		
+		Map<Integer, List<Request>> replicaRequests = new HashMap<>();
+		for(Request r : reqs) {
+			
+		}
 		
 //		Paulo code:
 //				ByteArrayOutputStream bos = new ByteArrayOutputStream();

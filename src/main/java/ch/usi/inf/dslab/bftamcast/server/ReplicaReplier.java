@@ -26,6 +26,7 @@ import bftsmart.tom.server.Replier;
 import ch.usi.inf.dslab.bftamcast.graph.Tree;
 import ch.usi.inf.dslab.bftamcast.graph.Vertex;
 import ch.usi.inf.dslab.bftamcast.kvs.Request;
+import ch.usi.inf.dslab.bftamcast.kvs.RequestType;
 import ch.usi.inf.dslab.bftamcast.util.RequestTracker;
 
 /**
@@ -93,6 +94,10 @@ public class ReplicaReplier implements Replier, FIFOExecutable, Serializable, Re
 		// extract request from tom message
 		req = new Request(request.getContent());
 		req.setSender(groupId);
+		if (req.getType() == RequestType.BATCH) {
+			Request[] reqs = Request.ArrayfromBytes(req.getValue());
+			//TODO
+		}
 
 		// already processes and answered request to other replicas, send what has been
 		// done
