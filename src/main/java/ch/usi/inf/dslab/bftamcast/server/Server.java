@@ -114,6 +114,10 @@ public class Server extends DefaultRecoverable{
 	 */
 	@Override
 	public byte[][] appExecuteBatch(byte[][] commands, MessageContext[] msgCtxs) {
+		
+		// do it in the replier and client??
+		//how to build batch for mixed clients?
+		
 		//TODO extract requests, make the replier handle them
 		ByteArrayOutputStream bos = new ByteArrayOutputStream();
 		byte[][] replies = new byte[commands.length][];
@@ -122,10 +126,15 @@ public class Server extends DefaultRecoverable{
 			reqs[i] = new Request(commands[i]);
 		}
 		
+		//TODO prepare batch for children
 		Map<Integer, List<Request>> replicaRequests = new HashMap<>();
 		for(Request r : reqs) {
-			
 		}
+		//TODO do I have to execute aswell??
+		
+		//TODO prepare tracker for batches
+		
+		//TODO listen for replies and rebuild original batch with replies and return its byte[][]
 		
 //		Paulo code:
 //				ByteArrayOutputStream bos = new ByteArrayOutputStream();
