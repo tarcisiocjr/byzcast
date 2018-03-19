@@ -60,7 +60,6 @@ public class Tree implements Serializable {
 			rd = new BufferedReader(fr);
 			String line = null;
 			while ((line = rd.readLine()) != null) {
-				System.out.println(line);
 				if (!line.startsWith("#") && !line.isEmpty()) {
 					// TODO instead of reading nodes and then tree, read nodes and specs (througput
 					// etc and build optimal tree)

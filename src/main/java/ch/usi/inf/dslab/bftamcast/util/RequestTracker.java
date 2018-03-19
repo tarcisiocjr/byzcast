@@ -20,10 +20,9 @@ public class RequestTracker {
 	private TOMMessage recivedRequest;
 	private Request myreply;
 
-	public RequestTracker(Map<Vertex, Integer> groups, TOMMessage original, Request myreply) {
+	public RequestTracker(Map<Vertex, Integer> groups, Request myreply) {
 		this.myreply = myreply;
 		tracker = new ConcurrentHashMap<>();
-		recivedRequest = original;
 		for (Vertex groupId : groups.keySet()) {
 
 			tracker.put(groupId.getGroupId(), new GroupRequestTracker(groups.get(groupId)));
@@ -32,7 +31,6 @@ public class RequestTracker {
 	}
 
 	public boolean addReply(Request req) {
-		System.out.println(req.getSender());
 		tracker.get(req.getSender()).addReply(req);
 		return checkAll();
 	}
