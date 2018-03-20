@@ -9,18 +9,10 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 import bftsmart.tom.MessageContext;
 import bftsmart.tom.ServiceReplica;
 import bftsmart.tom.server.defaultservices.DefaultRecoverable;
-import ch.usi.inf.dslab.bftamcast.graph.Tree;
-import ch.usi.inf.dslab.bftamcast.graph.Vertex;
-import ch.usi.inf.dslab.bftamcast.kvs.Request;
-import ch.usi.inf.dslab.bftamcast.kvs.RequestType;
 import ch.usi.inf.dslab.bftamcast.util.CLIParser;
 
 /**
@@ -29,8 +21,7 @@ import ch.usi.inf.dslab.bftamcast.util.CLIParser;
  */
 public class Server extends DefaultRecoverable {
 	private ReplicaReplier replier;
-	private int id, groupId, nextTS;
-	private int seqN = 0;
+	private int id, groupId;
 
 	/**
 	 * main for launching group member
@@ -59,7 +50,6 @@ public class Server extends DefaultRecoverable {
 	public Server(int id, int group, String configPath, String treeConfigPath) {
 		this.id = id;
 		this.groupId = group;
-		this.nextTS = 0;
 		replier = new ReplicaReplier(id, group, treeConfigPath);
 
 		try {
@@ -74,8 +64,7 @@ public class Server extends DefaultRecoverable {
 	}
 
 	/**
-	 * install snapshot for this replica //TODO add needed fields when batching is
-	 * done
+	 * install snapshot for this replica
 	 */
 	@Override
 	public void installSnapshot(byte[] state) {
@@ -85,7 +74,6 @@ public class Server extends DefaultRecoverable {
 			replier = (ReplicaReplier) in.readObject();
 			id = in.readInt();
 			groupId = in.readInt();
-			nextTS = in.readInt();
 			in.close();
 			bis.close();
 		} catch (ClassNotFoundException e) {
@@ -98,7 +86,7 @@ public class Server extends DefaultRecoverable {
 	}
 
 	/**
-	 * get snapshot for this replica //TODO add needed fields when batching is done
+	 * get snapshot for this replica
 	 */
 	@Override
 	public byte[] getSnapshot() {
@@ -108,7 +96,6 @@ public class Server extends DefaultRecoverable {
 			out.writeObject(replier);
 			out.writeInt(id);
 			out.writeInt(groupId);
-			out.writeInt(nextTS);
 			out.flush();
 			out.close();
 			bos.close();

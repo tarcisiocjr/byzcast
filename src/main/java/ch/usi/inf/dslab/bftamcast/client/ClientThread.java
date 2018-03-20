@@ -63,7 +63,14 @@ public class ClientThread implements Runnable, ReplyListener {
 		startTime = System.nanoTime();
 
 		Request req;
+		double perc = globalPerc/100;
+		int [] dests = new int[overlayTree.getDestinations().size()];
+		for (int j = 0; j < dests.length; j++) {
+			dests[j] = overlayTree.getDestinations().get(j);
+		}
 
+		List<Integer> list = new LinkedList<Integer>(overlayTree.getDestinations());
+		
 		while (elapsed / 1e9 < runTime) {
 			try {
 
@@ -71,10 +78,13 @@ public class ClientThread implements Runnable, ReplyListener {
 				byte[] value = randomString(size).getBytes();
 				int[] destinations;
 				int key = r.nextInt(Integer.MAX_VALUE);
-				List<Integer> list = new LinkedList<Integer>(overlayTree.getDestinations());
+				
 				Collections.shuffle(list);
-				destinations = list.subList(r.nextInt(list.size()), list.size() - 1).stream().mapToInt(i -> i)
-						.toArray();
+				if(r.nextDouble() <= perc) {
+					destinations = dests;
+				}else {
+				destinations = new int[] {dests[r.nextInt(dests.length)]};
+				}
 				 RequestType type = destinations.length > 1 ? RequestType.SIZE :
 				 RequestType.PUT;
 

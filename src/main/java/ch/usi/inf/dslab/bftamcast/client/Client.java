@@ -3,6 +3,7 @@ package ch.usi.inf.dslab.bftamcast.client;
 import ch.usi.inf.dslab.bftamcast.util.CLIParser;
 
 import java.util.Random;
+import java.util.UUID;
 
 /**
  * @author Paulo Coelho - paulo.coelho@usi.ch
@@ -16,7 +17,7 @@ public class Client {
         int valueSize = p.getMsgSize();
         int clientCount = p.getClientCount();
         int idGroup = p.getGroup();
-        int id = p.getId() == 0 ? r.nextInt(Integer.MAX_VALUE) : p.getId();
+        int id = UUID.randomUUID().hashCode();
         int perc = p.getGlobalPercent();
         boolean ng = p.isNonGenuine();
         String treeConfigPath = p.getTreeConfig();

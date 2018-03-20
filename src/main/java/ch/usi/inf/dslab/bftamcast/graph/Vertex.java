@@ -38,6 +38,13 @@ public class Vertex implements Serializable {
 		inReach = new ArrayList<>();
 		this.groupId = ID;
 		this.proxy = new AsynchServiceProxy(proxyID, confPath);
+//		ScheduledThreadPoolExecutor exec = new ScheduledThreadPoolExecutor(1);
+//
+//		exec.schedule(new Runnable() {
+//		          public void run() {
+//		        	 
+//		          }
+//		     }, 0, TimeUnit.SECONDS);
 	}
 
 	// max load
