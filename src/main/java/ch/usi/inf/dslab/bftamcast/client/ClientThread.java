@@ -63,7 +63,6 @@ public class ClientThread implements Runnable, ReplyListener {
 		startTime = System.nanoTime();
 
 		Request req;
-		//TODO map keys to replicas, in order to not have conflicting readings
 
 		while (elapsed / 1e9 < runTime) {
 			try {

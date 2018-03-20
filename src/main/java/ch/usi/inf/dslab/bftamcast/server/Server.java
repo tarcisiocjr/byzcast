@@ -121,114 +121,11 @@ public class Server extends DefaultRecoverable {
 		}
 	}
 
-//	/**
-//	 * Execute batch of requests, not sure it make sense, but I still have to read
-//	 * how it works and check what paulo did
-//	 */
-//	@Override
-//	public byte[][] appExecuteBatch(byte[][] commands, MessageContext[] msgCtxs) {
-//
-//		// do it in the replier and client??
-//		// how to build batch for mixed clients?
-//
-//		// TODO extract requests, make the replier handle them
-//		ByteArrayOutputStream bos = new ByteArrayOutputStream();
-//		byte[][] replies = new byte[commands.length][];
-//		Request[] reqs = new Request[commands.length];
-//		for (int i = 0; i < reqs.length; i++) {
-//			reqs[i] = new Request(commands[i]);
-//		}
-//
-//		// TODO prepare batch for children
-//		Map<Vertex, List<Request>> replicaRequests = new HashMap<>();
-//		Tree overlayTree = replier.getOverlayTree();
-//		for (Request req : reqs) {
-//			// forward to me
-//			for (int dest : req.getDestination()) {
-//				if (groupId == dest) {
-//					replicaRequests.computeIfAbsent(replier.getVertex(), k -> new ArrayList<>());
-//					replicaRequests.get(replier.getVertex()).add(req);
-//				} else if (replier.getVertex().getChildernIDs().contains(dest)) {
-//					Vertex v = overlayTree.findVertexById(dest);
-//					replicaRequests.computeIfAbsent(v, k -> new ArrayList<>());
-//					replicaRequests.get(v).add(req);
-//				}
-//
-//				else {
-//					for (Vertex v : replier.getVertex().getChildren()) {
-//						if (v.inReach(dest)) {
-//							if (!replicaRequests.containsKey(v) || !replicaRequests.get(v).contains(req)) {
-//								replicaRequests.computeIfAbsent(v, k -> new ArrayList<>());
-//								replicaRequests.get(v).add(req);
-//							}
-//							break;// only one path
-//						}
-//					}
-//				}
-//			}
-//		}
-//
-//		// batch identical destinations requests?
-//
-//		// if destinations are different need a different tracker for eachone?? do that
-//		// in replier?
-//
-//		Thread[] threads = new Thread[replicaRequests.keySet().size()];
-//		Request[] threadsReplies = new Request[overlayTree.getDestinations().size()];
-//
-//		int i = 0;
-//		for (Vertex dest : replicaRequests.keySet()) {
-//			Request batchReq = new Request(RequestType.BATCH, 0,
-//					Request.ArrayToBytes(replicaRequests.get(dest).toArray(new Request[0])),
-//					new int[] { dest.getGroupId() }, seqN++, groupId, groupId);
-//			// can use async but can not access to reply inside this method, while have to
-//			// wait until callback (same as doing synchronous)
-//			//how merge replies from multiple replicas??? you get only one!? proxy with asyn produce f+1 answers, but invokeordered only one, where to check??
-//			threads[i] = new Thread(
-//					() -> threadsReplies[dest.getGroupId()] = new Request(dest.getProxy().invokeOrdered(batchReq.toBytes())));
-//
-//			threads[i].start();
-//			i++;
-//		}
-//
-//		for (int j = 0; j < threads.length; j++) {
-//			try {
-//				threads[j].join();
-//			} catch (InterruptedException e) {
-//				// TODO Auto-generated catch block
-//				e.printStackTrace();
-//			}
-//		}
-//
-//		// merge replies for same requests 
-//		
-//		//continue after talking with paulo
-//
-//		
-//		throw new UnsupportedOperationException("Implemented by UniversalReplier");
-//	}
 	
 	
 	@Override
 	public byte[][] appExecuteBatch(byte[][] commands, MessageContext[] msgCtxs) {
-
-		// do it in the replier and client??
-		// how to build batch for mixed clients?
-
-		// TODO extract requests, make the replier handle them
-		ByteArrayOutputStream bos = new ByteArrayOutputStream();
-		Request[] batch = new Request[commands.length];
-		for (int i = 0; i < batch.length; i++) {
-			batch[i] = new Request(commands[i]);
-		}
-		System.out.println("BAAAAATCH");
-		System.out.println("BAAAAATCH");
-		System.out.println("BAAAAATCH");
-		System.out.println("BAAAAATCH");
-		System.out.println("BAAAAATCH");
-		System.out.println("BAAAAATCH");
-		System.out.println("BAAAAATCH");
-		return replier.handleBatch(batch);
+		throw new UnsupportedOperationException("Implemented by UniversalReplier");
 	}
 
 	@Override
