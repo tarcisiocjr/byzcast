@@ -14,17 +14,20 @@ import bftsmart.tom.AsynchServiceProxy;
 import bftsmart.tom.RequestContext;
 import bftsmart.tom.core.messages.TOMMessage;
 import bftsmart.tom.core.messages.TOMMessageType;
-import ch.usi.inf.dslab.bftamcast.graph.Tree;
+import ch.usi.inf.dslab.bftamcast.graph.TreeDirect;
+import ch.usi.inf.dslab.bftamcast.graph.VertexDirect;
 import ch.usi.inf.dslab.bftamcast.kvs.Request;
 import ch.usi.inf.dslab.bftamcast.kvs.RequestType;
 import ch.usi.inf.dslab.bftamcast.util.GroupRequestTracker;
+import ch.usi.inf.dslab.bftamcast.util.RequestTracker;
+import ch.usi.inf.dslab.bftamcast.util.RequestTrackerDirect;
 import ch.usi.inf.dslab.bftamcast.util.Stats;
 
 /**
  * @author Paulo Coelho - paulo.coelho@usi.ch
  * @author Christian Vuerich - christian.vuerich@usi.ch
  */
-public class ClientThread implements Runnable, ReplyListener {
+public class ClientThreadDirect implements Runnable, ReplyListener {
 	final char[] symbols = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".toCharArray();
 	final int clientId;
 	final int groupId;
@@ -36,12 +39,12 @@ public class ClientThread implements Runnable, ReplyListener {
 	final Random random;
 	final Stats localStats, globalStats;
 	final Map<Integer, GroupRequestTracker> repliesTracker;
+	final Map<Integer, RequestTrackerDirect> repliesTracker2;
 	long startTime, delta = 0, elapsed = 0;
-	private Tree overlayTree;
-	private long now;
+	private TreeDirect overlayTree;
 	private ReentrantLock lock = new ReentrantLock();
 
-	public ClientThread(int clientId, int groupId, boolean verbose, int runTime, int valueSize, int globalPerc,
+	public ClientThreadDirect(int clientId, int groupId, boolean verbose, int runTime, int valueSize, int globalPerc,
 			boolean ng, String treeConfigPath) {
 		this.clientId = clientId;
 		this.groupId = groupId;
@@ -53,7 +56,8 @@ public class ClientThread implements Runnable, ReplyListener {
 		this.localStats = new Stats();
 		this.globalStats = new Stats();
 		this.repliesTracker = new HashMap<>();
-		this.overlayTree = new Tree(treeConfigPath, UUID.randomUUID().hashCode());
+		this.repliesTracker2 = new HashMap<>();
+		this.overlayTree = new TreeDirect(treeConfigPath, UUID.randomUUID().hashCode(), null);
 	}
 
 	@Override
@@ -63,14 +67,14 @@ public class ClientThread implements Runnable, ReplyListener {
 		startTime = System.nanoTime();
 
 		Request req;
-		double perc = globalPerc/100;
-		int [] dests = new int[overlayTree.getDestinations().size()];
+		double perc = globalPerc / 100;
+		int[] dests = new int[overlayTree.getDestinations().size()];
 		for (int j = 0; j < dests.length; j++) {
 			dests[j] = overlayTree.getDestinations().get(j);
 		}
 
 		List<Integer> list = new LinkedList<Integer>(overlayTree.getDestinations());
-		
+
 		while (elapsed / 1e9 < runTime) {
 			try {
 
@@ -78,15 +82,14 @@ public class ClientThread implements Runnable, ReplyListener {
 				byte[] value = randomString(size).getBytes();
 				int[] destinations;
 				int key = r.nextInt(Integer.MAX_VALUE);
-				
+
 				Collections.shuffle(list);
-				if(r.nextDouble() <= perc) {
+				if (r.nextDouble() <= perc) {
 					destinations = dests;
-				}else {
-				destinations = new int[] {dests[r.nextInt(dests.length)]};
+				} else {
+					destinations = new int[] { dests[r.nextInt(dests.length)] };
 				}
-				 RequestType type = destinations.length > 1 ? RequestType.SIZE :
-				 RequestType.PUT;
+				RequestType type = destinations.length > 1 ? RequestType.SIZE : RequestType.PUT;
 
 				req = new Request(type, key, value, destinations, seqNumber, clientId, clientId);
 
@@ -94,9 +97,15 @@ public class ClientThread implements Runnable, ReplyListener {
 				prox.invokeAsynchRequest(req.toBytes(), this, TOMMessageType.ORDERED_REQUEST);
 				// TODO maybe needed to cancel requests, but will check later for performance
 				// prox.cleanAsynchRequest(requestId);
-				repliesTracker.put(seqNumber, new GroupRequestTracker(prox.getViewManager().getCurrentViewF()+1));
-				now = System.nanoTime();
-				elapsed = (now - startTime);
+//				repliesTracker.put(seqNumber, new GroupRequestTracker(prox.getViewManager().getCurrentViewF() + 1));
+				Map<VertexDirect, Integer> totrack = new HashMap<>();
+				VertexDirect v;
+				for (int i = 0; i < destinations.length; i++) {
+					v = overlayTree.findVertexById(destinations[i]);
+					totrack.put(v, v.getProxy().getViewManager().getCurrentViewF() + 1);
+				}
+				repliesTracker2.put(seqNumber, new RequestTrackerDirect(totrack, null));
+
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
@@ -134,7 +143,7 @@ public class ClientThread implements Runnable, ReplyListener {
 	}
 
 	/**
-	 * Async reply reciever 
+	 * Async reply reciever
 	 */
 	@Override
 	public void replyReceived(RequestContext context, TOMMessage reply) {
@@ -145,29 +154,58 @@ public class ClientThread implements Runnable, ReplyListener {
 		// convert reply to request object
 		Request replyReq = new Request(reply.getContent());
 		// add it to tracker and check if majority of replies reached
-		GroupRequestTracker tracker = repliesTracker.get(replyReq.getSeqNumber());
-
+		// GroupRequestTracker tracker = repliesTracker.get(replyReq.getSeqNumber());
+		//
+		// if (tracker != null && tracker.addReply(replyReq)) {
+		// lock.lock();
+		// try {
+		// if (replyReq.getDestination().length > 1)
+		// globalStats.store(tracker.getElapsedTime() / 1000);
+		// else
+		// localStats.store(tracker.getElapsedTime() / 1000);
+		// if (verbose && elapsed - delta >= 2 * 1e9) {
+		// System.out.println("Client " + clientId + " ops/second:"
+		// + (localStats.getPartialCount() + globalStats.getPartialCount())
+		// / ((float) (elapsed - delta) / 1e9));
+		// delta = elapsed;
+		// }
+		// }finally {
+		// lock.unlock();
+		// }
+		//
+		// //remove finished request tracker
+		// repliesTracker.remove(replyReq.getSeqNumber());
+		// }
+		// get the tracker for that request
+		RequestTrackerDirect tracker = repliesTracker2.get(replyReq.getSeqNumber());
+		// add the reply to tracker and if all involved groups reached their f+1 quota
 		if (tracker != null && tracker.addReply(replyReq)) {
-			lock.lock();
+			// get reply with all groups replies
+			Request finalReply = tracker.getMergedReply();
 			try {
-			if (replyReq.getDestination().length > 1)
-				globalStats.store(tracker.getElapsedTime() / 1000);
-			else
-				localStats.store(tracker.getElapsedTime() / 1000);
-			if (verbose && elapsed - delta >= 2 * 1e9) {
-				System.out.println("Client " + clientId + " ops/second:"
-						+ (localStats.getPartialCount() + globalStats.getPartialCount())
-								/ ((float) (elapsed - delta) / 1e9));
-				delta = elapsed;
-			}
-			}finally {
+				if (finalReply.getDestination().length > 1)
+					globalStats.store(tracker.getElapsedTime() / 1000);
+				else
+					localStats.store(tracker.getElapsedTime() / 1000);
+				if (verbose && elapsed - delta >= 2 * 1e9) {
+					System.out.println("Client " + clientId + " ops/second:"
+							+ (localStats.getPartialCount() + globalStats.getPartialCount())
+									/ ((float) (elapsed - delta) / 1e9));
+					delta = elapsed;
+				}
+			} finally {
 				lock.unlock();
 			}
-			
-			//remove finished request tracker
-			repliesTracker.remove(replyReq.getSeqNumber());
+
+			// remove finished request tracker
+			repliesTracker2.remove(replyReq.getSeqNumber());
+
 		}
+	
+
 	}
+
+	
 
 	@Override
 	public void reset() {

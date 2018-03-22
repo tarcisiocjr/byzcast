@@ -24,20 +24,23 @@ import bftsmart.tom.server.BatchExecutable;
 import bftsmart.tom.server.FIFOExecutable;
 import bftsmart.tom.server.Replier;
 import ch.usi.inf.dslab.bftamcast.graph.Tree;
+import ch.usi.inf.dslab.bftamcast.graph.TreeDirect;
 import ch.usi.inf.dslab.bftamcast.graph.Vertex;
+import ch.usi.inf.dslab.bftamcast.graph.VertexDirect;
 import ch.usi.inf.dslab.bftamcast.kvs.Request;
-import ch.usi.inf.dslab.bftamcast.util.RequestTracker;
+import ch.usi.inf.dslab.bftamcast.kvs.RequestType;
 import io.netty.util.internal.ConcurrentSet;
 
 /**
  * @author Christian Vuerich - christian.vuerich@usi.ch
  *
  */
-public class ReplicaReplier implements Replier, FIFOExecutable, BatchExecutable, Serializable, ReplyListener {
+public class ReplicaReplierDirect implements Replier, FIFOExecutable, BatchExecutable, Serializable, ReplyListener {
+
 
 	private static final long serialVersionUID = 1L;
 	// keep the proxy of all groups and compute lca etc/
-	private Tree overlayTree;
+	private TreeDirect overlayTree;
 	private int groupId;
 	protected transient Lock replyLock;
 	protected transient Condition contextSet;
@@ -47,13 +50,14 @@ public class ReplicaReplier implements Replier, FIFOExecutable, BatchExecutable,
 	// key store map
 	private Map<Integer, byte[]> table;
 	// trackers for replies from replicas
-	private ConcurrentMap<Integer, ConcurrentHashMap<Integer, RequestTracker>> repliesTracker;
+	// private ConcurrentMap<Integer, ConcurrentHashMap<Integer, RequestTracker>>
+	// repliesTracker;
 	// map for finished requests replies
 	private ConcurrentMap<Integer, ConcurrentHashMap<Integer, Request>> processedReplies;
 	// map for not processed requests
 	private ConcurrentMap<Integer, ConcurrentHashMap<Integer, ConcurrentSet<TOMMessage>>> globalReplies;
 	// vertex in the overlay tree representing my group
-	private Vertex me;
+	private VertexDirect me;
 
 	/**
 	 * Constructor
@@ -62,15 +66,15 @@ public class ReplicaReplier implements Replier, FIFOExecutable, BatchExecutable,
 	 * @param groupID
 	 * @param treeConfig
 	 */
-	public ReplicaReplier(int RepID, int groupID, String treeConfig) {
+	public ReplicaReplierDirect(int RepID, int groupID, String treeConfig) {
 
-		this.overlayTree = new Tree(treeConfig, UUID.randomUUID().hashCode());
+		this.overlayTree = new TreeDirect(treeConfig, UUID.randomUUID().hashCode(), null);
 		this.groupId = groupID;
 		me = overlayTree.findVertexById(groupID);
 		replyLock = new ReentrantLock();
 		contextSet = replyLock.newCondition();
 		globalReplies = new ConcurrentHashMap<>();
-		repliesTracker = new ConcurrentHashMap<>();
+		// repliesTracker = new ConcurrentHashMap<>();
 		processedReplies = new ConcurrentHashMap<>();
 
 		table = new TreeMap<>();
@@ -79,7 +83,7 @@ public class ReplicaReplier implements Replier, FIFOExecutable, BatchExecutable,
 	@Override
 	public void manageReply(TOMMessage request, MessageContext msgCtx) {
 
-		req = new Request(request.getContent());
+		
 
 		while (rc == null) {
 			try {
@@ -90,24 +94,36 @@ public class ReplicaReplier implements Replier, FIFOExecutable, BatchExecutable,
 				Logger.getLogger(ReplicaReplier.class.getName()).log(Level.SEVERE, null, ex);
 			}
 		}
-
-		// extract request from tom message
 		req = new Request(request.getContent());
 		req.setSender(groupId);
+		// hack to establish connections
+		if (req.getType() == RequestType.NOP) {
+			System.out.println("connected " + msgCtx.getSender());
+			rc.getServerCommunicationSystem().send(new int[] { req.getClient() }, request.reply); 
+			return;
+		}
+		
+		System.out.println("new message");
+
 
 		// already processes and answered request to other replicas, send what has
 		// been done
 		if (processedReplies.get(req.getClient()) != null
 				&& processedReplies.get(req.getClient()).containsKey(req.getSeqNumber())) {
-			request.reply.setContent(processedReplies.get(req.getClient()).get(req.getSeqNumber()).toBytes());
-			rc.getServerCommunicationSystem().send(new int[] { request.getSender() }, request.reply);
+			System.out.println("already processed, reply directly, req# " + req.getSeqNumber());
+	
 		}
 		// client contacted server directly, no majority needed
-		else if (req.getDestination().length == 1) {
+		else 
+			if (req.getDestination().length == 1) {
+			System.out.println("only destination, server contacted me directly, exec and reply directly");
 			execute(req);
 
 			request.reply.setContent(req.toBytes());
-			rc.getServerCommunicationSystem().send(new int[] { request.getSender() }, request.reply);
+			// rc.getServerCommunicationSystem().send(new int[] { request.getSender() },
+			// request.reply);
+			System.out.println("seeending  req# " + req.getSeqNumber() + "client " + req.getClient());
+			rc.getServerCommunicationSystem().send(new int[] { req.getClient() }, request.reply); 
 			// create entry for client replies if not already these
 			processedReplies.computeIfAbsent(req.getClient(), k -> new ConcurrentHashMap<>());
 			// add processed reply to client replies
@@ -115,11 +131,13 @@ public class ReplicaReplier implements Replier, FIFOExecutable, BatchExecutable,
 		}
 		// another group contacted me, majority needed
 		else {
+			System.out.println("else");
 			// majority of parent group replicas f+1
-			Vertex lca = overlayTree.lca(req.getDestination());
+			VertexDirect lca = overlayTree.lca(req.getDestination());
 			int majReplicasOfSender = 0;
 			// this group is not the lcs, so not contacted directly from client
 			if (groupId != lca.getGroupId()) {
+				System.out.println("not contacted directly from client");
 				majReplicasOfSender = me.getParent().getProxy().getViewManager().getCurrentViewF() + 1;
 			}
 
@@ -135,16 +153,21 @@ public class ReplicaReplier implements Replier, FIFOExecutable, BatchExecutable,
 					count++;
 				}
 			}
+			System.out.println("count = "+ count);
+			System.out.println("maj = " + majReplicasOfSender);
 
 			// majority of replicas sent request and this replica is not already
 			// processing
 			// the request (not processing it more than once)
-			if (count >= majReplicasOfSender && (repliesTracker.get(req.getClient()) == null
-					|| !repliesTracker.get(req.getClient()).containsKey(req.getSeqNumber()))) {
+			if (count >= majReplicasOfSender && (!processedReplies.containsKey(req.getClient())
+					|| !processedReplies.get(req.getClient()).containsKey(req.getSeqNumber()))) {
+				System.out.println("processing!!! req " + req.getSeqNumber());
 
+				globalReplies.get(req.getClient()).remove(req.getSeqNumber());
+				//
 				int[] destinations = req.getDestination();
 				boolean addreq = false;
-				Map<Vertex, Integer> toSend = new HashMap<>();
+				Map<VertexDirect, Integer> toSend = new HashMap<>();
 				// List<Vertex>
 				for (int i = 0; i < destinations.length; i++) {
 					// I am a target, compute but wait for majority of other destination to
@@ -153,17 +176,29 @@ public class ReplicaReplier implements Replier, FIFOExecutable, BatchExecutable,
 					if (destinations[i] == groupId) {
 						execute(req);
 						// System.out.println(req.getValue());
-						addreq = true;
+//						addreq = true;
+						System.out.println("majority reached, I am a destination, execute and send!");
+						processedReplies.computeIfAbsent(req.getClient(), k -> new ConcurrentHashMap<>());
+						// add processed reply to client replies
+						processedReplies.get(req.getClient()).put(req.getSeqNumber(), req);
+					
+						// can remove, later requests will receive answers directly from already
+						// processes replies
+						request.reply.setContent(req.toBytes());
+					
+						System.out.println("seeending  req# " + req.getSeqNumber() + "client " + req.getClient());
+						rc.getServerCommunicationSystem().send(new int[] { req.getClient() }, request.reply);
+						globalReplies.get(req.getClient()).remove(req.getSeqNumber());
 					}
 					// my child in tree is a destination, forward it
 					else if (me.getChildernIDs().contains(destinations[i])) {
-						Vertex v = overlayTree.findVertexById(destinations[i]);
+						VertexDirect v = overlayTree.findVertexById(destinations[i]);
 						toSend.put(v, v.getProxy().getViewManager().getCurrentViewF() + 1);
 					}
 					// destination must be in the path of only one of my childrens
 					else {
 
-						for (Vertex v : me.getChildren()) {
+						for (VertexDirect v : me.getChildren()) {
 							if (v.inReach(destinations[i])) {
 								if (!toSend.keySet().contains(v)) {
 									toSend.put(v, v.getProxy().getViewManager().getCurrentViewF() + 1);
@@ -175,35 +210,10 @@ public class ReplicaReplier implements Replier, FIFOExecutable, BatchExecutable,
 
 				}
 
-				// no other destination is in my reach, send reply back
-				if (toSend.keySet().isEmpty()) {
-					// create entry for client replies if not already these
-					processedReplies.computeIfAbsent(req.getClient(), k -> new ConcurrentHashMap<>());
-					// add processed reply to client replies
-					processedReplies.get(req.getClient()).put(req.getSeqNumber(), req);
-					for (TOMMessage msg : msgs) {
-						msg.reply.setContent(req.toBytes());
-						rc.getServerCommunicationSystem().send(new int[] { msg.getSender() }, msg.reply);
-					}
-					// can remove, later requests will receive answers directly from already
-					// processes replies
-					globalReplies.get(req.getClient()).remove(req.getSeqNumber());
-					return;
-				} else {
+				for (VertexDirect v : toSend.keySet()) {
+					System.out.println("sending to OTHERS req " + req.getSeqNumber());
 
-					// else, tracker for received replies and majority needed
-					// add map for a client tracker if absent
-					repliesTracker.computeIfAbsent(req.getClient(), k -> new ConcurrentHashMap<>());
-
-					if (addreq) {
-						repliesTracker.get(req.getClient()).put(req.getSeqNumber(), new RequestTracker(toSend, req));
-					} else {
-						repliesTracker.get(req.getClient()).put(req.getSeqNumber(), new RequestTracker(toSend, null));
-					}
-				}
-
-				for (Vertex v : toSend.keySet()) {
-					v.getProxy().invokeAsynchRequest(request.getContent(), this, TOMMessageType.ORDERED_REQUEST);
+					v.getProxy().invokeAsynchRequest(req.toBytes(), this, TOMMessageType.ORDERED_REQUEST);
 				}
 			}
 		}
@@ -276,40 +286,14 @@ public class ReplicaReplier implements Replier, FIFOExecutable, BatchExecutable,
 	 */
 	@Override
 	public void replyReceived(RequestContext context, TOMMessage reply) {
-		// unpack request from reply
-		Request replyReq = new Request(reply.getContent());
-		// get the tracker for that request
-		RequestTracker tracker = repliesTracker.get(replyReq.getClient()).get(replyReq.getSeqNumber());
-		// add the reply to tracker and if all involved groups reached their f+1 quota
-		if (tracker != null && tracker.addReply(replyReq)) {
-			// get reply with all groups replies
-			Request sendReply = tracker.getMergedReply();
-			sendReply.setSender(groupId);
-			// get all requests waiting for this answer
-			ConcurrentSet<TOMMessage> msgs = globalReplies.get(replyReq.getClient()).get(replyReq.getSeqNumber());
-			// add finished request result to map, for storage and eventual later
-			// re-submission
-			processedReplies.computeIfAbsent(sendReply.getClient(), k -> new ConcurrentHashMap<>());
-			processedReplies.get(sendReply.getClient()).put(sendReply.getSeqNumber(), sendReply);
-			// reply to all
-			if (msgs != null) {
-				for (TOMMessage msg : msgs) {
-					msg.reply.setContent(sendReply.toBytes());
-					rc.getServerCommunicationSystem().send(new int[] { msg.getSender() }, msg.reply);
-				}
-			}
-			// remove entries for processed and save reply
-			globalReplies.get(req.getClient()).remove(sendReply.getSeqNumber());
-			repliesTracker.get(req.getClient()).remove(sendReply.getSeqNumber());
-
-		}
+		System.out.println("async magic???");
 	}
 
-	public Tree getOverlayTree() {
+	public TreeDirect getOverlayTree() {
 		return overlayTree;
 	}
 
-	public Vertex getVertex() {
+	public VertexDirect getVertex() {
 		return me;
 	}
 

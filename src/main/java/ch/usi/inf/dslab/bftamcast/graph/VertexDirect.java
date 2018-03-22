@@ -11,12 +11,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 import bftsmart.tom.AsynchServiceProxy;
+import ch.usi.inf.dslab.bftamcast.client.ConsoleClientDirect;
 
 /**
  * @author Christian Vuerich - christian.vuerich@usi.ch
  *
  */
-public class Vertex implements Serializable {
+public class VertexDirect implements Serializable {
+	
 
 	/**
 	 * 
@@ -25,19 +27,20 @@ public class Vertex implements Serializable {
 	private transient AsynchServiceProxy proxy;
 	private String confPath;
 	private int groupId;
-	private List<Vertex> children;
+	private List<VertexDirect> children;
 	private List<Integer> childernIDs;
 	private List<Integer> inReach;
 	// cyclic but for now it easy to have for lca
-	private Vertex parent;
+	private VertexDirect parent;
 
-	public Vertex(int ID, String configPath, int proxyID) {
+	public VertexDirect(int ID, String configPath, int proxyID, ConsoleClientDirect c) {
+		System.out.println(ID);
 		this.confPath = configPath;
 		children = new ArrayList<>();
 		childernIDs = new ArrayList<>();
 		inReach = new ArrayList<>();
 		this.groupId = ID;
-		this.proxy = new AsynchServiceProxy(proxyID, confPath);
+		this.proxy = new myAsyncProxy(proxyID, confPath, c);
 //		ScheduledThreadPoolExecutor exec = new ScheduledThreadPoolExecutor(1);
 //
 //		exec.schedule(new Runnable() {
@@ -66,7 +69,7 @@ public class Vertex implements Serializable {
 			return true;
 		}
 		boolean ret = false;
-		for (Vertex v : children) {
+		for (VertexDirect v : children) {
 			ret = v.inReach(groupId);
 			if (ret) {
 				inReach.add(groupId);
@@ -82,12 +85,12 @@ public class Vertex implements Serializable {
 	 * @param id of the vertex you search
 	 * @return the vertex if found or null
 	 */
-	public Vertex findVertexByID(int id) {
+	public VertexDirect findVertexByID(int id) {
 		if (id == groupId) {
 			return this;
 		}
-		Vertex ret = null;
-		for (Vertex v : children) {
+		VertexDirect ret = null;
+		for (VertexDirect v : children) {
 			ret = v.findVertexByID(id);
 			if (ret != null) {
 				return ret;
@@ -146,7 +149,7 @@ public class Vertex implements Serializable {
 	/**
 	 * @return the children
 	 */
-	public List<Vertex> getChildren() {
+	public List<VertexDirect> getChildren() {
 		return children;
 	}
 
@@ -160,7 +163,7 @@ public class Vertex implements Serializable {
 	/**
 	 * @return the parent
 	 */
-	public Vertex getParent() {
+	public VertexDirect getParent() {
 		return parent;
 	}
 
@@ -168,7 +171,7 @@ public class Vertex implements Serializable {
 	/**
 	 * @param parent the parent to set
 	 */
-	public void setParent(Vertex parent) {
+	public void setParent(VertexDirect parent) {
 		this.parent = parent;
 	}
 	

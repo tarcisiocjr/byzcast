@@ -9,7 +9,7 @@ import java.util.Arrays;
  * @author Paulo Coelho - paulo.coelho@usi.ch
  * @author Christian Vuerich - christian.vuerich@usi.ch
  */
-public class Request implements RequestIf, Serializable {
+public class RequestDirect implements RequestIf, Serializable {
 	/**
 	 * 
 	 */
@@ -29,7 +29,7 @@ public class Request implements RequestIf, Serializable {
 	 * 
 	 * @param reqBytes
 	 */
-	public Request(byte[] reqBytes) {
+	public RequestDirect(byte[] reqBytes) {
 		fromBytes(reqBytes);
 	}
 
@@ -42,7 +42,7 @@ public class Request implements RequestIf, Serializable {
 	 * @param seqNumber
 	 * @param sender
 	 */
-	public Request(RequestType type, int key, byte[] value, int[] destination, int seqNumber, int client, int sender) {
+	public RequestDirect(RequestType type, int key, byte[] value, int[] destination, int seqNumber, int client, int sender) {
 		this.client = client;
 		this.sender = sender;
 		this.type = type;
@@ -59,13 +59,13 @@ public class Request implements RequestIf, Serializable {
 	 * @param reqs
 	 * @return
 	 */
-	public static byte[] ArrayToBytes(Request[] reqs) {
+	public static byte[] ArrayToBytes(RequestDirect[] reqs) {
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
 
 		try {
 			ObjectOutputStream dos = new ObjectOutputStream(out);
 			dos.writeInt(reqs.length);
-			for (Request r : reqs) {
+			for (RequestDirect r : reqs) {
 				dos.writeObject(r);
 			}
 			dos.close();
@@ -84,17 +84,17 @@ public class Request implements RequestIf, Serializable {
 	 * @param b
 	 * @return
 	 */
-	public static Request[] ArrayfromBytes(byte[] b) {
+	public static RequestDirect[] ArrayfromBytes(byte[] b) {
 		ByteArrayInputStream in = new ByteArrayInputStream(b);
-		Request[] reqs = null;
+		RequestDirect[] reqs = null;
 		int size;
 
 		try {
 			ObjectInputStream dis = new ObjectInputStream(in);
 			size = dis.readInt();
-			reqs = new Request[size];
+			reqs = new RequestDirect[size];
 			for (int i = 0; i < reqs.length; i++)
-				reqs[i] = (Request) dis.readObject();
+				reqs[i] = (RequestDirect) dis.readObject();
 
 		} catch (IOException | ClassNotFoundException e) {
 			System.err.println("Unable to convert bytes to Request");
@@ -300,8 +300,8 @@ public class Request implements RequestIf, Serializable {
 	@Override
 	public String toString() {
 		StringBuffer buf = new StringBuffer();
-		buf.append("RequestIf '" + this.type + "', key " + this.key + ", seq. number" + this.seqNumber + ", client "
-				+ this.client + " to groups ( ");
+		buf.append("RequestIf '" + this.type + "', key " + this.key + ", seq. number " + this.seqNumber + ", client "
+				+ this.client +", sender " + this.sender + " to groups ( ");
 		for (int dest : this.destination)
 			buf.append(dest + " ");
 		buf.append(')');
@@ -313,7 +313,7 @@ public class Request implements RequestIf, Serializable {
 	 * @param r
 	 * @return
 	 */
-	public boolean equals(Request r) {
+	public boolean equals(RequestDirect r) {
 		if (this.key != r.key) {
 			System.out.println("key problem");
 			return false;

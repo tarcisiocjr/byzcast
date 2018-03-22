@@ -10,16 +10,19 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.StringTokenizer;
 
+import ch.usi.inf.dslab.bftamcast.client.ConsoleClient;
+import ch.usi.inf.dslab.bftamcast.client.ConsoleClientDirect;
+
 /**
  * @author Christian Vuerich - christian.vuerich@usi.ch
  *
  */
-public class Tree implements Serializable {
+public class TreeDirect implements Serializable {
 	/**
 	 * 
 	 */
 	private static final long serialVersionUID = -1340477045756411763L;
-	private Vertex root;
+	private VertexDirect root;
 	private List<Integer> destinations;
 
 	/**
@@ -29,7 +32,7 @@ public class Tree implements Serializable {
 	 *            none
 	 */
 	public static void main(String[] args) {
-		new Tree("config/tree.conf", 0);
+		new TreeDirect("config/tree.conf", 0, null);
 	}
 
 	/**
@@ -49,10 +52,10 @@ public class Tree implements Serializable {
 	 *            containing the id of the vertices and their config path for bft
 	 *            smart and connection between them
 	 */
-	public Tree(String configFile, int proxyID) {
+	public TreeDirect(String configFile, int proxyID, ConsoleClientDirect c) {
 
 		destinations = new ArrayList<>();
-		List<Vertex> vertices = new ArrayList<>();
+		List<VertexDirect> vertices = new ArrayList<>();
 		FileReader fr;
 		BufferedReader rd;
 		try {
@@ -66,7 +69,7 @@ public class Tree implements Serializable {
 					StringTokenizer str = new StringTokenizer(line, " ");
 					// vertex declaration (group)
 					if (str.countTokens() == 2) {
-						vertices.add(new Vertex(Integer.valueOf(str.nextToken()), str.nextToken(), proxyID));
+						vertices.add(new VertexDirect(Integer.valueOf(str.nextToken()), str.nextToken(), proxyID, c));
 						destinations.add(vertices.get(vertices.size() - 1).getGroupId());
 					}
 					// connection declaration
@@ -76,9 +79,9 @@ public class Tree implements Serializable {
 						int to = Integer.valueOf(str.nextToken());
 
 						// add connections in vertices
-						for (Vertex v1 : vertices) {
+						for (VertexDirect v1 : vertices) {
 							if (v1.getGroupId() == from) {
-								for (Vertex v2 : vertices) {
+								for (VertexDirect v2 : vertices) {
 									if (v2.getGroupId() == to) {
 										v1.getChildren().add(v2);
 										v1.getChildernIDs().add(v2.getGroupId());
@@ -89,7 +92,7 @@ public class Tree implements Serializable {
 						}
 
 						// the vertex with no parent is the root vertex of the tree
-						for (Vertex v : vertices) {
+						for (VertexDirect v : vertices) {
 							if (v.getParent() == null) {
 								root = v;
 							}
@@ -113,17 +116,17 @@ public class Tree implements Serializable {
 	 * @return the lowest common ancestor in the tree of all the vertices in the
 	 *         input vertices list.
 	 */
-	public Vertex lca(int[] ids) {
+	public VertexDirect lca(int[] ids) {
 
 		
-		List<Vertex> vertices = new ArrayList<>();
+		List<VertexDirect> vertices = new ArrayList<>();
 		for (int i = 0; i < ids.length; i++) {
 			vertices.add(findVertexById(ids[i]));
 		}
 
 		// tree only has one path between any two nodes, so only one child of root could
 		// be ancestor
-		Vertex ancestor = root;
+		VertexDirect ancestor = root;
 		boolean reachable = true;
 		while (reachable) {
 			reachable = true;
@@ -132,9 +135,9 @@ public class Tree implements Serializable {
 				return ancestor;
 			}
 			//check if any of the current ancestor's childrens can reach all destinations
-			for (Vertex v : ancestor.getChildren()) {
+			for (VertexDirect v : ancestor.getChildren()) {
 				reachable = true;
-				for (Vertex target : vertices) {
+				for (VertexDirect target : vertices) {
 					//check child reach for all destinations
 					reachable = reachable & v.inReach(target.getGroupId());
 					if (!reachable) {
@@ -159,7 +162,7 @@ public class Tree implements Serializable {
 	 * @param id
 	 * @return vertex with specified id or null
 	 */
-	public Vertex findVertexById(int id) {
+	public VertexDirect findVertexById(int id) {
 		return root.findVertexByID(id);
 	}
 

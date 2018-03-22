@@ -19,7 +19,7 @@ import ch.usi.inf.dslab.bftamcast.util.CLIParser;
  * @author Christian Vuerich - christian.vuerich@usi.ch
  *
  */
-public class Server extends DefaultRecoverable {
+public class ServerDirect extends DefaultRecoverable {
 	private ReplicaReplier replier;
 	private int id, groupId;
 
@@ -29,6 +29,7 @@ public class Server extends DefaultRecoverable {
 	 * @param args
 	 */
 	public static void main(String[] args) {
+		
 		CLIParser p = CLIParser.getServerParser(args);
 		new Server(p.getId(), p.getGroup(), p.getGroupConfig(), p.getTreeConfig());
 	}
@@ -47,7 +48,7 @@ public class Server extends DefaultRecoverable {
 	 *            path of the configuration file representing the overlay tree of
 	 *            groups
 	 */
-	public Server(int id, int group, String configPath, String treeConfigPath) {
+	public ServerDirect(int id, int group, String configPath, String treeConfigPath) {
 		this.id = id;
 		this.groupId = group;
 		replier = new ReplicaReplier(id, group, treeConfigPath);

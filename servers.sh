@@ -23,6 +23,7 @@ for (( i = 0; i < $1; i++ )); do
 	echo "done " >> tmpscrit$i.sh
 	echo "tmux attach-session -t bftamcast\$G " >> tmpscrit$i.sh
 	chmod u+x tmpscrit$i.sh
+	sleep 2
 	open -a /Applications/Utilities/Terminal.app/ tmpscrit$i.sh
 
 done
