@@ -63,14 +63,14 @@ public class ClientThread implements Runnable, ReplyListener {
 		startTime = System.nanoTime();
 
 		Request req;
-		double perc = globalPerc/100;
-		int [] dests = new int[overlayTree.getDestinations().size()];
+		double perc = globalPerc / 100;
+		int[] dests = new int[overlayTree.getDestinations().size()];
 		for (int j = 0; j < dests.length; j++) {
 			dests[j] = overlayTree.getDestinations().get(j);
 		}
 
 		List<Integer> list = new LinkedList<Integer>(overlayTree.getDestinations());
-		
+
 		while (elapsed / 1e9 < runTime) {
 			try {
 
@@ -78,15 +78,16 @@ public class ClientThread implements Runnable, ReplyListener {
 				byte[] value = randomString(size).getBytes();
 				int[] destinations;
 				int key = r.nextInt(Integer.MAX_VALUE);
-				
+
 				Collections.shuffle(list);
-				if(r.nextDouble() <= perc) {
+				if (r.nextDouble() <= perc) {
 					destinations = dests;
-				}else {
-				destinations = new int[] {dests[r.nextInt(dests.length)]};
+				} else {
+					destinations = new int[] { dests[r.nextInt(dests.length)] };
 				}
-				 RequestType type = destinations.length > 1 ? RequestType.SIZE :
-				 RequestType.PUT;
+				//test
+				destinations = new int[] { 0 };
+				RequestType type = destinations.length > 1 ? RequestType.SIZE : RequestType.PUT;
 
 				req = new Request(type, key, value, destinations, seqNumber, clientId, clientId);
 
@@ -94,7 +95,7 @@ public class ClientThread implements Runnable, ReplyListener {
 				prox.invokeAsynchRequest(req.toBytes(), this, TOMMessageType.ORDERED_REQUEST);
 				// TODO maybe needed to cancel requests, but will check later for performance
 				// prox.cleanAsynchRequest(requestId);
-				repliesTracker.put(seqNumber, new GroupRequestTracker(prox.getViewManager().getCurrentViewF()+1));
+				repliesTracker.put(seqNumber, new GroupRequestTracker(prox.getViewManager().getCurrentViewF() + 1));
 				now = System.nanoTime();
 				elapsed = (now - startTime);
 			} catch (Exception e) {
@@ -134,7 +135,7 @@ public class ClientThread implements Runnable, ReplyListener {
 	}
 
 	/**
-	 * Async reply reciever 
+	 * Async reply reciever
 	 */
 	@Override
 	public void replyReceived(RequestContext context, TOMMessage reply) {
@@ -150,21 +151,21 @@ public class ClientThread implements Runnable, ReplyListener {
 		if (tracker != null && tracker.addReply(replyReq)) {
 			lock.lock();
 			try {
-			if (replyReq.getDestination().length > 1)
-				globalStats.store(tracker.getElapsedTime() / 1000);
-			else
-				localStats.store(tracker.getElapsedTime() / 1000);
-			if (verbose && elapsed - delta >= 2 * 1e9) {
-				System.out.println("Client " + clientId + " ops/second:"
-						+ (localStats.getPartialCount() + globalStats.getPartialCount())
-								/ ((float) (elapsed - delta) / 1e9));
-				delta = elapsed;
-			}
-			}finally {
+				if (replyReq.getDestination().length > 1)
+					globalStats.store(tracker.getElapsedTime() / 1000);
+				else
+					localStats.store(tracker.getElapsedTime() / 1000);
+				if (verbose && elapsed - delta >= 2 * 1e9) {
+					System.out.println("Client " + clientId + " ops/second:"
+							+ (localStats.getPartialCount() + globalStats.getPartialCount())
+									/ ((float) (elapsed - delta) / 1e9));
+					delta = elapsed;
+				}
+			} finally {
 				lock.unlock();
 			}
-			
-			//remove finished request tracker
+
+			// remove finished request tracker
 			repliesTracker.remove(replyReq.getSeqNumber());
 		}
 	}
