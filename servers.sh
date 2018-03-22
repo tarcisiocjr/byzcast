@@ -11,5 +11,5 @@ for (( i = 0; i < $1; i++ )); do
 	# end tell' $i
 
 	osascript -e 'tell application "Terminal" to do script "t;./group.sh '$i'"'
-
+	sleep 1
 done

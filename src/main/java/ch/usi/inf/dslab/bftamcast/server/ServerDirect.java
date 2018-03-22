@@ -20,7 +20,7 @@ import ch.usi.inf.dslab.bftamcast.util.CLIParser;
  *
  */
 public class ServerDirect extends DefaultRecoverable {
-	private ReplicaReplier replier;
+	private ReplicaReplierDirect replier;
 	private int id, groupId;
 
 	/**
@@ -31,7 +31,7 @@ public class ServerDirect extends DefaultRecoverable {
 	public static void main(String[] args) {
 		
 		CLIParser p = CLIParser.getServerParser(args);
-		new Server(p.getId(), p.getGroup(), p.getGroupConfig(), p.getTreeConfig());
+		new ServerDirect(p.getId(), p.getGroup(), p.getGroupConfig(), p.getTreeConfig());
 	}
 
 	/**
@@ -51,7 +51,7 @@ public class ServerDirect extends DefaultRecoverable {
 	public ServerDirect(int id, int group, String configPath, String treeConfigPath) {
 		this.id = id;
 		this.groupId = group;
-		replier = new ReplicaReplier(id, group, treeConfigPath);
+		replier = new ReplicaReplierDirect(id, group, treeConfigPath);
 
 		try {
 			Thread.sleep(this.groupId * 4000 + this.id * 1000);
@@ -72,7 +72,7 @@ public class ServerDirect extends DefaultRecoverable {
 		ByteArrayInputStream bis = new ByteArrayInputStream(state);
 		try {
 			ObjectInput in = new ObjectInputStream(bis);
-			replier = (ReplicaReplier) in.readObject();
+			replier = (ReplicaReplierDirect) in.readObject();
 			id = in.readInt();
 			groupId = in.readInt();
 			in.close();

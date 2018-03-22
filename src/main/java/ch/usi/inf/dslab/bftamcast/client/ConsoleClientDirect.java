@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.Scanner;
 import java.util.StringTokenizer;
 import java.util.UUID;
+import java.util.concurrent.Semaphore;
 
 import bftsmart.communication.client.ReplyListener;
 import bftsmart.tom.AsynchServiceProxy;
@@ -14,50 +15,42 @@ import bftsmart.tom.core.messages.TOMMessage;
 import bftsmart.tom.core.messages.TOMMessageType;
 import ch.usi.inf.dslab.bftamcast.graph.TreeDirect;
 import ch.usi.inf.dslab.bftamcast.graph.VertexDirect;
-
-/**
- * @author Tarcisio Ceolin - tarcisio.ceolin.junior@usi.ch
- * @author Paulo Coelho - paulo.coelho@usi.ch
- * @author Christian Vuerich - christian.vuerich@usi.ch
- */
-
-import ch.usi.inf.dslab.bftamcast.kvs.Request;
+import ch.usi.inf.dslab.bftamcast.kvs.RequestDirect;
 import ch.usi.inf.dslab.bftamcast.kvs.RequestType;
 import ch.usi.inf.dslab.bftamcast.util.CLIParser;
-import ch.usi.inf.dslab.bftamcast.util.GroupRequestTracker;
-import ch.usi.inf.dslab.bftamcast.util.RequestTracker;
 import ch.usi.inf.dslab.bftamcast.util.RequestTrackerDirect;
 
 public class ConsoleClientDirect implements ReplyListener {
-	final Map<Integer, GroupRequestTracker> repliesTracker = new HashMap<>();
 	private static Scanner scanner;
 	final Map<Integer, RequestTrackerDirect> repliesTracker2 = new HashMap<>();
+	final Semaphore lock =  new Semaphore(1);
 
 	public static void main(String[] args) {
 		int seqNumber = 0;
+		Map<VertexDirect, Integer> totrack;
 		ConsoleClientDirect c = new ConsoleClientDirect();
 		CLIParser p = CLIParser.getClientParser(args);
 		int clientId = UUID.randomUUID().hashCode();
 		String treeConfigPath = p.getTreeConfig();
 		TreeDirect overlayTree = new TreeDirect(treeConfigPath, clientId, c);
-		Request req;
+		RequestDirect req;
 
 		for (Integer i : overlayTree.getDestinations()) {
 			VertexDirect v = overlayTree.findVertexById(i);
+			totrack = new HashMap<>();
+			totrack.put(v, v.getProxy().getViewManager().getCurrentViewF() + 1);
+			c.repliesTracker2.put(seqNumber, new RequestTrackerDirect(totrack, null));
+
 			v.getProxy().invokeAsynchRequest(
-					new Request(RequestType.NOP, -1, new byte[0], new int[0], 0, 0, 0).toBytes(), c,
+					new RequestDirect(RequestType.NOP, -1, new byte[0], new int[] {v.getGroupId()}, seqNumber, clientId, clientId).toBytes(), c,
 					TOMMessageType.ORDERED_REQUEST);
+			seqNumber++;
 		}
-		//
 
 		Console console = System.console();
 		scanner = new Scanner(System.in);
 		while (true) {
-			// for (Integer i : overlayTree.getDestinations()) {
-			// Vertex v = overlayTree.findVertexById(i);
-			// v.getProxy().invokeAsynchRequest(new Request(RequestType.NOP, -1, new
-			// byte[0], new int[0], 0, 0, 0).toBytes(), c, TOMMessageType.ORDERED_REQUEST);
-			// }
+
 			System.out.println("Client: " + clientId);
 			System.out.println("Select an option:");
 			System.out.println("1. ADD A KEY/VALUE");
@@ -77,7 +70,7 @@ public class ConsoleClientDirect implements ReplyListener {
 			int key;
 			RequestType type;
 			VertexDirect v;
-			Map<VertexDirect, Integer> totrack;
+			
 
 			switch (cmd) {
 
@@ -102,10 +95,15 @@ public class ConsoleClientDirect implements ReplyListener {
 				c.repliesTracker2.put(seqNumber, new RequestTrackerDirect(totrack, null));
 				value = console.readLine("Enter the value: ").getBytes();
 
-				req = new Request(type, key, value, destinations, seqNumber, clientId, clientId);
+				req = new RequestDirect(type, key, value, destinations, seqNumber, clientId, clientId);
 
 				target = overlayTree.lca(n).getProxy();
-				c.repliesTracker.put(seqNumber, new GroupRequestTracker(target.getViewManager().getCurrentViewF() + 1));
+				totrack = new HashMap<>();
+				for (int i = 0; i < destinations.length; i++) {
+					v = overlayTree.findVertexById(destinations[i]);
+					totrack.put(v, v.getProxy().getViewManager().getCurrentViewF() + 1);
+				}
+				c.repliesTracker2.put(seqNumber, new RequestTrackerDirect(totrack, null));
 				target.invokeAsynchRequest(req.toBytes(), c, TOMMessageType.ORDERED_REQUEST);
 				System.out.println("sent");
 				break;
@@ -129,9 +127,8 @@ public class ConsoleClientDirect implements ReplyListener {
 				}
 				c.repliesTracker2.put(seqNumber, new RequestTrackerDirect(totrack, null));
 				target = overlayTree.lca(n).getProxy();
-				req = new Request(type, key, value, destinations, seqNumber, clientId, clientId);
-				// c.repliesTracker.put(seqNumber, new
-				// GroupRequestTracker(target.getViewManager().getCurrentViewF() + 1));
+				req = new RequestDirect(type, key, value, destinations, seqNumber, clientId, clientId);
+
 				target.invokeAsynchRequest(req.toBytes(), c, TOMMessageType.ORDERED_REQUEST);
 				break;
 			case 3:
@@ -154,7 +151,7 @@ public class ConsoleClientDirect implements ReplyListener {
 				}
 				c.repliesTracker2.put(seqNumber, new RequestTrackerDirect(totrack, null));
 				target = overlayTree.lca(n).getProxy();
-				req = new Request(type, key, value, destinations, seqNumber, clientId, clientId);
+				req = new RequestDirect(type, key, value, destinations, seqNumber, clientId, clientId);
 				// c.repliesTracker.put(seqNumber, new
 				// GroupRequestTracker(target.getViewManager().getCurrentViewF() + 1));
 				target.invokeAsynchRequest(req.toBytes(), c, TOMMessageType.ORDERED_REQUEST);
@@ -177,8 +174,8 @@ public class ConsoleClientDirect implements ReplyListener {
 				c.repliesTracker2.put(seqNumber, new RequestTrackerDirect(totrack, null));
 				target = overlayTree.lca(destinations).getProxy();
 				System.out.println("id ==    " + overlayTree.lca(destinations).getGroupId());
-				req = new Request(type, key, value, destinations, seqNumber, clientId, clientId);
-				c.repliesTracker.put(seqNumber, new GroupRequestTracker(target.getViewManager().getCurrentViewF() + 1));
+				req = new RequestDirect(type, key, value, destinations, seqNumber, clientId, clientId);
+				c.repliesTracker2.put(seqNumber, new RequestTrackerDirect(totrack, null));
 				target.invokeAsynchRequest(req.toBytes(), c, TOMMessageType.ORDERED_REQUEST);
 				break;
 			default:
@@ -193,9 +190,9 @@ public class ConsoleClientDirect implements ReplyListener {
 	@Override
 	public void replyReceived(RequestContext context, TOMMessage reply) {
 
-		Request replyReq = new Request(reply.getContent());
-		if (replyReq.getType() == RequestType.NOP)
-			return;
+		RequestDirect replyReq = new RequestDirect(reply.getContent());
+//		if (replyReq.getType() == RequestType.NOP)
+//			return;
 		System.out.println(replyReq.toString());
 		//
 		RequestTrackerDirect tracker = repliesTracker2.get(replyReq.getSeqNumber());
@@ -203,7 +200,7 @@ public class ConsoleClientDirect implements ReplyListener {
 		if (tracker != null && tracker.addReply(replyReq)) {
 			System.out.println("DOOOOONE " + replyReq.getSeqNumber());
 			// get reply with all groups replies
-			Request finalReply = tracker.getMergedReply();
+			RequestDirect finalReply = tracker.getMergedReply();
 			switch (finalReply.getType()) {
 			case PUT:
 				System.out.println();
@@ -211,20 +208,22 @@ public class ConsoleClientDirect implements ReplyListener {
 				for (int i = 0; i < replyReq.getResult().length; i++) {
 					System.out.println(
 
-							"previous value at replica " + replyReq.getDestination()[i] + " : "
+							"previous value at replica " + replyReq.getDestination()[i] + " index " + i+": "
 									+ (replyReq.getResult()[i] == null ? "NULL" : new String(replyReq.getResult()[i])));
 				}
 				System.out.println();
 				System.out.println();
 
 				break;
+			case NOP:
+				System.out.println("WP");
 			case GET:
 				System.out.println();
 				System.out.println();
 				for (int i = 0; i < replyReq.getResult().length; i++) {
 					System.out.println(
 
-							"value at replica " + replyReq.getDestination()[i] + " : "
+							"value at replica " + replyReq.getDestination()[i] + " index " + i+": "
 									+ (replyReq.getResult()[i] == null ? "NULL" : new String(replyReq.getResult()[i])));
 				}
 				System.out.println();
@@ -237,7 +236,7 @@ public class ConsoleClientDirect implements ReplyListener {
 				for (int i = 0; i < replyReq.getResult().length; i++) {
 					System.out.println(
 
-							"removed value at replica " + replyReq.getDestination()[i] + " : "
+							"removed value at replica " + replyReq.getDestination()[i] + " index " + i+": "
 									+ (replyReq.getResult()[i] == null ? "NULL" : new String(replyReq.getResult()[i])));
 				}
 				System.out.println();
@@ -249,7 +248,7 @@ public class ConsoleClientDirect implements ReplyListener {
 				for (int i = 0; i < replyReq.getResult().length; i++) {
 					System.out.println(
 
-							"map size at replica " + replyReq.getDestination()[i] + " : "
+							"map size at replica " + replyReq.getDestination()[i] + " index " + i+": "
 									+ (replyReq.getResult()[i] == null ? "NULL" : new String(replyReq.getResult()[i])));
 				}
 				System.out.println();
@@ -268,9 +267,18 @@ public class ConsoleClientDirect implements ReplyListener {
 	}
 
 	public void handle(TOMMessage msg) {
-		 System.out.println("GG");
-		Request replyReq = new Request(msg.getContent());
-		replyReceived(null, msg);
+		try {
+			lock.acquire();
+			 System.out.println("GG");
+				RequestDirect replyReq = new RequestDirect(msg.getContent());
+				replyReceived(null, msg);
+				
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		lock.release();
+		
 	}
 
 	@Override

@@ -10,7 +10,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.StringTokenizer;
 
-import ch.usi.inf.dslab.bftamcast.client.ConsoleClient;
 import ch.usi.inf.dslab.bftamcast.client.ConsoleClientDirect;
 
 /**
@@ -117,6 +116,9 @@ public class TreeDirect implements Serializable {
 	 *         input vertices list.
 	 */
 	public VertexDirect lca(int[] ids) {
+		if(ids.length == 1) {
+			return findVertexById(ids[0]);
+		}
 
 		
 		List<VertexDirect> vertices = new ArrayList<>();

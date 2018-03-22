@@ -23,12 +23,9 @@ import bftsmart.tom.core.messages.TOMMessageType;
 import bftsmart.tom.server.BatchExecutable;
 import bftsmart.tom.server.FIFOExecutable;
 import bftsmart.tom.server.Replier;
-import ch.usi.inf.dslab.bftamcast.graph.Tree;
 import ch.usi.inf.dslab.bftamcast.graph.TreeDirect;
-import ch.usi.inf.dslab.bftamcast.graph.Vertex;
 import ch.usi.inf.dslab.bftamcast.graph.VertexDirect;
-import ch.usi.inf.dslab.bftamcast.kvs.Request;
-import ch.usi.inf.dslab.bftamcast.kvs.RequestType;
+import ch.usi.inf.dslab.bftamcast.kvs.RequestDirect;
 import io.netty.util.internal.ConcurrentSet;
 
 /**
@@ -45,7 +42,7 @@ public class ReplicaReplierDirect implements Replier, FIFOExecutable, BatchExecu
 	protected transient Lock replyLock;
 	protected transient Condition contextSet;
 	protected transient ReplicaContext rc;
-	protected Request req;
+	protected RequestDirect req;
 
 	// key store map
 	private Map<Integer, byte[]> table;
@@ -53,7 +50,7 @@ public class ReplicaReplierDirect implements Replier, FIFOExecutable, BatchExecu
 	// private ConcurrentMap<Integer, ConcurrentHashMap<Integer, RequestTracker>>
 	// repliesTracker;
 	// map for finished requests replies
-	private ConcurrentMap<Integer, ConcurrentHashMap<Integer, Request>> processedReplies;
+	private ConcurrentMap<Integer, ConcurrentHashMap<Integer, RequestDirect>> processedReplies;
 	// map for not processed requests
 	private ConcurrentMap<Integer, ConcurrentHashMap<Integer, ConcurrentSet<TOMMessage>>> globalReplies;
 	// vertex in the overlay tree representing my group
@@ -91,17 +88,17 @@ public class ReplicaReplierDirect implements Replier, FIFOExecutable, BatchExecu
 				this.contextSet.await();
 				this.replyLock.unlock();
 			} catch (InterruptedException ex) {
-				Logger.getLogger(ReplicaReplier.class.getName()).log(Level.SEVERE, null, ex);
+				Logger.getLogger(ReplicaReplierDirect.class.getName()).log(Level.SEVERE, null, ex);
 			}
 		}
-		req = new Request(request.getContent());
+		req = new RequestDirect(request.getContent());
 		req.setSender(groupId);
 		// hack to establish connections
-		if (req.getType() == RequestType.NOP) {
-			System.out.println("connected " + msgCtx.getSender());
-			rc.getServerCommunicationSystem().send(new int[] { req.getClient() }, request.reply); 
-			return;
-		}
+//		if (req.getType() == RequestType.NOP) {
+//			System.out.println("connected " + msgCtx.getSender());
+//			rc.getServerCommunicationSystem().send(new int[] { req.getClient() }, request.reply); 
+//			return;
+//		}
 		
 		System.out.println("new message");
 
@@ -134,6 +131,13 @@ public class ReplicaReplierDirect implements Replier, FIFOExecutable, BatchExecu
 			System.out.println("else");
 			// majority of parent group replicas f+1
 			VertexDirect lca = overlayTree.lca(req.getDestination());
+			for (int i : req.getDestination()) {
+				System.out.println("sdfsdf    "+ i);
+			}
+			System.out.println("fasdf");
+			System.out.println(lca);
+			System.out.println(lca.getGroupId());
+			System.out.println(groupId);
 			int majReplicasOfSender = 0;
 			// this group is not the lcs, so not contacted directly from client
 			if (groupId != lca.getGroupId()) {
@@ -146,9 +150,9 @@ public class ReplicaReplierDirect implements Replier, FIFOExecutable, BatchExecu
 			// check if majority of parent contacted me, and request is the same
 			// -1 because the request used to compare other is already in msgs
 			int count = -1;
-			Request r;
+			RequestDirect r;
 			for (TOMMessage m : msgs) {
-				r = new Request(m.getContent());
+				r = new RequestDirect(m.getContent());
 				if (r.equals(req)) {
 					count++;
 				}
@@ -246,7 +250,7 @@ public class ReplicaReplierDirect implements Replier, FIFOExecutable, BatchExecu
 	 * 
 	 * @param req
 	 */
-	protected void execute(Request req) {
+	protected void execute(RequestDirect req) {
 		byte[] resultBytes;
 		switch (req.getType()) {
 		case PUT:

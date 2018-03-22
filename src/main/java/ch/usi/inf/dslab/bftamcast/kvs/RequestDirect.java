@@ -50,6 +50,7 @@ public class RequestDirect implements RequestIf, Serializable {
 		this.value = value;
 		this.destination = destination;
 		this.result = new byte[destination.length][];
+		System.out.println("result size = " +destination.length);
 		this.seqNumber = seqNumber;
 	}
 
@@ -118,23 +119,39 @@ public class RequestDirect implements RequestIf, Serializable {
 	 */
 	public void setResult(byte[] eval, int groupID) {
 		//look for index in destinations of groupID
+		if(groupID == 2) {
+			System.out.println("setting 2");
+		}
 		for (int i = 0; i < destination.length; i++) {
 			if (destination[i] == groupID) {
 				//set result
+				
 				this.result[i] = eval;
 			}
 		}
 	}
 	
-	public void  mergeReplies(byte[][] replies) {
-		if(replies.length != result.length) {
-			System.err.println("Error merging results");
-		}
-		for (int i = 0; i < replies.length; i++) {
-			if(replies[i] != null) {
-				result[i] = replies[i];
+	public void  setReplies(byte[][] reply, int groupId) {
+		for (int i = 0; i < destination.length; i++) {
+			if (destination[i] == groupId) {
+				System.out.println("index "+ i);
+				System.out.println("before  " +(result[i] == null ? "NULL" : new String(result[i])));
+				System.out.println("after  " +(reply[i] == null ? "NULL" : new String(reply[i])));
+				 result[i] = reply[i];
 			}
 		}
+//
+//		if(replies.length != result.length) {
+//			System.err.println("Error merging results");
+//			throw new UnknownError();
+//		}
+//		for (int i = 0; i < replies.length; i++) {
+//			System.out.println("A group " + destination[i] + "replied " + (replies[i] == null ? "NULL" : new String(replies[i])));
+//			System.out.println("B group " + destination[i] + "replied " + (result[i] == null ? "NULL" : new String(result[i])));
+//			if(result[i] == null) {
+//				result[i] = replies[i];
+//			}
+//		}
 	}
 
 	/**
@@ -143,6 +160,9 @@ public class RequestDirect implements RequestIf, Serializable {
 	 * @return
 	 */
 	public byte[] getGroupResult(int groupID) {
+		if(groupID == 2) {
+			System.out.println("getting 2");
+		}
 		for (int i = 0; i < destination.length; i++) {
 			if (destination[i] == groupID) {
 				return result[i];

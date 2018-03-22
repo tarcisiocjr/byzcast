@@ -16,10 +16,8 @@ import bftsmart.tom.core.messages.TOMMessage;
 import bftsmart.tom.core.messages.TOMMessageType;
 import ch.usi.inf.dslab.bftamcast.graph.TreeDirect;
 import ch.usi.inf.dslab.bftamcast.graph.VertexDirect;
-import ch.usi.inf.dslab.bftamcast.kvs.Request;
+import ch.usi.inf.dslab.bftamcast.kvs.RequestDirect;
 import ch.usi.inf.dslab.bftamcast.kvs.RequestType;
-import ch.usi.inf.dslab.bftamcast.util.GroupRequestTracker;
-import ch.usi.inf.dslab.bftamcast.util.RequestTracker;
 import ch.usi.inf.dslab.bftamcast.util.RequestTrackerDirect;
 import ch.usi.inf.dslab.bftamcast.util.Stats;
 
@@ -38,7 +36,6 @@ public class ClientThreadDirect implements Runnable, ReplyListener {
 	private int seqNumber = 0;
 	final Random random;
 	final Stats localStats, globalStats;
-	final Map<Integer, GroupRequestTracker> repliesTracker;
 	final Map<Integer, RequestTrackerDirect> repliesTracker2;
 	long startTime, delta = 0, elapsed = 0;
 	private TreeDirect overlayTree;
@@ -55,7 +52,6 @@ public class ClientThreadDirect implements Runnable, ReplyListener {
 		this.random = new Random();
 		this.localStats = new Stats();
 		this.globalStats = new Stats();
-		this.repliesTracker = new HashMap<>();
 		this.repliesTracker2 = new HashMap<>();
 		this.overlayTree = new TreeDirect(treeConfigPath, UUID.randomUUID().hashCode(), null);
 	}
@@ -66,7 +62,7 @@ public class ClientThreadDirect implements Runnable, ReplyListener {
 		Random r = new Random();
 		startTime = System.nanoTime();
 
-		Request req;
+		RequestDirect req;
 		double perc = globalPerc / 100;
 		int[] dests = new int[overlayTree.getDestinations().size()];
 		for (int j = 0; j < dests.length; j++) {
@@ -91,7 +87,7 @@ public class ClientThreadDirect implements Runnable, ReplyListener {
 				}
 				RequestType type = destinations.length > 1 ? RequestType.SIZE : RequestType.PUT;
 
-				req = new Request(type, key, value, destinations, seqNumber, clientId, clientId);
+				req = new RequestDirect(type, key, value, destinations, seqNumber, clientId, clientId);
 
 				AsynchServiceProxy prox = overlayTree.lca(req.getDestination()).getProxy();
 				prox.invokeAsynchRequest(req.toBytes(), this, TOMMessageType.ORDERED_REQUEST);
@@ -152,7 +148,7 @@ public class ClientThreadDirect implements Runnable, ReplyListener {
 			return;
 		}
 		// convert reply to request object
-		Request replyReq = new Request(reply.getContent());
+		RequestDirect replyReq = new RequestDirect(reply.getContent());
 		// add it to tracker and check if majority of replies reached
 		// GroupRequestTracker tracker = repliesTracker.get(replyReq.getSeqNumber());
 		//
@@ -181,7 +177,7 @@ public class ClientThreadDirect implements Runnable, ReplyListener {
 		// add the reply to tracker and if all involved groups reached their f+1 quota
 		if (tracker != null && tracker.addReply(replyReq)) {
 			// get reply with all groups replies
-			Request finalReply = tracker.getMergedReply();
+			RequestDirect finalReply = tracker.getMergedReply();
 			try {
 				if (finalReply.getDestination().length > 1)
 					globalStats.store(tracker.getElapsedTime() / 1000);
