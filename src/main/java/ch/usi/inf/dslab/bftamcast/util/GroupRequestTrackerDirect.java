@@ -37,6 +37,7 @@ public class GroupRequestTrackerDirect {
 			majorityReply = reply;
 		}
 		if (currentMajority >= majority) {
+			System.out.println("group "+majorityReply.getSender() + "reached majority, reply is " + (majorityReply.getGroupResult(majorityReply.getSender()) == null ? "NULL" : new String(majorityReply.getGroupResult(majorityReply.getSender()))) );
 			endTime = System.nanoTime();
 			majreached = true;
 			return true;

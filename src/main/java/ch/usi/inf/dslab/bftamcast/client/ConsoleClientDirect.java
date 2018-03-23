@@ -205,11 +205,11 @@ public class ConsoleClientDirect implements ReplyListener {
 			case PUT:
 				System.out.println();
 				System.out.println();
-				for (int i = 0; i < replyReq.getResult().length; i++) {
+				for (int i = 0; i < finalReply.getResult().length; i++) {
 					System.out.println(
 
-							"previous value at replica " + replyReq.getDestination()[i] + " index " + i+": "
-									+ (replyReq.getResult()[i] == null ? "NULL" : new String(replyReq.getResult()[i])));
+							"previous value at replica " + finalReply.getDestination()[i] + " index " + i+": "
+									+ (finalReply.getResult()[i] == null ? "NULL" : new String(finalReply.getResult()[i])));
 				}
 				System.out.println();
 				System.out.println();
@@ -220,11 +220,11 @@ public class ConsoleClientDirect implements ReplyListener {
 			case GET:
 				System.out.println();
 				System.out.println();
-				for (int i = 0; i < replyReq.getResult().length; i++) {
+				for (int i = 0; i < finalReply.getResult().length; i++) {
 					System.out.println(
 
-							"value at replica " + replyReq.getDestination()[i] + " index " + i+": "
-									+ (replyReq.getResult()[i] == null ? "NULL" : new String(replyReq.getResult()[i])));
+							"value at replica " + finalReply.getDestination()[i] + " index " + i+": "
+									+ (finalReply.getResult()[i] == null ? "NULL" : new String(finalReply.getResult()[i])));
 				}
 				System.out.println();
 				System.out.println();
@@ -233,11 +233,11 @@ public class ConsoleClientDirect implements ReplyListener {
 			case REMOVE:
 				System.out.println();
 				System.out.println();
-				for (int i = 0; i < replyReq.getResult().length; i++) {
+				for (int i = 0; i < finalReply.getResult().length; i++) {
 					System.out.println(
 
-							"removed value at replica " + replyReq.getDestination()[i] + " index " + i+": "
-									+ (replyReq.getResult()[i] == null ? "NULL" : new String(replyReq.getResult()[i])));
+							"removed value at replica " + finalReply.getDestination()[i] + " index " + i+": "
+									+ (finalReply.getResult()[i] == null ? "NULL" : new String(finalReply.getResult()[i])));
 				}
 				System.out.println();
 				System.out.println();
@@ -245,11 +245,11 @@ public class ConsoleClientDirect implements ReplyListener {
 			case SIZE:
 				System.out.println();
 				System.out.println();
-				for (int i = 0; i < replyReq.getResult().length; i++) {
+				for (int i = 0; i < finalReply.getResult().length; i++) {
 					System.out.println(
 
-							"map size at replica " + replyReq.getDestination()[i] + " index " + i+": "
-									+ (replyReq.getResult()[i] == null ? "NULL" : new String(replyReq.getResult()[i])));
+							"map size at replica " + finalReply.getDestination()[i] + " index " + i+": "
+									+ (finalReply.getResult()[i] == null ? "NULL" : new String(finalReply.getResult()[i])));
 				}
 				System.out.println();
 				System.out.println();
@@ -261,7 +261,7 @@ public class ConsoleClientDirect implements ReplyListener {
 			}
 
 			// remove finished request tracker
-			repliesTracker2.remove(replyReq.getSeqNumber());
+			repliesTracker2.remove(finalReply.getSeqNumber());
 
 		}
 	}
@@ -269,8 +269,7 @@ public class ConsoleClientDirect implements ReplyListener {
 	public void handle(TOMMessage msg) {
 		try {
 			lock.acquire();
-			 System.out.println("GG");
-				RequestDirect replyReq = new RequestDirect(msg.getContent());
+//			 System.out.println("GG");
 				replyReceived(null, msg);
 				
 		} catch (InterruptedException e) {
