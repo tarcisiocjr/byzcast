@@ -86,7 +86,7 @@ public class ClientThread implements Runnable, ReplyListener {
 					destinations = new int[] { dests[r.nextInt(dests.length)] };
 				}
 				//test
-				destinations = new int[] { 0 };
+				destinations = dests;
 				RequestType type = destinations.length > 1 ? RequestType.SIZE : RequestType.PUT;
 
 				req = new Request(type, key, value, destinations, seqNumber, clientId, clientId);

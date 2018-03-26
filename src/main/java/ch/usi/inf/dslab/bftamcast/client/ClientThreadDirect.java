@@ -25,7 +25,7 @@ import ch.usi.inf.dslab.bftamcast.util.Stats;
  * @author Paulo Coelho - paulo.coelho@usi.ch
  * @author Christian Vuerich - christian.vuerich@usi.ch
  */
-public class ClientThreadDirect implements Runnable, ReplyListener {
+public class ClientThreadDirect implements Runnable, ReplyListener  {
 	final char[] symbols = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".toCharArray();
 	final int clientId;
 	final int groupId;
@@ -60,7 +60,7 @@ public class ClientThreadDirect implements Runnable, ReplyListener {
 	public void run() {
 		// setup
 		Random r = new Random();
-		startTime = System.nanoTime();
+		
 
 		RequestDirect req;
 		double perc = globalPerc / 100;
@@ -68,9 +68,23 @@ public class ClientThreadDirect implements Runnable, ReplyListener {
 		for (int j = 0; j < dests.length; j++) {
 			dests[j] = overlayTree.getDestinations().get(j);
 		}
+		Map <VertexDirect, Integer> totrack;
+		
+		for (Integer i : overlayTree.getDestinations()) {
+			VertexDirect v = overlayTree.findVertexById(i);
+			totrack = new HashMap<>();
+			totrack.put(v, v.getProxy().getViewManager().getCurrentViewF() + 1);
+			repliesTracker2.put(seqNumber, new RequestTrackerDirect(totrack, null));
+
+			v.getProxy().invokeAsynchRequest(
+					new RequestDirect(RequestType.NOP, -1, new byte[0], new int[] {v.getGroupId()}, seqNumber, clientId, clientId).toBytes(), this,
+					TOMMessageType.ORDERED_REQUEST);
+			seqNumber++;
+		}
 
 		List<Integer> list = new LinkedList<Integer>(overlayTree.getDestinations());
 
+		startTime = System.nanoTime();
 		while (elapsed / 1e9 < runTime) {
 			try {
 
@@ -85,6 +99,7 @@ public class ClientThreadDirect implements Runnable, ReplyListener {
 				} else {
 					destinations = new int[] { dests[r.nextInt(dests.length)] };
 				}
+				destinations = dests;
 				RequestType type = destinations.length > 1 ? RequestType.SIZE : RequestType.PUT;
 
 				req = new RequestDirect(type, key, value, destinations, seqNumber, clientId, clientId);
@@ -94,7 +109,7 @@ public class ClientThreadDirect implements Runnable, ReplyListener {
 				// TODO maybe needed to cancel requests, but will check later for performance
 				// prox.cleanAsynchRequest(requestId);
 //				repliesTracker.put(seqNumber, new GroupRequestTracker(prox.getViewManager().getCurrentViewF() + 1));
-				Map<VertexDirect, Integer> totrack = new HashMap<>();
+				totrack = new HashMap<>();
 				VertexDirect v;
 				for (int i = 0; i < destinations.length; i++) {
 					v = overlayTree.findVertexById(destinations[i]);
@@ -149,29 +164,7 @@ public class ClientThreadDirect implements Runnable, ReplyListener {
 		}
 		// convert reply to request object
 		RequestDirect replyReq = new RequestDirect(reply.getContent());
-		// add it to tracker and check if majority of replies reached
-		// GroupRequestTracker tracker = repliesTracker.get(replyReq.getSeqNumber());
-		//
-		// if (tracker != null && tracker.addReply(replyReq)) {
-		// lock.lock();
-		// try {
-		// if (replyReq.getDestination().length > 1)
-		// globalStats.store(tracker.getElapsedTime() / 1000);
-		// else
-		// localStats.store(tracker.getElapsedTime() / 1000);
-		// if (verbose && elapsed - delta >= 2 * 1e9) {
-		// System.out.println("Client " + clientId + " ops/second:"
-		// + (localStats.getPartialCount() + globalStats.getPartialCount())
-		// / ((float) (elapsed - delta) / 1e9));
-		// delta = elapsed;
-		// }
-		// }finally {
-		// lock.unlock();
-		// }
-		//
-		// //remove finished request tracker
-		// repliesTracker.remove(replyReq.getSeqNumber());
-		// }
+	
 		// get the tracker for that request
 		RequestTrackerDirect tracker = repliesTracker2.get(replyReq.getSeqNumber());
 		// add the reply to tracker and if all involved groups reached their f+1 quota

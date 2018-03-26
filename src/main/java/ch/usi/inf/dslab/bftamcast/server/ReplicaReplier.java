@@ -286,7 +286,7 @@ public class ReplicaReplier implements Replier, FIFOExecutable, BatchExecutable,
 			Request sendReply = tracker.getMergedReply();
 			sendReply.setSender(groupId);
 			// get all requests waiting for this answer
-			ConcurrentSet<TOMMessage> msgs = globalReplies.get(replyReq.getClient()).get(replyReq.getSeqNumber());
+			ConcurrentSet<TOMMessage> msgs = globalReplies.get(sendReply.getClient()).get(sendReply.getSeqNumber());
 			// add finished request result to map, for storage and eventual later
 			// re-submission
 			processedReplies.computeIfAbsent(sendReply.getClient(), k -> new ConcurrentHashMap<>());
