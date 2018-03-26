@@ -4,8 +4,11 @@
 package ch.usi.inf.dslab.bftamcast.treesearch;
 
 import java.io.BufferedReader;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -198,6 +201,27 @@ public class Graph {
 		for (DestSet s : load) {
 			getRoot(s.destinationsIDS);
 		}
+		
+		String gg = "digraph G { ";
+		for (DestSet s : load) {
+			for(Vertex v : s.destinations) {
+				gg += "" + s.root.ID+"->"+v.ID+"\n";
+			}
+		}
+		gg+="}";
+		PrintWriter writer;
+		try {
+			writer = new PrintWriter("graph.dot", "UTF-8");
+			writer.println(gg);
+			writer.close();
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (UnsupportedEncodingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
 
 	}
 
