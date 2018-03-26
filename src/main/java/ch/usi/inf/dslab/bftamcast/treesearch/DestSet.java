@@ -20,8 +20,13 @@ public class DestSet {
 	public List<DestSet> overlaps = new ArrayList<>();
 
 
-	public DestSet(int percentage) {
+	public DestSet(int percentage, List<Vertex> dests) {
 		this.percentage = percentage;
+		this.destinations =  dests;
+		for (Vertex vertex : dests) {
+			destinationsIDS.add(vertex.ID);
+		}
+		
 	}
 
 	public boolean matchDests(List<Integer> dests) {

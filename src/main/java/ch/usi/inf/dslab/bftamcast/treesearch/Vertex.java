@@ -10,11 +10,11 @@ import java.util.List;
  */
 public class Vertex {
 	public int ID;
-	public int capacity, resCapacity;
+	public double capacity, resCapacity;
 	List<Vertex> connections = new ArrayList<>();
 	Vertex parent;
 
-	public Vertex(int ID, String conf, int capacity) {
+	public Vertex(int ID, String conf, double capacity) {
 		this.ID = ID;
 		this.capacity = capacity;
 		this.resCapacity = capacity;

@@ -7,7 +7,6 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.StringTokenizer;
@@ -41,18 +40,19 @@ public class Graph {
 					if (line.contains("%")) {
 						str = new StringTokenizer(line, "%");
 						if (str.countTokens() == 2) {
-							DestSet s = new DestSet(Integer.valueOf(str.nextToken()));
+							int loadp = Integer.valueOf(str.nextToken());
+							List<Vertex> ver = new ArrayList<>();
 							str = new StringTokenizer(str.nextToken(), " ");
 							while (str.hasMoreTokens()) {
 								int id = Integer.valueOf(str.nextToken());
 								for (Vertex v : vertices) {
 									if (v.ID == id) {
-										s.destinations.add(v);
-										s.destinationsIDS.add(v.ID);
+										ver.add(v);
 										break;
 									}
 								}
 							}
+							DestSet s = new DestSet(loadp, ver);
 							load.add(s);
 						}
 					} else {
@@ -75,6 +75,38 @@ public class Graph {
 			e.printStackTrace();
 		}
 
+		// generate all possible destinations (to clean up)
+		List<Integer> tmp = new ArrayList<>();
+		int arr[] = new int[vertices.size()];
+		int i = 0;
+		for (Vertex v : vertices) {
+			arr[i] = v.ID;
+			i++;
+		}
+		int n = arr.length;
+		int N = (int) Math.pow(2d, Double.valueOf(n));
+		for (int i1 = 1; i1 < N; i1++) {
+			String code = Integer.toBinaryString(N | i1).substring(1);
+			for (int j = 0; j < n; j++) {
+				if (code.charAt(j) == '1') {
+					tmp.add(arr[j]);
+				}
+			}
+			if (!existsLoad(tmp)) {
+				List<Vertex> ggCode = new ArrayList<>();
+				for (Vertex vertex : vertices) {
+					if (tmp.contains(vertex.ID)) {
+						ggCode.add(vertex);
+					}
+				}
+				load.add(new DestSet(1, ggCode));
+			}
+			tmp.clear();
+		}
+		System.out.println("RIP " + load.size() + " " + N);
+
+		// print destinations and loads %
+
 		for (DestSet s : load) {
 			System.out.print(s.percentage + "% ");
 			for (Vertex v : s.destinations) {
@@ -82,6 +114,8 @@ public class Graph {
 			}
 			System.out.println();
 		}
+
+		// find overlapping sets of destinations (find prefix order)
 
 		for (DestSet s : load) {
 			for (DestSet s2 : load) {
@@ -97,20 +131,51 @@ public class Graph {
 
 		}
 
+		// find optimal genuine node to sort for each destination set
 		for (DestSet s : load) {
+
+			Vertex maxCapacityVertex = null;
+			double max = 0;
+			for (Vertex v : s.destinations) {
+				if (v.resCapacity > max) {
+					max = v.resCapacity;
+					maxCapacityVertex = v;
+				}
+			}
+			s.root = maxCapacityVertex;
+			s.handled = true;
+			System.out
+					.println("1111MAX = " + maxCapacityVertex.ID + " res capacity = " + maxCapacityVertex.resCapacity);
+
+			// TODO if another load overlaps either use it's root or use common node as
+			// root
+			// for current load or external if genuine are overloaded
+			maxCapacityVertex.resCapacity = maxCapacityVertex.resCapacity
+					- (maxCapacityVertex.capacity * (s.percentage / 100.0));
+
+		}
+		
+		//handle prefix order for overlapping
+
+		for (DestSet s : load) {
+			// genuine for single target
 			if (!s.handled) {
-				List<Vertex> possibleRoots = new ArrayList();
-				possibleRoots.addAll(s.destinations);
+				List<Vertex> possibleRoots = new ArrayList<>();
+				possibleRoots.add(s.root);
 				for (DestSet overlap : s.overlaps) {
 					if (overlap.handled) {
 						possibleRoots.add(overlap.root);
 					} else {
-						possibleRoots.removeAll(overlap.destinations);
-						possibleRoots.addAll(overlap.destinations);
+						for(Vertex v : overlap.destinations) {
+							if(s.destinations.contains(v)) {
+								possibleRoots.remove(v);
+								possibleRoots.add(v);
+							}
+						}
 					}
 				}
 				Vertex maxCapacityVertex = null;
-				int max = 0;
+				double max = 0;
 				for (Vertex v : possibleRoots) {
 					if (v.resCapacity > max) {
 						max = v.resCapacity;
@@ -119,71 +184,33 @@ public class Graph {
 				}
 				s.root = maxCapacityVertex;
 				s.handled = true;
-				for (DestSet overlap : s.overlaps) {
-					if (!overlap.handled) {
-						overlap.root = maxCapacityVertex;
-						overlap.handled = true;
-					}
-				}
-				// TODO if another load overlaps either use it's root or use common node as root
-				// for current load or
-				maxCapacityVertex.resCapacity -= maxCapacityVertex.capacity * (s.percentage / 100);
+				System.out
+						.println("MAX = " + maxCapacityVertex.ID + " res capacity = " + maxCapacityVertex.resCapacity);
+
+				// TODO if another load overlaps either use it's root or use common node as
+				// root
+				// for current load or external if genuine are overloaded
+				maxCapacityVertex.resCapacity = maxCapacityVertex.resCapacity
+						- (maxCapacityVertex.capacity * (s.percentage / 100.0));
 			}
 		}
 
-		System.out.println(getRoot(new ArrayList<Integer>() {
-			{
-				add(1);
-				add(3);
-				add(2);
-			}
-		}).ID);
-		System.out.println(getRoot(new ArrayList<Integer>() {
-			{
-				add(4);
-				add(5);
-				add(2);
-			}
-		}).ID);
-		System.out.println(getRoot(new ArrayList<Integer>() {
-			{
-				add(8);
-				add(3);
-				add(2);
-			}
-		}).ID);
-		
-		System.out.println(getRoot(new ArrayList<Integer>() {
-			{
-				add(8);
-			}
-		}).ID);
-		
-		System.out.println(getRoot(new ArrayList<Integer>() {
-			{
-				add(0);
-				add(1);
-				add(2);
-				add(3);
-				add(4);
-				add(5);
-				add(6);
-				add(7);
-				add(8);
-				add(9);
-			}
-		}).ID);
+		for (DestSet s : load) {
+			getRoot(s.destinationsIDS);
+		}
 
 	}
 
 	public Vertex getRoot(List<Integer> dests) {
+		System.out.print("List " + dests.toString() + "  has root ");
 		for (DestSet s : load) {
 			if (s.matchDests(dests)) {
+				System.out.println(s.root.ID + " here");
 				return s.root;
 			}
 		}
 
-		int max = 0;
+		double max = 0;
 		Vertex maxV = null;
 		for (Vertex v : vertices) {
 			if (dests.contains(v.ID) && v.resCapacity < max) {
@@ -191,8 +218,18 @@ public class Graph {
 				maxV = v;
 			}
 		}
+		System.out.println(maxV.ID + " there");
 
 		return maxV;
+	}
+
+	public boolean existsLoad(List<Integer> dests) {
+		for (DestSet s : load) {
+			if (s.matchDests(dests)) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 }
