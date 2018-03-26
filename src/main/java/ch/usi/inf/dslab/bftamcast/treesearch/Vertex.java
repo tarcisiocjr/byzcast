@@ -10,12 +10,13 @@ import java.util.List;
  */
 public class Vertex {
 	public int ID;
-	public int capacity;
+	public int capacity, resCapacity;
 	List<Vertex> connections = new ArrayList<>();
 	Vertex parent;
 
 	public Vertex(int ID, String conf, int capacity) {
 		this.ID = ID;
 		this.capacity = capacity;
+		this.resCapacity = capacity;
 	}
 }

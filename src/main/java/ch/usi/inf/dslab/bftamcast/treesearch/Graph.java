@@ -7,25 +7,26 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.StringTokenizer;
-
-import ch.usi.inf.dslab.bftamcast.graph.Tree;
 
 /**
  * @author Christian Vuerich - christian.vuerich@usi.ch
  *
  */
 public class Graph {
+	public List<Vertex> vertices = new ArrayList<>();
+	public List<DestSet> load = new ArrayList<>();
 
+	// instead have a sorter for each destination combo
 	public static void main(String[] args) {
 		new Graph("config/load.conf");
 	}
 
 	public Graph(String configFile) {
 
-		List<Vertex> vertices = new ArrayList<>();
-		List<DestSet> load = new ArrayList<>();
 		FileReader fr;
 		BufferedReader rd;
 
@@ -47,6 +48,7 @@ public class Graph {
 								for (Vertex v : vertices) {
 									if (v.ID == id) {
 										s.destinations.add(v);
+										s.destinationsIDS.add(v.ID);
 										break;
 									}
 								}
@@ -82,53 +84,115 @@ public class Graph {
 		}
 
 		for (DestSet s : load) {
-			Vertex maxCapacityVertex = null;
-			int max = 0;
-			for (Vertex v : s.destinations) {
-				if (v.capacity > max) {
-					max = v.capacity;
-					maxCapacityVertex = v;
-				}
-			}
-			if (maxCapacityVertex.parent != null) {
-				for (Vertex v : s.destinations) {
-					if (v == maxCapacityVertex.parent) {
-						System.out.println("LOOOP, have to select another max capacity node");
+			for (DestSet s2 : load) {
+				if (s2 != s && !Collections.disjoint(s.destinationsIDS, s2.destinationsIDS)) {
+					if (!s2.overlaps.contains(s)) {
+						s2.overlaps.add(s);
+					}
+					if (!s.overlaps.contains(s2)) {
+						s.overlaps.add(s2);
 					}
 				}
 			}
-			for (Vertex v : s.destinations) {
-				if (v != maxCapacityVertex) {
-					if(v.parent != null || v.parent != maxCapacityVertex) {
-						System.out.println("new parent change, have to rearrange");
-					}
-					v.parent = maxCapacityVertex;
-					
-					if(!maxCapacityVertex.connections.contains(v)) {
-						maxCapacityVertex.connections.add(v);
-					}
-				}
-			}
-			maxCapacityVertex.capacity = maxCapacityVertex.capacity*(1-s.percentage/100);
-			
+
 		}
-		
-		for(Vertex v : vertices){
-			if(v.parent == null) {
-				print(v);
+
+		for (DestSet s : load) {
+			if (!s.handled) {
+				List<Vertex> possibleRoots = new ArrayList();
+				possibleRoots.addAll(s.destinations);
+				for (DestSet overlap : s.overlaps) {
+					if (overlap.handled) {
+						possibleRoots.add(overlap.root);
+					} else {
+						possibleRoots.removeAll(overlap.destinations);
+						possibleRoots.addAll(overlap.destinations);
+					}
+				}
+				Vertex maxCapacityVertex = null;
+				int max = 0;
+				for (Vertex v : possibleRoots) {
+					if (v.resCapacity > max) {
+						max = v.resCapacity;
+						maxCapacityVertex = v;
+					}
+				}
+				s.root = maxCapacityVertex;
+				s.handled = true;
+				for (DestSet overlap : s.overlaps) {
+					if (!overlap.handled) {
+						overlap.root = maxCapacityVertex;
+						overlap.handled = true;
+					}
+				}
+				// TODO if another load overlaps either use it's root or use common node as root
+				// for current load or
+				maxCapacityVertex.resCapacity -= maxCapacityVertex.capacity * (s.percentage / 100);
 			}
 		}
 
+		System.out.println(getRoot(new ArrayList<Integer>() {
+			{
+				add(1);
+				add(3);
+				add(2);
+			}
+		}).ID);
+		System.out.println(getRoot(new ArrayList<Integer>() {
+			{
+				add(4);
+				add(5);
+				add(2);
+			}
+		}).ID);
+		System.out.println(getRoot(new ArrayList<Integer>() {
+			{
+				add(8);
+				add(3);
+				add(2);
+			}
+		}).ID);
+		
+		System.out.println(getRoot(new ArrayList<Integer>() {
+			{
+				add(8);
+			}
+		}).ID);
+		
+		System.out.println(getRoot(new ArrayList<Integer>() {
+			{
+				add(0);
+				add(1);
+				add(2);
+				add(3);
+				add(4);
+				add(5);
+				add(6);
+				add(7);
+				add(8);
+				add(9);
+			}
+		}).ID);
+
 	}
-	public void print(Vertex v) {
-		System.out.print("" + v.ID + " -> ");
-		for(Vertex c : v.connections){
-			System.out.print(c.ID+", " );
+
+	public Vertex getRoot(List<Integer> dests) {
+		for (DestSet s : load) {
+			if (s.matchDests(dests)) {
+				return s.root;
+			}
 		}
-		System.out.println();
-		for(Vertex c : v.connections){
-			print(c);
+
+		int max = 0;
+		Vertex maxV = null;
+		for (Vertex v : vertices) {
+			if (dests.contains(v.ID) && v.resCapacity < max) {
+				max = v.resCapacity;
+				maxV = v;
+			}
 		}
+
+		return maxV;
 	}
 
 }
