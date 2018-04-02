@@ -10,6 +10,6 @@ for (( i = 0; i < $1; i++ )); do
 	# 	do script "echo " 
 	# end tell' $i
 
-	osascript -e 'tell application "Terminal" to do script "t;./group.sh '$i'"'
+	osascript -e 'tell application "Terminal" to do script "t;cd script/ ;./groupC.sh '$i'"'
 	sleep 1
 done

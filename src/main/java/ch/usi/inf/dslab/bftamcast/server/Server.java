@@ -30,7 +30,7 @@ public class Server extends DefaultRecoverable {
 	 */
 	public static void main(String[] args) {
 		CLIParser p = CLIParser.getServerParser(args);
-		new Server(p.getId(), p.getGroup(), p.getGroupConfig(), p.getTreeConfig());
+		new Server(p.getId(), p.getGroup(), p.getTreeConfig());
 	}
 
 	/**
@@ -47,7 +47,7 @@ public class Server extends DefaultRecoverable {
 	 *            path of the configuration file representing the overlay tree of
 	 *            groups
 	 */
-	public Server(int id, int group, String configPath, String treeConfigPath) {
+	public Server(int id, int group, String treeConfigPath) {
 		this.id = id;
 		this.groupId = group;
 		replier = new ReplicaReplier(id, group, treeConfigPath);
@@ -60,7 +60,7 @@ public class Server extends DefaultRecoverable {
 			System.exit(-1);
 		}
 
-		new ServiceReplica(this.id, configPath, replier, this, null, replier);
+		new ServiceReplica(this.id, replier.getMyVertex().getConfPath(), replier, this, null, replier);
 	}
 
 	/**

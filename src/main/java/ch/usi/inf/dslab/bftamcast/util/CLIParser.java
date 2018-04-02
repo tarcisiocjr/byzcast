@@ -4,7 +4,7 @@ import org.apache.commons.cli.*;
 
 public class CLIParser {
     private Option  id, group,
-            globalPercent, clientCount, duration, msgSize, nonGenuine, treeConfig, GroupConfig;
+            globalPercent, clientCount, duration, msgSize, nonGenuine, treeConfig;
     private Options options;
     private CommandLineParser parser;
     private CommandLine line;
@@ -18,7 +18,6 @@ public class CLIParser {
         duration = Option.builder("d").desc("time to execute in seconds (defaults to 120)").argName("seconds").hasArg().numberOfArgs(1).type(Integer.class).build();
         msgSize = Option.builder("s").desc("message size in bytes (defaults to 64)").argName("bytes").hasArg().numberOfArgs(1).type(Integer.class).build();
         clientCount = Option.builder("c").desc("number of client threads (defaults to 1)").argName("clients").hasArg().numberOfArgs(1).type(Integer.class).build();
-        GroupConfig = Option.builder("G").desc("group config folder").argName("folder").hasArg().numberOfArgs(1).type(String.class).build();
         treeConfig= Option.builder("t").desc("tree conf file").argName("file").hasArg().numberOfArgs(1).type(String.class).required().build();
         nonGenuine = Option.builder("ng").desc("sets the server to the non-genuine config.uration").hasArg(false).build();
         options = new Options();
@@ -50,10 +49,8 @@ public class CLIParser {
         parser.command = "Univers server";
         parser.id.setRequired(true);
         parser.group.setRequired(true);
-        parser.GroupConfig.setRequired(true);
         parser.options.addOption(parser.id);
         parser.options.addOption(parser.group);
-        parser.options.addOption(parser.GroupConfig);
         parser.options.addOption(parser.treeConfig);
         parser.parse(args);
         return parser;
@@ -64,9 +61,7 @@ public class CLIParser {
         return Integer.parseInt(line.getOptionValue("i"));
     }
     
-    public String getGroupConfig() {
-        return line.getOptionValue("G");
-    }
+
 
     public int getGroup() {
         return Integer.parseInt(line.getOptionValue("g"));

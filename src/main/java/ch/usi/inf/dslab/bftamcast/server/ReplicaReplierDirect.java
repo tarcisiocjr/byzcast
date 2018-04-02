@@ -170,7 +170,6 @@ public class ReplicaReplierDirect implements Replier, FIFOExecutable, BatchExecu
 				globalReplies.get(req.getClient()).remove(req.getSeqNumber());
 				//
 				int[] destinations = req.getDestination();
-				boolean addreq = false;
 				Map<VertexDirect, Integer> toSend = new HashMap<>();
 				// List<Vertex>
 				for (int i = 0; i < destinations.length; i++) {

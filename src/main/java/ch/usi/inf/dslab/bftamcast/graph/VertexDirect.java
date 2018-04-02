@@ -175,7 +175,9 @@ public class VertexDirect implements Serializable {
 		this.parent = parent;
 	}
 	
-	
+	public String getConfPath() {
+		return confPath;
+	}
 	
 
 }

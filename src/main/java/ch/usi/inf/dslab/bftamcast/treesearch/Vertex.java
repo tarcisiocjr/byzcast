@@ -13,6 +13,7 @@ public class Vertex {
 	public double capacity, resCapacity;
 	List<Vertex> connections = new ArrayList<>();
 	Vertex parent;
+	boolean printed = false;
 
 	public Vertex(int ID, String conf, double capacity) {
 		this.ID = ID;

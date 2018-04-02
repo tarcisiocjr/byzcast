@@ -14,7 +14,6 @@ public class DestSet {
 	public List<Vertex> destinations = new ArrayList<>();
 	public List<Integer> destinationsIDS = new ArrayList<>();
 	public int percentage;
-	public boolean handled = false;
 
 	public Vertex root;
 	public List<DestSet> overlaps = new ArrayList<>();

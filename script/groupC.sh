@@ -9,7 +9,7 @@ G=$1
 N=4
 ARGS="${@:2}"
 
-JAVA="java -cp 'lib/*:target/*' ch.usi.inf.dslab.bftamcast"
+JAVA="java -cp '../lib/*:../target/*' ch.usi.inf.dslab.bftamcast"
 
 tmux new-session -d -s bftamcast$G
 
@@ -26,7 +26,7 @@ tmux select-layout tiled
 
 for (( j = 0; j <$N; j++ )); do
 
-    tmux send-keys -t bftamcast$G.$j "$JAVA.server.ServerDirect -t config/tree.conf -i $j -g $G -G config/local$G $ARGS" C-m  
+    tmux send-keys -t bftamcast$G.$j "$JAVA.server.ServerDirect -t ../config/tree.conf -i $j -g $G $ARGS" C-m  
  
 done
 

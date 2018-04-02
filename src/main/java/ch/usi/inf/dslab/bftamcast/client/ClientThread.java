@@ -71,23 +71,25 @@ public class ClientThread implements Runnable, ReplyListener {
 
 		List<Integer> list = new LinkedList<Integer>(overlayTree.getDestinations());
 
+		byte[] value = randomString(size).getBytes();
+		int[] destinations;
+		int[] local = new int[] {dests[r.nextInt(dests.length)]};
+
 		while (elapsed / 1e9 < runTime) {
 			try {
 
 				seqNumber++;
-				byte[] value = randomString(size).getBytes();
-				int[] destinations;
 				int key = r.nextInt(Integer.MAX_VALUE);
+				destinations = (r.nextInt(100) >= globalPerc ? local : dests);
 
-				Collections.shuffle(list);
-				if (r.nextDouble() <= perc) {
-					destinations = dests;
-				} else {
-					destinations = new int[] { dests[r.nextInt(dests.length)] };
-				}
-				//test
-				destinations = dests;
-				RequestType type = destinations.length > 1 ? RequestType.SIZE : RequestType.PUT;
+//				Collections.shuffle(list);
+//				if (r.nextDouble() <= perc) {
+//					destinations = dests;
+//				} else {
+//					destinations = new int[] { dests[r.nextInt(dests.length)] };
+//				}
+			
+				RequestType type =destinations.length > 1 ? RequestType.SIZE : RequestType.PUT;
 
 				req = new Request(type, key, value, destinations, seqNumber, clientId, clientId);
 

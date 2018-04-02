@@ -66,7 +66,7 @@ public class Tree implements Serializable {
 					StringTokenizer str = new StringTokenizer(line, " ");
 					// vertex declaration (group)
 					if (str.countTokens() == 2) {
-						vertices.add(new Vertex(Integer.valueOf(str.nextToken()), str.nextToken(), proxyID));
+						vertices.add(new Vertex(Integer.valueOf(str.nextToken()), configFile.replace("tree.conf", "") + str.nextToken(), proxyID));
 						destinations.add(vertices.get(vertices.size() - 1).getGroupId());
 					}
 					// connection declaration

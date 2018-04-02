@@ -309,7 +309,7 @@ public class ReplicaReplier implements Replier, FIFOExecutable, BatchExecutable,
 		return overlayTree;
 	}
 
-	public Vertex getVertex() {
+	public Vertex getMyVertex() {
 		return me;
 	}
 

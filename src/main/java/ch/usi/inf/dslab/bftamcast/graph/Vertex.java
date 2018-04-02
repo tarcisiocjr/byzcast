@@ -172,6 +172,10 @@ public class Vertex implements Serializable {
 		this.parent = parent;
 	}
 	
+	public String getConfPath() {
+		return confPath;
+	}
+	
 	
 	
 

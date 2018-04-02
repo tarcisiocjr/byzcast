@@ -31,7 +31,7 @@ public class ServerDirect extends DefaultRecoverable {
 	public static void main(String[] args) {
 		
 		CLIParser p = CLIParser.getServerParser(args);
-		new ServerDirect(p.getId(), p.getGroup(), p.getGroupConfig(), p.getTreeConfig());
+		new ServerDirect(p.getId(), p.getGroup(), p.getTreeConfig());
 	}
 
 	/**
@@ -48,7 +48,7 @@ public class ServerDirect extends DefaultRecoverable {
 	 *            path of the configuration file representing the overlay tree of
 	 *            groups
 	 */
-	public ServerDirect(int id, int group, String configPath, String treeConfigPath) {
+	public ServerDirect(int id, int group, String treeConfigPath) {
 		this.id = id;
 		this.groupId = group;
 		replier = new ReplicaReplierDirect(id, group, treeConfigPath);
@@ -61,7 +61,7 @@ public class ServerDirect extends DefaultRecoverable {
 			System.exit(-1);
 		}
 
-		new ServiceReplica(this.id, configPath, replier, this, null, replier);
+		new ServiceReplica(this.id, replier.getVertex().getConfPath(), replier, this, null, replier);
 	}
 
 	/**
