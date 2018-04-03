@@ -3,6 +3,8 @@ package ch.usi.inf.dslab.bftamcast.treesearch;
 import java.util.ArrayList;
 import java.util.List;
 
+import bftsmart.tom.TOMSender;
+
 /**
  * 
  * @author Christian Vuerich - christian.vuerich@usi.ch
@@ -20,4 +22,12 @@ public class Vertex {
 		this.capacity = capacity;
 		this.resCapacity = capacity;
 	}
+	
+public String toString() {
+	return ID+"";
+}
+
+public boolean canReach(int ID) {
+	
+}
 }

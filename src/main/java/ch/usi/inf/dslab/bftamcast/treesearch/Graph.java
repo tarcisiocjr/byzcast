@@ -133,6 +133,11 @@ public class Graph {
 			}
 
 		}
+		Vertex root = null;
+		load.sort(new DestSet(0, null));
+		for (DestSet s : load) {
+			System.out.println(s.percentage);
+		}
 
 		// find optimal genuine node to sort for each destination set
 		for (DestSet s : load) {
@@ -158,56 +163,84 @@ public class Graph {
 		}
 
 		// handle prefix order for overlapping
+		//
+		// for (DestSet s : load) {
+		// // genuine for single target
+		//
+		// List<Vertex> possibleRoots = new ArrayList<>();
+		// possibleRoots.add(s.root);
+		// for (DestSet overlap : s.overlaps) {
+		// possibleRoots.add(overlap.root);
+		// overlap.root.resCapacity = overlap.root.resCapacity
+		// - (overlap.root.capacity * (overlap.percentage / 100.0));
+		// for (Vertex v : overlap.destinations) {
+		// if (s.destinations.contains(v)) {
+		// possibleRoots.remove(v);
+		// possibleRoots.add(v);
+		// }
+		// }
+		// }
+		//
+		// Vertex maxCapacityVertex = null;
+		// double max = 0;
+		// for (Vertex v : possibleRoots) {
+		// if (v.resCapacity > max) {
+		// max = v.resCapacity;
+		// maxCapacityVertex = v;
+		// }
+		// }
+		// if (maxCapacityVertex != null) {
+		// s.root = maxCapacityVertex;
+		// for (DestSet overlap : s.overlaps) {
+		// overlap.root = maxCapacityVertex;
+		//
+		// }
+		// System.out
+		// .println("MAX = " + maxCapacityVertex.ID + " res capacity = " +
+		// maxCapacityVertex.resCapacity);
+		//
+		// maxCapacityVertex.resCapacity = maxCapacityVertex.resCapacity
+		// - (maxCapacityVertex.capacity * (s.percentage / 100.0));
+		// } else {
+		// for (DestSet overlap : s.overlaps) {
+		// possibleRoots.add(overlap.root);
+		// overlap.root.resCapacity = overlap.root.resCapacity
+		// - (overlap.root.capacity * (overlap.percentage / 100.0));
+		// }
+		//
+		// // TODO if another load overlaps either use it's root or use common node as
+		// // root
+		// // for current load or external if genuine are overloaded
+		// //check acyclic
+		//
+		// }
+		// }
 
-		for (DestSet s : load) {
-			// genuine for single target
+		// sort by load % higher load shallower tree (less communication delays)
 
-			List<Vertex> possibleRoots = new ArrayList<>();
-			possibleRoots.add(s.root);
-			for (DestSet overlap : s.overlaps) {
-				possibleRoots.add(overlap.root);
-				overlap.root.resCapacity = overlap.root.resCapacity
-						- (overlap.root.capacity * (overlap.percentage / 100.0));
-				for (Vertex v : overlap.destinations) {
-					if (s.destinations.contains(v)) {
-						possibleRoots.remove(v);
-						possibleRoots.add(v);
+		int size = vertices.size();
+		while (size >= 2) {
+			for (DestSet s : load) {
+				if (s.destinations.size() == size) {
+					System.out.println(s.root.ID + "  " + s.destinations.toString());
+
+					if (root == null || s.root == root) {
+						root = s.root;
+						root.connections.removeAll(s.destinations);
+						root.connections.addAll(s.destinations);
+						root.connections.remove(s.root);
+					} else {
+							Vertex v = findParent(s.root);
+							System.out.println(v.ID);
+							v.connections.removeAll(s.destinations);
+							v.connections.add(s.root);
+							s.root.connections.addAll(s.destinations);
+							s.root.connections.remove(s.root);
 					}
+
 				}
 			}
-
-			Vertex maxCapacityVertex = null;
-			double max = 0;
-			for (Vertex v : possibleRoots) {
-				if (v.resCapacity > max) {
-					max = v.resCapacity;
-					maxCapacityVertex = v;
-				}
-			}
-			if (maxCapacityVertex != null) {
-				s.root = maxCapacityVertex;
-				for (DestSet overlap : s.overlaps) {
-					overlap.root = maxCapacityVertex;
-
-				}
-				System.out
-						.println("MAX = " + maxCapacityVertex.ID + " res capacity = " + maxCapacityVertex.resCapacity);
-
-				maxCapacityVertex.resCapacity = maxCapacityVertex.resCapacity
-						- (maxCapacityVertex.capacity * (s.percentage / 100.0));
-			} else {
-				for (DestSet overlap : s.overlaps) {
-					possibleRoots.add(overlap.root);
-					overlap.root.resCapacity = overlap.root.resCapacity
-							- (overlap.root.capacity * (overlap.percentage / 100.0));
-				}
-
-				// TODO if another load overlaps either use it's root or use common node as
-				// root
-				// for current load or external if genuine are overloaded
-				//check acyclic
-
-			}
+			size--;
 		}
 
 		for (
@@ -236,6 +269,20 @@ public class Graph {
 				writer.println(gg);
 				writer.close();
 			}
+
+			String gg = "digraph G { ";
+			for (Vertex v : vertices) {
+				for (Vertex d : v.connections) {
+					if (!gg.contains("" + v.ID + "->" + d.ID + "\n")) {
+						gg += "" + v.ID + "->" + d.ID + "\n";
+					}
+				}
+			}
+
+			gg += "}";
+			writer = new PrintWriter("graphs/graph_total.dot", "UTF-8");
+			writer.println(gg);
+			writer.close();
 
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block
@@ -276,6 +323,15 @@ public class Graph {
 			}
 		}
 		return false;
+	}
+
+	public Vertex findParent(Vertex g) {
+		for (Vertex v : vertices) {
+			if (v.connections.contains(g)) {
+				return v;
+			}
+		}
+		return null;
 	}
 
 }

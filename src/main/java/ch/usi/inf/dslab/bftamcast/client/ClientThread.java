@@ -70,6 +70,7 @@ public class ClientThread implements Runnable, ReplyListener {
 		}
 
 		List<Integer> list = new LinkedList<Integer>(overlayTree.getDestinations());
+		System.out.println("global perc = "+ globalPerc);
 
 		byte[] value = randomString(size).getBytes();
 		int[] destinations;
