@@ -15,6 +15,7 @@ public class DestSet implements Comparator<DestSet>{
 	public List<Vertex> destinations = new ArrayList<>();
 	public List<Integer> destinationsIDS = new ArrayList<>();
 	public int percentage;
+	public int penalty = 0;
 
 	public Vertex root;
 	public List<DestSet> overlaps = new ArrayList<>();

@@ -14,6 +14,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.StringTokenizer;
 
+import ch.usi.inf.dslab.bftamcast.treesearch.Vertex;
+
 /**
  * @author Christian Vuerich - christian.vuerich@usi.ch
  *
@@ -108,189 +110,65 @@ public class Graph {
 		}
 		System.out.println("RIP " + load.size() + " " + N);
 
-		// print destinations and loads %
 
-		for (DestSet s : load) {
-			System.out.print(s.percentage + "% ");
-			for (Vertex v : s.destinations) {
-				System.out.print(v.ID + " ");
-			}
-			System.out.println();
-		}
 
-		// find overlapping sets of destinations (find prefix order)
 
-		for (DestSet s : load) {
-			for (DestSet s2 : load) {
-				if (s2 != s && !Collections.disjoint(s.destinationsIDS, s2.destinationsIDS)) {
-					if (!s2.overlaps.contains(s)) {
-						s2.overlaps.add(s);
-					}
-					if (!s.overlaps.contains(s2)) {
-						s.overlaps.add(s2);
-					}
-				}
-			}
-
-		}
-		Vertex root = null;
 		load.sort(new DestSet(0, null));
-		for (DestSet s : load) {
-			System.out.println(s.percentage);
-		}
-
-		// find optimal genuine node to sort for each destination set
-		for (DestSet s : load) {
-
-			Vertex maxCapacityVertex = null;
-			double max = 0;
-			for (Vertex v : s.destinations) {
-				if (v.resCapacity > max) {
-					max = v.resCapacity;
-					maxCapacityVertex = v;
-				}
-			}
-			s.root = maxCapacityVertex;
-			System.out
-					.println("1111MAX = " + maxCapacityVertex.ID + " res capacity = " + maxCapacityVertex.resCapacity);
-
-			// TODO if another load overlaps either use it's root or use common node as
-			// root
-			// for current load or external if genuine are overloaded
-			maxCapacityVertex.resCapacity = maxCapacityVertex.resCapacity
-					+ (maxCapacityVertex.capacity * (s.percentage / 100.0));
-
-		}
-
-		// handle prefix order for overlapping
-		//
-		// for (DestSet s : load) {
-		// // genuine for single target
-		//
-		// List<Vertex> possibleRoots = new ArrayList<>();
-		// possibleRoots.add(s.root);
-		// for (DestSet overlap : s.overlaps) {
-		// possibleRoots.add(overlap.root);
-		// overlap.root.resCapacity = overlap.root.resCapacity
-		// - (overlap.root.capacity * (overlap.percentage / 100.0));
-		// for (Vertex v : overlap.destinations) {
-		// if (s.destinations.contains(v)) {
-		// possibleRoots.remove(v);
-		// possibleRoots.add(v);
-		// }
-		// }
-		// }
-		//
-		// Vertex maxCapacityVertex = null;
-		// double max = 0;
-		// for (Vertex v : possibleRoots) {
-		// if (v.resCapacity > max) {
-		// max = v.resCapacity;
-		// maxCapacityVertex = v;
-		// }
-		// }
-		// if (maxCapacityVertex != null) {
-		// s.root = maxCapacityVertex;
-		// for (DestSet overlap : s.overlaps) {
-		// overlap.root = maxCapacityVertex;
-		//
-		// }
-		// System.out
-		// .println("MAX = " + maxCapacityVertex.ID + " res capacity = " +
-		// maxCapacityVertex.resCapacity);
-		//
-		// maxCapacityVertex.resCapacity = maxCapacityVertex.resCapacity
-		// - (maxCapacityVertex.capacity * (s.percentage / 100.0));
-		// } else {
-		// for (DestSet overlap : s.overlaps) {
-		// possibleRoots.add(overlap.root);
-		// overlap.root.resCapacity = overlap.root.resCapacity
-		// - (overlap.root.capacity * (overlap.percentage / 100.0));
-		// }
-		//
-		// // TODO if another load overlaps either use it's root or use common node as
-		// // root
-		// // for current load or external if genuine are overloaded
-		// //check acyclic
-		//
-		// }
-		// }
-
-		// sort by load % higher load shallower tree (less communication delays)
-
-		int size = vertices.size();
-		while (size >= 2) {
-			for (DestSet s : load) {
-				if (s.destinations.size() == size) {
-					System.out.println(s.root.ID + "  " + s.destinations.toString());
-
-					if (root == null || s.root == root) {
-						root = s.root;
-						root.connections.removeAll(s.destinations);
-						root.connections.addAll(s.destinations);
-						root.connections.remove(s.root);
-					} else {
-							Vertex v = findParent(s.root);
-							System.out.println(v.ID);
-							v.connections.removeAll(s.destinations);
-							v.connections.add(s.root);
-							s.root.connections.addAll(s.destinations);
-							s.root.connections.remove(s.root);
-					}
-
-				}
-			}
-			size--;
-		}
+		//generate all possible trees
+		//evaluate based on all dests and minimize score
+		//		https://blogs.msdn.microsoft.com/ericlippert/2010/04/22/every-tree-there-is/
 
 		for (
 
 		DestSet s : load) {
-			getRoot(s.destinationsIDS);
+			//check best root with score  =  for n dests: load *lca - get eight * load/n
+			//
+//			try to have all scores as low as possible
+			
 		}
 
-		PrintWriter writer;
-		try {
-			for (DestSet s : load) {
-				String gg = "digraph G { ";
-				String d = "";
-				for (Vertex v : s.destinations) {
-					d += v.ID + "_";
-					if (true) {
-						if (!gg.contains("" + s.root.ID + "->" + v.ID + "\n")) {
-							gg += "" + s.root.ID + "->" + v.ID + "\n";
-							v.printed = true;
-						}
-					}
-				}
-				gg += "}";
-
-				writer = new PrintWriter("graphs/graph_" + d + ".dot", "UTF-8");
-				writer.println(gg);
-				writer.close();
-			}
-
-			String gg = "digraph G { ";
-			for (Vertex v : vertices) {
-				for (Vertex d : v.connections) {
-					if (!gg.contains("" + v.ID + "->" + d.ID + "\n")) {
-						gg += "" + v.ID + "->" + d.ID + "\n";
-					}
-				}
-			}
-
-			gg += "}";
-			writer = new PrintWriter("graphs/graph_total.dot", "UTF-8");
-			writer.println(gg);
-			writer.close();
-
-		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (UnsupportedEncodingException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+//		PrintWriter writer;
+//		try {
+//			for (DestSet s : load) {
+//				String gg = "digraph G { ";
+//				String d = "";
+//				for (Vertex v : s.destinations) {
+//					d += v.ID + "_";
+//					if (true) {
+//						if (!gg.contains("" + s.root.ID + "->" + v.ID + "\n")) {
+//							gg += "" + s.root.ID + "->" + v.ID + "\n";
+//							v.printed = true;
+//						}
+//					}
+//				}
+//				gg += "}";
+//
+//				writer = new PrintWriter("graphs/graph_" + d + ".dot", "UTF-8");
+//				writer.println(gg);
+//				writer.close();
+//			}
+//
+//			String gg = "digraph G { ";
+//			for (Vertex v : vertices) {
+//				for (Vertex d : v.connections) {
+//					if (!gg.contains("" + v.ID + "->" + d.ID + "\n")) {
+//						gg += "" + v.ID + "->" + d.ID + "\n";
+//					}
+//				}
+//			}
+//
+//			gg += "}";
+//			writer = new PrintWriter("graphs/graph_total.dot", "UTF-8");
+//			writer.println(gg);
+//			writer.close();
+//
+//		} catch (FileNotFoundException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		} catch (UnsupportedEncodingException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		}
 
 	}
 
@@ -332,6 +210,43 @@ public class Graph {
 			}
 		}
 		return null;
+	}
+	
+	
+public int lca(List<Vertex> vertices, Vertex root) {
+
+		// tree only has one path between any two nodes, so only one child of root could
+		// be ancestor
+	int level = 0;
+		Vertex ancestor = root;
+		boolean reachable = true;
+		while (reachable) {
+			reachable = true;
+			//if you can not go lower in the tree return current acestor
+			if(ancestor.connections.isEmpty()) {
+				return level;
+			}
+			//check if any of the current ancestor's childrens can reach all destinations
+			for (Vertex v : ancestor.connections) {
+				reachable = true;
+				for (Vertex target : vertices) {
+					//check child reach for all destinations
+					reachable = reachable & v.inReach(target.ID);
+					if (!reachable) {
+						break;
+					}
+				}
+				//if child can reach all it is the new ancestor
+				if (reachable) {
+					// tree only one path between two vertices, so if found lower anchestor it is
+					// not needed to keep searching other children
+					ancestor = v;
+					level +=1;
+					break;
+				}
+			}
+		}
+		return level;
 	}
 
 }
