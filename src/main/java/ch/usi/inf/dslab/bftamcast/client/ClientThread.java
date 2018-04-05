@@ -1,9 +1,6 @@
 package ch.usi.inf.dslab.bftamcast.client;
 
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
@@ -63,13 +60,12 @@ public class ClientThread implements Runnable, ReplyListener {
 		startTime = System.nanoTime();
 
 		Request req;
-		double perc = globalPerc / 100;
 		int[] dests = new int[overlayTree.getDestinations().size()];
 		for (int j = 0; j < dests.length; j++) {
 			dests[j] = overlayTree.getDestinations().get(j);
 		}
 
-		List<Integer> list = new LinkedList<Integer>(overlayTree.getDestinations());
+//		List<Integer> list = new LinkedList<Integer>(overlayTree.getDestinations());
 		System.out.println("global perc = "+ globalPerc);
 
 		byte[] value = randomString(size).getBytes();

@@ -3,7 +3,6 @@ package ch.usi.inf.dslab.bftamcast.treesearch;
 import java.util.ArrayList;
 import java.util.List;
 
-
 /**
  * 
  * @author Christian Vuerich - christian.vuerich@usi.ch
@@ -15,7 +14,7 @@ public class Vertex {
 	List<Vertex> connections = new ArrayList<>();
 	Vertex parent;
 	boolean printed = false;
-	private List<Integer> inReach = new ArrayList<>();
+	public List<Integer> inReach = new ArrayList<>();
 	public int inDegree = 0;
 	public int inLatency = 0;
 	int level = -1;
@@ -49,27 +48,33 @@ public class Vertex {
 		}
 		return false;
 	}
+
 	public int getLevel() {
-		if(level!=-1) {
+		if (level != -1) {
 			return level;
 		}
 		if (parent == null) {
 			level = 0;
 			return 0;
-			
-		}
-		else {
-			level = 1+ parent.getLevel();
+
+		} else {
+			level = 1 + parent.getLevel();
 			return level;
 		}
 	}
-	
+
 	public int latecyToLCA(Vertex lca) {
-		if(this.ID == lca.ID || this.parent == null) {
+		if (this.ID == lca.ID || this.parent == null) {
 			return 0;
-		}
-		else {
+		} else {
 			return inLatency + parent.latecyToLCA(lca);
+		}
+	}
+
+	public void updateLoad(int loadperc, int ID) {
+		resCapacity -= capacity / 100 * loadperc;
+		if (ID!=this.ID && parent != null) {
+			parent.updateLoad(loadperc, ID);
 		}
 	}
 
