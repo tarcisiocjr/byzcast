@@ -11,8 +11,14 @@ import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 import java.util.StringTokenizer;
+
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Sets;
 
 import ch.usi.inf.dslab.bftamcast.treesearch.Vertex;
 
@@ -22,6 +28,7 @@ import ch.usi.inf.dslab.bftamcast.treesearch.Vertex;
  */
 public class Graph {
 	public List<Vertex> vertices = new ArrayList<>();
+	public List<Edge> edges = new ArrayList<>();
 	public List<DestSet> load = new ArrayList<>();
 
 	// instead have a sorter for each destination combo
@@ -67,6 +74,29 @@ public class Graph {
 							Vertex v = new Vertex(Integer.valueOf(str.nextToken()), str.nextToken(),
 									Integer.valueOf(str.nextToken()));
 							vertices.add(v);
+						} else if (str.countTokens() == 4) {
+							int a = Integer.valueOf(str.nextToken());
+							str.nextToken(); // drop "-"
+							int b = Integer.valueOf(str.nextToken());
+							int latency = Integer.valueOf(str.nextToken());
+							Vertex aa = null, bb = null;
+							for (Vertex v : vertices) {
+								if (a == v.ID) {
+									aa = v;
+								}
+								if (b == v.ID) {
+									bb = v;
+								}
+							}
+							if (aa == null || bb == null) {
+								System.err.println("connection not know for edge");
+								return;
+							}
+							Edge e1 = new Edge(aa, bb, latency);
+							Edge e2 = new Edge(bb, aa, latency);
+
+							edges.add(e1);
+							edges.add(e2);
 						}
 
 					}
@@ -108,67 +138,184 @@ public class Graph {
 			}
 			tmp.clear();
 		}
-		System.out.println("RIP " + load.size() + " " + N);
 
+		// System.out.println("RIP " + load.size() + " " + N);
 
+		System.out.println(vertices.size());
 
+		int minscore = Integer.MAX_VALUE;
+		Set<Edge> topTree = null;
 
 		load.sort(new DestSet(0, null));
-		//generate all possible trees
-		//evaluate based on all dests and minimize score
-		//		https://blogs.msdn.microsoft.com/ericlippert/2010/04/22/every-tree-there-is/
+		Set<Edge> e = ImmutableSet.copyOf(edges);
 
-		for (
+		// change to generate only sets of size v-1
+		Set<Set<Edge>> gg = Sets.powerSet(e);
+		Set<Set<Edge>> ggremove = Sets.newHashSet();
+		for (Set<Edge> tree : gg) {
+			if (tree.size() != vertices.size() - 1) {
+				ggremove.add(tree);
+			} else {
+				for (Vertex v : vertices) {
+					v.inDegree = 0;
+					v.parent = null;
+					v.connections.clear();
+					v.inLatency = Integer.MAX_VALUE;
+					v.level = -1;
+					v.colored = false;
+				}
 
-		DestSet s : load) {
-			//check best root with score  =  for n dests: load *lca - get eight * load/n
-			//
-//			try to have all scores as low as possible
-			
+				for (Edge edge : tree) {
+					edge.a.colored = true;
+					edge.b.colored = true;
+					edge.b.inDegree += 1;
+				}
+				boolean root = false;
+				Vertex rootV = null;
+				boolean trashed = false;
+				boolean cover = true;
+				for (Vertex v : vertices) {
+					cover = cover && v.colored;
+					if (v.inDegree == 0 && root == false) {
+						rootV = v;
+						root = true;
+					} else if (v.inDegree != 1) {
+						ggremove.add(tree);
+						trashed = true;
+						break;
+					}
+				}
+				if (root != true) {
+					System.out.println("no root");
+					ggremove.add(tree);
+					trashed = true;
+				}
+
+				// good tree
+				if (!trashed && cover) {
+					for (Edge edge : tree) {
+						edge.a.connections.add(edge.b);
+						edge.b.parent = edge.a;
+						edge.b.inLatency = edge.latency;
+					}
+					List<Vertex> explored = new LinkedList();
+					List<Vertex> toexplore = new LinkedList();
+					toexplore.add(rootV);
+					while (!toexplore.isEmpty()) {
+						Vertex v = toexplore.remove(0);
+						explored.add(v);
+						for (Vertex con : v.connections) {
+							if (explored.contains(con)) {
+								// loop not a tree
+								ggremove.add(tree);
+								trashed = true;
+								break;
+							} else {
+								toexplore.add(con);
+							}
+						}
+					}
+
+					if (!explored.containsAll(vertices)) {
+						ggremove.add(tree);
+						trashed = true;
+					}
+					if (!trashed) {
+//
+//						PrintWriter writer;
+//						try {
+//							String ggq = "digraph G { ";
+//							System.out.println(tree);
+//							for (Edge v : tree) {
+//
+//								if (!ggq.contains("" + v.a.ID + "->" + v.b.ID + "\n")) {
+//									ggq += "" + v.a.ID + "->" + v.b.ID + "\n";
+//								}
+//							}
+//
+//							ggq += "}";
+//							writer = new PrintWriter("graphs/graph_total" + tree.hashCode() + ".dot", "UTF-8");
+//							writer.println(ggq);
+//							writer.close();
+//
+//						} catch (FileNotFoundException e1) {
+//							// TODO Auto-generated catch block
+//							e1.printStackTrace();
+//						} catch (UnsupportedEncodingException e1) {
+//							// TODO Auto-generated catch block
+//							e1.printStackTrace();
+//						}
+						System.out.println("goodtreee");
+						
+						List<Vertex> toprint = new ArrayList();
+						List<Vertex> toadd = new ArrayList();
+						toprint.add(rootV);
+						while(!toprint.isEmpty()) {
+							
+							toadd.clear();
+							for (Vertex vertex : toprint) {
+								toadd .addAll(vertex.connections);
+								if(vertex.parent!= null) {
+								System.out.print(""+vertex.ID + "("+vertex.parent.ID+")    ");
+								}else
+									System.out.print(""+vertex.ID + "(null)");
+							}
+							System.out.println();
+							toprint.clear();
+							toprint.addAll(toadd);
+							
+							
+						}
+
+						for (DestSet s : load) {
+							// check best root with score = for n dests: load *lca - get eight * load/n
+							Vertex lca = lca(s.destinations, rootV);
+							int lcaH = lca.getLevel();
+							System.out.println("lca height = "+ lcaH + " id=  " + lca.ID);
+							int score = 0;
+							for (Vertex v : s.destinations) {
+								//TODO check load capacity
+								score += (v.latecyToLCA(lca)*0
+										+ (lcaH - v.getLevel())) ; //(s.percentage / s.destinations.size()));
+								if (score >= minscore) {
+									break;
+								}
+							}
+							System.out.println("score  for dests : " + s.destinations.toString() + " = " + score);
+							if (score < minscore) {
+								minscore = score;
+								topTree = tree;
+							}
+						}
+					}
+				}
+			}
 		}
 
-//		PrintWriter writer;
-//		try {
-//			for (DestSet s : load) {
-//				String gg = "digraph G { ";
-//				String d = "";
-//				for (Vertex v : s.destinations) {
-//					d += v.ID + "_";
-//					if (true) {
-//						if (!gg.contains("" + s.root.ID + "->" + v.ID + "\n")) {
-//							gg += "" + s.root.ID + "->" + v.ID + "\n";
-//							v.printed = true;
-//						}
-//					}
-//				}
-//				gg += "}";
-//
-//				writer = new PrintWriter("graphs/graph_" + d + ".dot", "UTF-8");
-//				writer.println(gg);
-//				writer.close();
-//			}
-//
-//			String gg = "digraph G { ";
-//			for (Vertex v : vertices) {
-//				for (Vertex d : v.connections) {
-//					if (!gg.contains("" + v.ID + "->" + d.ID + "\n")) {
-//						gg += "" + v.ID + "->" + d.ID + "\n";
-//					}
-//				}
-//			}
-//
-//			gg += "}";
-//			writer = new PrintWriter("graphs/graph_total.dot", "UTF-8");
-//			writer.println(gg);
-//			writer.close();
-//
-//		} catch (FileNotFoundException e) {
-//			// TODO Auto-generated catch block
-//			e.printStackTrace();
-//		} catch (UnsupportedEncodingException e) {
-//			// TODO Auto-generated catch block
-//			e.printStackTrace();
-//		}
+		PrintWriter writer;
+		try {
+		
+			String ggq = "digraph G { ";
+			System.out.println(topTree);
+			for (Edge v : topTree) {
+
+				if (!ggq.contains("" + v.a.ID + "->" + v.b.ID + "\n")) {
+					ggq += "" + v.a.ID + "->" + v.b.ID + "\n";
+				}
+			}
+
+			ggq += "}";
+			writer = new PrintWriter("graphs/graph_total.dot", "UTF-8");
+			writer.println(ggq);
+			writer.close();
+
+		} catch (FileNotFoundException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		} catch (UnsupportedEncodingException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
 
 	}
 
@@ -211,42 +358,44 @@ public class Graph {
 		}
 		return null;
 	}
-	
-	
-public int lca(List<Vertex> vertices, Vertex root) {
+
+	public Vertex lca(List<Vertex> vertices, Vertex root) {
 
 		// tree only has one path between any two nodes, so only one child of root could
 		// be ancestor
-	int level = 0;
 		Vertex ancestor = root;
 		boolean reachable = true;
 		while (reachable) {
 			reachable = true;
-			//if you can not go lower in the tree return current acestor
-			if(ancestor.connections.isEmpty()) {
-				return level;
+			// if you can not go lower in the tree return current acestor
+			if (ancestor.connections.isEmpty()) {
+				return ancestor;
 			}
-			//check if any of the current ancestor's childrens can reach all destinations
+			// check if any of the current ancestor's childrens can reach all destinations
 			for (Vertex v : ancestor.connections) {
 				reachable = true;
 				for (Vertex target : vertices) {
-					//check child reach for all destinations
+					// check child reach for all destinations
 					reachable = reachable & v.inReach(target.ID);
 					if (!reachable) {
 						break;
 					}
 				}
-				//if child can reach all it is the new ancestor
+				// if child can reach all it is the new ancestor
 				if (reachable) {
 					// tree only one path between two vertices, so if found lower anchestor it is
 					// not needed to keep searching other children
 					ancestor = v;
-					level +=1;
 					break;
 				}
 			}
 		}
-		return level;
+		return ancestor;
 	}
+	
 
 }
+
+
+
+

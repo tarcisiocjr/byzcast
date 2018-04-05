@@ -39,6 +39,7 @@ Temporary Items
 tmp/
 bin/
 dist/
+graphs/
 
 # Sensitive or high-churn files:
 .idea/**/dataSources/
