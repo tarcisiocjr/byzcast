@@ -60,6 +60,7 @@ public class Server extends DefaultRecoverable {
 			System.exit(-1);
 		}
 
+		System.out.println(replier.getMyVertex().getConfPath());
 		new ServiceReplica(this.id, replier.getMyVertex().getConfPath(), replier, this, null, replier);
 	}
 

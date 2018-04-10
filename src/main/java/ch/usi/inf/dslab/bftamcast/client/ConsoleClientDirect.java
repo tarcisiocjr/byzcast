@@ -269,11 +269,9 @@ public class ConsoleClientDirect implements ReplyListener {
 	public void handle(TOMMessage msg) {
 		try {
 			lock.acquire();
-//			 System.out.println("GG");
 				replyReceived(null, msg);
 				
 		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		lock.release();

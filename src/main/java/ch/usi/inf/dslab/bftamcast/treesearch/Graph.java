@@ -18,6 +18,7 @@ import java.util.StringTokenizer;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 
+
 /**
  * @author Christian Vuerich - christian.vuerich@usi.ch
  *
@@ -108,14 +109,12 @@ public class Graph {
 			fr.close();
 			rd.close();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} finally {
 			if (rd != null) {
 				try {
 					rd.close();
 				} catch (IOException e1) {
-					// TODO Auto-generated catch block
 					e1.printStackTrace();
 				}
 			}
@@ -164,9 +163,10 @@ public class Graph {
 		// generate all possible combination of edges (change to generate only the ones
 		// of size v-1)
 		load.sort(new DestSet(0, null));
-		Set<Edge> e = ImmutableSet.copyOf(edges);
-		Set<Set<Edge>> gg = Sets.powerSet(e);
-		Set<Set<Edge>> ggremove = Sets.newHashSet();
+		List<Set<Edge>> gg = getSubsets(edges, vertices.size() - 1);
+		List<Set<Edge>> ggremove = new ArrayList<>();
+		System.out.println("SIZE       "+ gg.size());
+		int count =0;
 		for (Set<Edge> tree : gg) {
 			// check if size == v-1
 			if (tree.size() != vertices.size() - 1) {
@@ -250,6 +250,7 @@ public class Graph {
 					}
 					// valid tree, compute score for load
 					if (!trashed) {
+						count ++;
 						System.out.println("goodtreee");
 						// system print the tree levels
 						List<Vertex> toprint = new ArrayList<>();
@@ -311,6 +312,8 @@ public class Graph {
 				}
 			}
 		}
+		
+		System.out.println("Size2     " + count);
 
 		// print tree on dot file
 		PrintWriter writer;
@@ -385,5 +388,31 @@ public class Graph {
 	// something like
 	// http://research.nii.ac.jp/~uno/papers/isaac96web.pdf or
 	// http://www.scielo.br/pdf/pope/v25n2/25707.pdf
+	
+	//while building check cost of tree, if already found a better one stop, if possible
+	
+	private static void getSubsets(List<Edge> superSet, int k, int idx, Set<Edge> current,List<Set<Edge>> solution) {
+	    //successful stop clause
+	    if (current.size() == k) {
+	        solution.add(new java.util.HashSet<>(current));
+	        return;
+	    }
+	    //unseccessful stop clause
+	    if (idx == superSet.size()) return;
+	    Edge x = superSet.get(idx);
+	    current.add(x);
+	    //TODO check if adding x violates the tree
+	    //"guess" x is in the subset
+	    getSubsets(superSet, k, idx+1, current, solution);
+	    current.remove(x);
+	    //"guess" x is not in the subset
+	    getSubsets(superSet, k, idx+1, current, solution);
+	}
+
+	public static List<Set<Edge>> getSubsets(List<Edge> superSet, int k) {
+	    List<Set<Edge>> res = new ArrayList<>();
+	    getSubsets(superSet, k, 0, new java.util.HashSet<Edge>(), res);
+	    return res;
+	}
 
 }

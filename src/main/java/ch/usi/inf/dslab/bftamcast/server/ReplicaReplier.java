@@ -33,6 +33,7 @@ import io.netty.util.internal.ConcurrentSet;
  * @author Christian Vuerich - christian.vuerich@usi.ch
  *
  */
+//TODO since BatchExecutable calls the same method as FIFOExecutable in performance try to remove BatchExecutable to check perf.
 public class ReplicaReplier implements Replier, FIFOExecutable, BatchExecutable, Serializable, ReplyListener {
 
 	private static final long serialVersionUID = 1L;
