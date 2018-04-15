@@ -68,7 +68,7 @@ public class Tree implements Serializable {
 					if (str.countTokens() == 2) {
 						vertices.add(new Vertex(Integer.valueOf(str.nextToken()), configFile.replace("tree.conf", "") + str.nextToken(), proxyID));
 						destinations.add(vertices.get(vertices.size() - 1).getGroupId());
-						System.out.println("adding vertex: " + vertices.get(vertices.size()-1));
+//						System.out.println("adding vertex: " + vertices.get(vertices.size()-1));
 					}
 					// connection declaration
 					if (str.countTokens() == 3) {
@@ -77,7 +77,7 @@ public class Tree implements Serializable {
 						str.nextToken();// throw away "->"
 						int to = Integer.valueOf(str.nextToken());
 						
-						System.out.println("adding edge: " + from +" -> " + to);
+//						System.out.println("adding edge: " + from +" -> " + to);
 
 						// add connections in vertices
 						for (Vertex v1 : vertices) {
@@ -163,7 +163,7 @@ public class Tree implements Serializable {
 	 * @return vertex with specified id or null
 	 */
 	public Vertex findVertexById(int id) {
-		System.out.println(root);
+//		System.out.println(root);
 		return root.findVertexByID(id);
 	}
 

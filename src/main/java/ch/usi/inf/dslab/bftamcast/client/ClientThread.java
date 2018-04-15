@@ -151,9 +151,9 @@ public class ClientThread implements Runnable, ReplyListener {
 			lock.lock();
 			try {
 				if (replyReq.getDestination().length > 1)
-					globalStats.store(tracker.getElapsedTime() / 1000);
+					globalStats.store(tracker.getElapsedTime() / 1000000);
 				else
-					localStats.store(tracker.getElapsedTime() / 1000);
+					localStats.store(tracker.getElapsedTime() / 1000000);
 				if (verbose && elapsed - delta >= 2 * 1e9) {
 					System.out.println("Client " + clientId + " ops/second:"
 							+ (localStats.getPartialCount() + globalStats.getPartialCount())

@@ -1,15 +1,15 @@
 #!/bin/bash
 
-IP=`ifconfig enp4s0 | grep "inet " | awk  '{print $2}'| awk '{print $1}'`
-#IP="192.168.3.11"
+# IP=`ifconfig enp4s0 | grep "inet " | awk  '{print $2}'| awk '{print $1}'`
+# #IP="192.168.3.11"
 
-if [ "$IP" = "" ]; then
-  echo "No IP found, exiting!"
-  exit
-fi
+# if [ "$IP" = "" ]; then
+#   echo "No IP found, exiting!"
+#   exit
+# fi
 
-echo "Using IP '$IP'" 
-name=`cat /etc/hosts | grep -w $IP | awk '{print $2}'`
+# echo "Using IP '$IP'" 
+name=`hostname`
 echo "Using name '$name'" 
 
  for i in `ls -d group*`; do

@@ -15,10 +15,8 @@ for (( i = 0; i < $ngroups; i++ )); do
 	touch group-$i/hosts.config
 	echo "#group $i" > group-$i/hosts.config
 	for (( j = 0; j < $groupsize; j++ )); do
-		num=$((baseNode + ( i * ( ngroups +1)) + j))
-		echo "$j node$num 1${j}0${i}${j}" >> group-$i/hosts.config
+		echo "$j node$baseNode 1${j}0${i}${j}" >> group-$i/hosts.config
+		baseNode=$(( baseNode + 1 ))
 	done
-	echo $i
+	
 done
-echo $baseNode
-echo $ngroups
