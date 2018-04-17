@@ -21,10 +21,11 @@ public class Vertex {
 	int level = -1;
 	boolean colored = false;
 
-	public Vertex(int ID, String conf, double capacity) {
+	public Vertex(int ID, String conf, double capacity, int replicas) {
 		this.ID = ID;
 		this.capacity = capacity;
 		this.resCapacity = capacity;
+		this.replicas = replicas;
 
 	}
 
