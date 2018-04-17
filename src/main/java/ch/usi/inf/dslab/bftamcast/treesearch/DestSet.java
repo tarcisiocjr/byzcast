@@ -14,15 +14,15 @@ import java.util.List;
 public class DestSet implements Comparator<DestSet>{
 	public List<Vertex> destinations = new ArrayList<>();
 	public List<Integer> destinationsIDS = new ArrayList<>();
-	public int percentage;
+	public int load;
 	public int penalty = 0;
 
 	public Vertex root;
 	public List<DestSet> overlaps = new ArrayList<>();
 
 
-	public DestSet(int percentage, List<Vertex> dests) {
-		this.percentage = percentage;
+	public DestSet(int load, List<Vertex> dests) {
+		this.load = load;
 		this.destinations =  dests;
 		if(destinations !=null) {
 		for (Vertex vertex : dests) {
@@ -31,14 +31,14 @@ public class DestSet implements Comparator<DestSet>{
 		
 	}
 
-	public boolean matchDests(List<Integer> dests) {
-		for (Integer i : destinationsIDS) {
-			if (!dests.contains(i)) {
+	public boolean matchDests(List<Vertex> dests) {
+		for (Vertex i : dests) {
+			if (!destinationsIDS.contains(i.ID)) {
 				return false;
 			}
 		}
-		for (Integer i : dests) {
-			if (!destinationsIDS.contains(i)) {
+		for (Vertex i : destinations) {
+			if (!dests.contains(i)) {
 				return false;
 			}
 		}
@@ -49,6 +49,6 @@ public class DestSet implements Comparator<DestSet>{
 	@Override
 	public int compare(DestSet arg0, DestSet arg1) {
 		
-		return   arg1.percentage -arg0.percentage;
+		return   arg1.load -arg0.load;
 	}
 }

@@ -8,12 +8,12 @@ package ch.usi.inf.dslab.bftamcast.treesearch;
  *
  */
 public class Edge {
-	public Vertex a;
-	public Vertex b;
+	public Vertex from;
+	public Vertex to;
 	public int latency;
-	public Edge(Vertex a, Vertex b, int latency) {
-		this.a =a;
-		this.b = b;
+	public Edge(Vertex from, Vertex to, int latency) {
+		this.from =from;
+		this.to = to;
 		this.latency = latency;
 	}
 }

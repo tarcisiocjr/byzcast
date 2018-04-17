@@ -9,11 +9,12 @@ import java.util.List;
  *
  */
 public class Vertex {
-	public int ID;
+	public int ID, replicas;
 	public double capacity, resCapacity;
 	List<Vertex> connections = new ArrayList<>();
 	Vertex parent;
 	boolean printed = false;
+	public List<Edge> outgoingEdges =  new ArrayList<>();
 	public List<Integer> inReach = new ArrayList<>();
 	public int inDegree = 0;
 	public int inLatency = 0;
@@ -71,11 +72,26 @@ public class Vertex {
 		}
 	}
 
-	public void updateLoad(int loadperc, int ID) {
-		resCapacity -= capacity / 100 * loadperc;
-		if (ID!=this.ID && parent != null) {
-			parent.updateLoad(loadperc, ID);
+	public void updateLoad(int load, List<Vertex> destinations, int replicas, List<Vertex> updated) {
+		updated.add(this);
+		List<Vertex> toUpdate =  new ArrayList<>();
+		for (Vertex v : connections) {
+			for(Vertex d : destinations) {
+				if(!toUpdate.contains(v) && v.inReach(d.ID)) {
+					toUpdate.add(v);
+				}
+			}
 		}
+		int replies = 0;
+		for (Vertex v : toUpdate) {
+			replies += v.replicas;
+		}
+		
+		resCapacity -= load *(replicas+replies);
+		for (Vertex v : toUpdate) {
+			v.updateLoad(load, destinations, this.replicas, updated);
+		}
+		
 	}
 
 }
