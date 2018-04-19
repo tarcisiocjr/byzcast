@@ -4,8 +4,8 @@ import ch.usi.inf.dslab.bftamcast.kvs.Request;
 import io.netty.util.internal.ConcurrentSet;
 
 /**
- * @author Christian Vuerich - christian.vuerich@usi.ch
- * Tracker for the replies from a single group
+ * @author Christian Vuerich - christian.vuerich@usi.ch Tracker for the replies
+ *         from a single group
  */
 public class GroupRequestTracker {
 	private ConcurrentSet<Request> replies;
@@ -23,26 +23,34 @@ public class GroupRequestTracker {
 	}
 
 	public boolean addReply(Request reply) {
-		int count = 0;
-		for (Request r : replies) {
-			if (r.equals(reply)) {
-				count++;
-			}
-		}
 
 		this.replies.add(reply);
 
-		if (count > currentMajority) {
-			currentMajority = count;
-			majorityReply = reply;
-		}
-		if (currentMajority >= majority) {
+		if (replies.size() >= majority) {
 			endTime = System.nanoTime();
 			majreached = true;
+			majorityReply = getMajReply();
 			return true;
 		}
 		return false;
 	}
+
+	public Request getMajReply() {
+
+		for (Request r : replies) {
+			int count = 0;
+			for (Request r2 : replies) {
+				if (r.equals(r2)) {
+					count++;
+					if (count >= majority) {
+						return r;
+					}
+				}
+			}
+		}
+		return null;
+	}
+	
 
 	public boolean getMajReached() {
 		return majreached;

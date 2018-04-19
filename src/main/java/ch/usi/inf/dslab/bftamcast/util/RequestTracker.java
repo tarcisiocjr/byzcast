@@ -31,6 +31,8 @@ public class RequestTracker {
 	}
 
 	public boolean addReply(Request req) {
+		System.out.println(req.getSender());
+		System.out.println(tracker.get(req.getSender()));
 		tracker.get(req.getSender()).addReply(req);
 		return checkAll();
 	}

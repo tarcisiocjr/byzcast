@@ -4,7 +4,7 @@ import org.apache.commons.cli.*;
 
 public class CLIParser {
     private Option  id, group,
-            globalPercent, clientCount, duration, msgSize, nonGenuine, treeConfig;
+            globalPercent, clientCount, duration, msgSize, nonGenuine, treeConfig, outstanding;
     private Options options;
     private CommandLineParser parser;
     private CommandLine line;
@@ -20,6 +20,7 @@ public class CLIParser {
         clientCount = Option.builder("c").desc("number of client threads (defaults to 1)").argName("clients").hasArg().numberOfArgs(1).type(Integer.class).build();
         treeConfig= Option.builder("t").desc("tree conf file").argName("file").hasArg().numberOfArgs(1).type(String.class).required().build();
         nonGenuine = Option.builder("ng").desc("sets the server to the non-genuine config.uration").hasArg(false).build();
+        outstanding = Option.builder("o").desc("number of outstanding messages allowed per client/replica (defaults to 1)").hasArg().numberOfArgs(1).type(Integer.class).build();
         options = new Options();
         parser = new DefaultParser();
         line = null;
@@ -38,6 +39,7 @@ public class CLIParser {
         parser.options.addOption(parser.globalPercent);
         parser.options.addOption(parser.nonGenuine);
         parser.options.addOption(parser.treeConfig);
+        parser.options.addOption(parser.outstanding);
         parser.parse(args);
         return parser;
     }
@@ -52,6 +54,7 @@ public class CLIParser {
         parser.options.addOption(parser.id);
         parser.options.addOption(parser.group);
         parser.options.addOption(parser.treeConfig);
+        parser.options.addOption(parser.outstanding);
         parser.parse(args);
         return parser;
     }
@@ -80,6 +83,11 @@ public class CLIParser {
     public int getDuration() {
         String v = line.getOptionValue("d");
         return v == null ? 120 : Integer.parseInt(v);
+    }
+    
+    public int getOutstandingMsg() {
+        String v = line.getOptionValue("o");
+        return v == null ? 1 : Integer.parseInt(v);
     }
 
     public int getMsgSize() {

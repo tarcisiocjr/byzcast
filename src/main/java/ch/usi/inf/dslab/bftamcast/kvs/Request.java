@@ -16,13 +16,14 @@ public class Request implements RequestIf, Serializable {
 	private static final long serialVersionUID = -8560523066225958549L;
 	private RequestType type;
 	private int key;
+	private int lcaID;
 	private int client;
 	private int sender;
 	private byte[] value;
 	private byte[][] result;
 	private int[] destination;
+	private int[] destinationhandled;
 	private int seqNumber;
-
 
 	/**
 	 * create a request object from a byte[]
@@ -42,14 +43,20 @@ public class Request implements RequestIf, Serializable {
 	 * @param seqNumber
 	 * @param sender
 	 */
-	public Request(RequestType type, int key, byte[] value, int[] destination, int seqNumber, int client, int sender) {
+	public Request(RequestType type, int key, byte[] value, int[] destination, int seqNumber, int client, int sender,
+			int lcaID) {
 		this.client = client;
+		this.lcaID = lcaID;
 		this.sender = sender;
 		this.type = type;
 		this.key = key;
 		this.value = value;
 		this.destination = destination;
 		this.result = new byte[destination.length][];
+		this.destinationhandled = new int[destination.length];
+		for (int i = 0; i < destinationhandled.length; i++) {
+			destinationhandled[i] = -1;
+		}
 		this.seqNumber = seqNumber;
 	}
 
@@ -105,33 +112,40 @@ public class Request implements RequestIf, Serializable {
 
 	/**
 	 * getter for Type field
+	 * 
 	 * @return
 	 */
 	public RequestType getType() {
 		return type;
 	}
 
+	public int getLcaID() {
+		return lcaID;
+	}
+
 	/**
-	 * set the result for a groupiD, at the same index of the groupID in destinations
+	 * set the result for a groupiD, at the same index of the groupID in
+	 * destinations
+	 * 
 	 * @param eval
 	 * @param groupID
 	 */
 	public void setResult(byte[] eval, int groupID) {
-		//look for index in destinations of groupID
+		// look for index in destinations of groupID
 		for (int i = 0; i < destination.length; i++) {
 			if (destination[i] == groupID) {
-				//set result
+				// set result
 				this.result[i] = eval;
 			}
 		}
 	}
-	
-	public void  mergeReplies(byte[][] replies) {
-		if(replies.length != result.length) {
+
+	public void mergeReplies(byte[][] replies) {
+		if (replies.length != result.length) {
 			System.err.println("Error merging results");
 		}
 		for (int i = 0; i < replies.length; i++) {
-			if(replies[i] != null) {
+			if (replies[i] != null) {
 				result[i] = replies[i];
 			}
 		}
@@ -139,6 +153,7 @@ public class Request implements RequestIf, Serializable {
 
 	/**
 	 * return the result byte[] at the same index groupID has in destinations
+	 * 
 	 * @param groupID
 	 * @return
 	 */
@@ -150,9 +165,10 @@ public class Request implements RequestIf, Serializable {
 		}
 		return null;
 	}
-	
+
 	/**
 	 * Getter for key field
+	 * 
 	 * @return
 	 */
 	public int getKey() {
@@ -161,6 +177,7 @@ public class Request implements RequestIf, Serializable {
 
 	/**
 	 * Getter for value field
+	 * 
 	 * @return
 	 */
 	public byte[] getValue() {
@@ -169,6 +186,7 @@ public class Request implements RequestIf, Serializable {
 
 	/**
 	 * Getter for value result
+	 * 
 	 * @return
 	 */
 	public byte[][] getResult() {
@@ -177,14 +195,23 @@ public class Request implements RequestIf, Serializable {
 
 	/**
 	 * Getter for value destination
+	 * 
 	 * @return
 	 */
 	public int[] getDestination() {
 		return destination;
 	}
+	
+	public int[] getDestinationHandled() {
+		return destinationhandled;
+	}
+	public void setDestinationHandled(int[] dh) {
+		this.destinationhandled = dh;
+	}
 
 	/**
 	 * Getter for sequence number field
+	 * 
 	 * @return
 	 */
 	public int getSeqNumber() {
@@ -193,6 +220,7 @@ public class Request implements RequestIf, Serializable {
 
 	/**
 	 * Getter for clientID field
+	 * 
 	 * @return
 	 */
 	public int getClient() {
@@ -201,6 +229,7 @@ public class Request implements RequestIf, Serializable {
 
 	/**
 	 * Getter for sender field
+	 * 
 	 * @return
 	 */
 	public int getSender() {
@@ -209,6 +238,7 @@ public class Request implements RequestIf, Serializable {
 
 	/**
 	 * Setter for sender field
+	 * 
 	 * @return
 	 */
 	public void setSender(int sender) {
@@ -225,6 +255,7 @@ public class Request implements RequestIf, Serializable {
 		try {
 			dos.writeUTF(this.type.name());
 			dos.writeInt(this.key);
+			dos.writeInt(this.lcaID);
 			dos.writeInt(this.value == null ? 0 : this.value.length);
 			if (value != null)
 				dos.write(this.value);
@@ -233,6 +264,9 @@ public class Request implements RequestIf, Serializable {
 			dos.writeInt(this.sender);
 			dos.writeInt(this.destination.length);
 			for (int dest : destination)
+				dos.writeInt(dest);
+			dos.writeInt(this.destinationhandled.length);
+			for (int dest : destinationhandled)
 				dos.writeInt(dest);
 			dos.writeInt(this.result == null ? 0 : this.result.length);
 			if (result != null) {
@@ -262,6 +296,7 @@ public class Request implements RequestIf, Serializable {
 		try {
 			this.type = RequestType.valueOf(dis.readUTF());
 			this.key = dis.readInt();
+			this.lcaID = dis.readInt();
 			vSize = dis.readInt();
 			if (vSize > 0) {
 				this.value = new byte[vSize];
@@ -275,6 +310,11 @@ public class Request implements RequestIf, Serializable {
 			this.destination = new int[destSize];
 			for (int i = 0; i < destSize; i++) {
 				this.destination[i] = dis.readInt();
+			}
+			destSize = dis.readInt();
+			this.destinationhandled = new int[destSize];
+			for (int i = 0; i < destSize; i++) {
+				this.destinationhandled[i] = dis.readInt();
 			}
 			resultSize = dis.readInt();
 			if (resultSize > 0) {
@@ -314,6 +354,17 @@ public class Request implements RequestIf, Serializable {
 	 * @return
 	 */
 	public boolean equals(Request r) {
+//		System.out.println("res = " + Arrays.equals(this.getResult(), r.getResult()));
+//		System.out.println("res = " + this.getResult().equals(r.getResult()));
+//		System.out.println();
+		
+//		System.out.println(this.key == r.key && this.type == r.type && this.seqNumber == r.seqNumber && this.client == r.client &&
+//				this.lcaID == r.lcaID && Arrays.equals(this.getValue(), r.getValue()) && Arrays.equals(this.getDestination(), r.getDestination())
+//				&&  Arrays.equals(this.getResult(), r.getResult()));
+//		
+//		return (this.key == r.key && this.type == r.type && this.seqNumber == r.seqNumber && this.client == r.client &&
+//				this.lcaID == r.lcaID && Arrays.equals(this.getValue(), r.getValue()) && Arrays.equals(this.getDestination(), r.getDestination())
+//				&&  Arrays.equals(this.getResult(), r.getResult()));
 		if (this.key != r.key) {
 			System.out.println("key problem");
 			return false;
@@ -330,41 +381,13 @@ public class Request implements RequestIf, Serializable {
 			System.out.println("sender problem");
 			return false;
 		}
-
-		if (this.getValue() == null) {
-			if (r.getValue() != null) {
-				System.out.println("value problem");
-				return false;
-			}
-		} else {
-			if (r.getValue() == null) {
-				System.out.println("value problem1");
-				return false;
-			}
+		if(!Arrays.equals(this.getValue(), r.getValue())){
+			return false;
+		}
+		if(!Arrays.equals(this.getDestination(), r.getDestination())){
+			return false;
 		}
 
-		if (this.getDestination() == null) {
-			if (r.getDestination() != null) {
-				System.out.println("destination problem");
-				return false;
-			}
-		} else {
-			if (r.getDestination() == null) {
-				System.out.println("destination problem1");
-				return false;
-			}
-		}
-		if (value != null) {
-			if (!Arrays.equals(value, r.value)) {
-				return false;
-			}
-		}
-		if (destination != null) {
-
-			if (!Arrays.equals(destination, r.destination)) {
-				return false;
-			}
-		}
 		if (result == null && r.result != null) {
 			return false;
 		}

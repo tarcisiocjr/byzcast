@@ -156,6 +156,18 @@ public class Vertex implements Serializable {
 	public List<Integer> getChildernIDs() {
 		return childernIDs;
 	}
+	
+	/**
+	 * @return the childernIDs
+	 */
+	public Vertex getChild(int id) {
+		for (Vertex c : children) {
+			if (c.getGroupId() == id) {
+				return c;
+			}
+		}
+		return null;
+	}
 
 	/**
 	 * @return the parent

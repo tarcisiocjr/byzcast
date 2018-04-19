@@ -14,6 +14,7 @@ import bftsmart.tom.RequestContext;
 import bftsmart.tom.core.messages.TOMMessage;
 import bftsmart.tom.core.messages.TOMMessageType;
 import ch.usi.inf.dslab.bftamcast.graph.Tree;
+import ch.usi.inf.dslab.bftamcast.graph.Vertex;
 
 /**
  * @author Tarcisio Ceolin - tarcisio.ceolin.junior@usi.ch
@@ -55,12 +56,13 @@ public class ConsoleClient implements ReplyListener {
 			StringTokenizer dt;
 			int[] n;
 			int index;
-			AsynchServiceProxy target;
+			Vertex target;
 			seqNumber++;
 			byte[] value;
 			int[] destinations;
 			int key;
 			RequestType type;
+			
 
 			switch (cmd) {
 
@@ -77,13 +79,14 @@ public class ConsoleClient implements ReplyListener {
 				}
 				destinations = n;
 				value = console.readLine("Enter the value: ").getBytes();
+				target = overlayTree.lca(destinations);
 
-				req = new Request(type, key, value, destinations, seqNumber, clientId, clientId);
 
-				target = overlayTree.lca(n).getProxy();
+				req = new Request(type, key, value, destinations, seqNumber, clientId, clientId, target.getGroupId());
+
 				System.out.println("id ==    " + overlayTree.lca(n).getGroupId());
-				c.repliesTracker.put(seqNumber, new GroupRequestTracker(target.getViewManager().getCurrentViewF() + 1));
-				target.invokeAsynchRequest(req.toBytes(), c, TOMMessageType.ORDERED_REQUEST);
+				c.repliesTracker.put(seqNumber, new GroupRequestTracker(target.getProxy().getViewManager().getCurrentViewF() + 1));
+				target.getProxy().invokeAsynchRequest(req.toBytes(), c, TOMMessageType.ORDERED_REQUEST);
 				System.out.println("sent");
 				break;
 			case 2:
@@ -99,11 +102,11 @@ public class ConsoleClient implements ReplyListener {
 					index++;
 				}
 				destinations = n;
-				target = overlayTree.lca(n).getProxy();
+				target = overlayTree.lca(destinations);
 				System.out.println("id ==    " + overlayTree.lca(n).getGroupId());
-				req = new Request(type, key, value, destinations, seqNumber, clientId, clientId);
-				c.repliesTracker.put(seqNumber, new GroupRequestTracker(target.getViewManager().getCurrentViewF() + 1));
-				target.invokeAsynchRequest(req.toBytes(), c, TOMMessageType.ORDERED_REQUEST);
+				req = new Request(type, key, value, destinations, seqNumber, clientId, clientId, target.getGroupId());
+				c.repliesTracker.put(seqNumber, new GroupRequestTracker(target.getProxy().getViewManager().getCurrentViewF() + 1));
+				target.getProxy().invokeAsynchRequest(req.toBytes(), c, TOMMessageType.ORDERED_REQUEST);
 				break;
 			case 3:
 				System.out.println("Removing value in the map");
@@ -118,27 +121,26 @@ public class ConsoleClient implements ReplyListener {
 					index++;
 				}
 				destinations = n;
-				target = overlayTree.lca(n).getProxy();
-				System.out.println("id ==    " + overlayTree.lca(n).getGroupId());
-				req = new Request(type, key, value, destinations, seqNumber, clientId, clientId);
-				c.repliesTracker.put(seqNumber, new GroupRequestTracker(target.getViewManager().getCurrentViewF() + 1));
-				target.invokeAsynchRequest(req.toBytes(), c, TOMMessageType.ORDERED_REQUEST);
+				target = overlayTree.lca(destinations);				System.out.println("id ==    " + overlayTree.lca(n).getGroupId());
+				req = new Request(type, key, value, destinations, seqNumber, clientId, clientId,target.getGroupId());
+				c.repliesTracker.put(seqNumber, new GroupRequestTracker(target.getProxy().getViewManager().getCurrentViewF() + 1));
+				target.getProxy().invokeAsynchRequest(req.toBytes(), c, TOMMessageType.ORDERED_REQUEST);
 				break;
 			case 4:
 				System.out.println("Getting the map size");
 				type = RequestType.SIZE;
 				key = 0;
+				
 				value = null;
 
 				destinations = new int[overlayTree.getDestinations().size()];
 				for (int i = 0; i < destinations.length; i++) {
 					destinations[i] = overlayTree.getDestinations().get(i);
 				}
-				target = overlayTree.lca(destinations).getProxy();
-				System.out.println("id ==    " + overlayTree.lca(destinations).getGroupId());
-				req = new Request(type, key, value, destinations, seqNumber, clientId, clientId);
-				c.repliesTracker.put(seqNumber, new GroupRequestTracker(target.getViewManager().getCurrentViewF() + 1));
-				target.invokeAsynchRequest(req.toBytes(), c, TOMMessageType.ORDERED_REQUEST);
+				target = overlayTree.lca(destinations);				System.out.println("id ==    " + overlayTree.lca(destinations).getGroupId());
+				req = new Request(type, key, value, destinations, seqNumber, clientId, clientId,target.getGroupId());
+				c.repliesTracker.put(seqNumber, new GroupRequestTracker(target.getProxy().getViewManager().getCurrentViewF() + 1));
+				target.getProxy().invokeAsynchRequest(req.toBytes(), c, TOMMessageType.ORDERED_REQUEST);
 				break;
 			default:
 				System.err.println("Invalid option...");
@@ -151,9 +153,12 @@ public class ConsoleClient implements ReplyListener {
 	 */
 	@Override
 	public void replyReceived(RequestContext context, TOMMessage reply) {
+		System.out.println("recieved");
+
 		Request replyReq = new Request(reply.getContent());
 		GroupRequestTracker tracker = repliesTracker.get(replyReq.getSeqNumber());
 		if (tracker != null && tracker.addReply(replyReq)) {
+			replyReq = tracker.getMajorityReply();
 			System.out.println("finish, sent up req # " + replyReq.getSeqNumber());
 
 			repliesTracker.remove(replyReq.getSeqNumber());

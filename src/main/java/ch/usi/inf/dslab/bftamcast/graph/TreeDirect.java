@@ -68,7 +68,7 @@ public class TreeDirect implements Serializable {
 					StringTokenizer str = new StringTokenizer(line, " ");
 					// vertex declaration (group)
 					if (str.countTokens() == 2) {
-						vertices.add(new VertexDirect(Integer.valueOf(str.nextToken()), str.nextToken(), proxyID, c));
+						vertices.add(new VertexDirect(Integer.valueOf(str.nextToken()), configFile.replace("tree.conf", "") + str.nextToken(), proxyID, c));
 						destinations.add(vertices.get(vertices.size() - 1).getGroupId());
 					}
 					// connection declaration

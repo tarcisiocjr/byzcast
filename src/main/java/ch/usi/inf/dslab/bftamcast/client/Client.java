@@ -23,11 +23,12 @@ public class Client {
         String treeConfigPath = p.getTreeConfig();
         ClientThread[] clients = new ClientThread[clientCount];
         Thread[] clientThreads = new Thread[clientCount];
+        int maxOutstanding = p.getOutstandingMsg();
 
         for (int i = 0; i < clientCount; i++) {
             System.out.println("Starting client " + (id + i));
             Thread.sleep(r.nextInt(600));
-            clients[i] = new ClientThread(id + i, idGroup,true, totalTime, valueSize, perc, ng, treeConfigPath);
+            clients[i] = new ClientThread(id + i, idGroup,true, totalTime, valueSize, perc, ng, treeConfigPath,maxOutstanding);
             clientThreads[i] = new Thread(clients[i]);
             clientThreads[i].start();
         }

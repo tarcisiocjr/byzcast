@@ -119,9 +119,10 @@ import io.netty.util.internal.ConcurrentSet;
 		// another group contacted me, majority needed
 		else {
 			// majority of parent group replicas f+1
+			Vertex lca = overlayTree.lca(req.getDestination());
 			int majReplicasOfSender = 0;
 			// this group is not the lcs, so not contacted directly from client
-			if (groupId != req.getLcaID()) {
+			if (groupId != lca.getGroupId()) {
 				majReplicasOfSender = me.getParent().getProxy().getViewManager().getCurrentViewF() + 1;
 			}
 
@@ -129,38 +130,37 @@ import io.netty.util.internal.ConcurrentSet;
 			ConcurrentSet<TOMMessage> msgs = saveRequest(request, req.getSeqNumber(), req.getClient());
 			// check if majority of parent contacted me, and request is the same
 			// -1 because the request used to compare other is already in msgs
-			
+			int count = -1;
+			Request r;
+			for (TOMMessage m : msgs) {
+				r = new Request(m.getContent());
+				if (r.equals(req)) {
+					count++;
+				}
+			}
 
 			// majority of replicas sent request and this replica is not already
 			// processing
 			// the request (not processing it more than once)
-			//count TODO
-			if (msgs.size() >= majReplicasOfSender && (repliesTracker.get(req.getClient()) == null
+			if (count >= majReplicasOfSender && (repliesTracker.get(req.getClient()) == null
 					|| !repliesTracker.get(req.getClient()).containsKey(req.getSeqNumber()))) {
 
-				req = getMajreq(msgs, majReplicasOfSender);
-				req.setSender(groupId);
-//				System.out.println("asdflkhjadsfdka    " + req);
 				int[] destinations = req.getDestination();
-				int[] destinationsH = req.getDestinationHandled();
 				boolean addreq = false;
 				Map<Vertex, Integer> toSend = new HashMap<>();
 				// List<Vertex>
 				for (int i = 0; i < destinations.length; i++) {
-					if(destinationsH[i] == -1) {
 					// I am a target, compute but wait for majority of other destination to
 					// execute
 					// the same to asnwer
 					if (destinations[i] == groupId) {
-						destinationsH[i] = destinations[i];
 						execute(req);
 						// System.out.println(req.getValue());
 						addreq = true;
 					}
 					// my child in tree is a destination, forward it
 					else if (me.getChildernIDs().contains(destinations[i])) {
-						Vertex v = me.getChild(destinations[i]);
-						destinationsH[i] = destinations[i];
+						Vertex v = overlayTree.findVertexById(destinations[i]);
 						toSend.put(v, v.getProxy().getViewManager().getCurrentViewF() + 1);
 					}
 					// destination must be in the path of only one of my childrens
@@ -169,17 +169,14 @@ import io.netty.util.internal.ConcurrentSet;
 						for (Vertex v : me.getChildren()) {
 							if (v.inReach(destinations[i])) {
 								if (!toSend.keySet().contains(v)) {
-									destinationsH[i] = destinations[i];
 									toSend.put(v, v.getProxy().getViewManager().getCurrentViewF() + 1);
 								}
 								break;// only one path
 							}
 						}
 					}
-					}
 
 				}
-				req.setDestinationHandled(destinationsH);
 
 				// no other destination is in my reach, send reply back
 				if (toSend.keySet().isEmpty()) {
@@ -282,7 +279,6 @@ import io.netty.util.internal.ConcurrentSet;
 	 */
 	@Override
 	public void replyReceived(RequestContext context, TOMMessage reply) {
-		System.out.println("recieved");
 		// unpack request from reply
 		Request replyReq = new Request(reply.getContent());
 		// get the tracker for that request
@@ -300,7 +296,6 @@ import io.netty.util.internal.ConcurrentSet;
 			processedReplies.get(sendReply.getClient()).put(sendReply.getSeqNumber(), sendReply);
 			// reply to all
 			if (msgs != null) {
-				System.out.println("replying");
 				for (TOMMessage msg : msgs) {
 					msg.reply.setContent(sendReply.toBytes());
 					rc.getServerCommunicationSystem().send(new int[] { msg.getSender() }, msg.reply);
@@ -355,27 +350,4 @@ import io.netty.util.internal.ConcurrentSet;
 //
 //		return command;
 //	}
-	
-	
-	public Request getMajreq(ConcurrentSet<TOMMessage> msgs, int majority) {
-//		System.out.println("majjj    " +  majority);
-//		System.out.println("msgs    " +  msgs.size());
-		Request r, r2;
-		for (TOMMessage m : msgs) {
-			int count = 0;
-			r = new Request(m.getContent());
-			for (TOMMessage m2 : msgs) {
-				r2 = new Request(m2.getContent());
-				if (r.equals(r2)) {
-					count++;
-//					System.out.println(count);
-					if(count >= majority) {
-						return r;
-					}
-				}
-			}
-		}
-		return null;
-		
-	}
 }

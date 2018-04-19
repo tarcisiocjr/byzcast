@@ -267,6 +267,9 @@ public class ConsoleClientDirect implements ReplyListener {
 	}
 
 	public void handle(TOMMessage msg) {
+		System.out.println(msg.getSender());
+		System.out.println(msg.getSequence());
+		System.out.println();
 		try {
 			lock.acquire();
 				replyReceived(null, msg);

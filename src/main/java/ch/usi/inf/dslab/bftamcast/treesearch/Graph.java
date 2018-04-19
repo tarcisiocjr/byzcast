@@ -10,10 +10,8 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
-import java.util.Set;
 import java.util.StringTokenizer;
 
 /**
@@ -125,7 +123,7 @@ public class Graph {
 		//testing generate tree
 //		
 		int ogsize = vertices.size();
-		for (int i = vertices.size()-1; i < 20; i++) {
+		for (int i = vertices.size()-1; i < 10; i++) {
 			vertices.add(new Vertex(i, "", 100000, numerOfReplicas));
 		}
 		for (Vertex v1 : vertices) {
@@ -169,7 +167,9 @@ public class Graph {
 		System.out.println(allDests.size());
 		for (List<Vertex> d : allDests) {
 //			if (!existsLoad(d)) {
-				load.add(new DestSet(r.nextInt(5)+1, d));
+			
+//				load.add(new DestSet(r.nextInt(5)+1, d));
+			load.add(new DestSet(baseload, d));
 //			}
 		}
 		System.out.println("sets dest size = " + load.size());
@@ -185,133 +185,133 @@ public class Graph {
 		// use
 
 		long start = System.currentTimeMillis(), end;
-//		System.out.println(" generating tree1 " +  start);
-//		// generate all possible combination of edges (change to generate only the ones
-//		// of size v-1)
-//		load.sort(new DestSet(0, null));
-//		List<List<Edge>> gg = getSubsets(edges, vertices.size() - 1);
-//		List<List<Edge>> ggremove = new ArrayList<>();
-//		System.out.println("All kset to explore       " + gg.size());
-//		int count = 0;
-//		for (List<Edge> tree : gg) {
-//			// check if size == v-1
-//			if (tree.size() != vertices.size() - 1) {
-//				ggremove.add(tree);
-//			} else {
-//				// reset vertices data
-//				for (Vertex v : vertices) {
-//					v.inDegree = 0;
-//					v.parent = null;
-//					v.connections.clear();
-//					v.inLatency = Integer.MAX_VALUE;
-//					v.level = -1;
-//					v.colored = false;
-//					v.inReach.clear();
-//					v.resCapacity = v.capacity;
-//				}
-//
-//				// setup to check validity
-//				for (Edge edge : tree) {
-//					edge.from.colored = true;
-//					edge.to.colored = true;
-//					edge.to.inDegree += 1;
-//				}
-//				// check if all vertices are present, that there is only one root and that tha
-//				// in degree is 1 for all (not root)
-//				boolean root = false;
-//				Vertex rootV = null;
-//				boolean trashed = false;
-//				boolean cover = true;
-//				for (Vertex v : vertices) {
-//					cover = cover && v.colored;
-//					// find root
-//					if (v.inDegree == 0 && root == false) {
-//						rootV = v;
-//						root = true;
-//					}
-//					// degree not 1, not a tree
-//					else if (v.inDegree != 1) {
-//						ggremove.add(tree);
-//						trashed = true;
-//						break;
-//					}
-//				}
-//				// there is no root, invalid tree
-//				if (root != true) {
-//					// System.out.println("no root");
-//					ggremove.add(tree);
-//					trashed = true;
-//				}
-//
-//				// good tree
-//				if (!trashed && cover) {
-//					// setup vertices connections
-//					for (Edge edge : tree) {
-//						edge.from.connections.add(edge.to);
-//						edge.to.parent = edge.from;
-//						edge.to.inLatency = edge.latency;
-//					}
-//					// check for loops
-//					List<Vertex> explored = new LinkedList<>();
-//					List<Vertex> toexplore = new LinkedList<>();
-//					toexplore.add(rootV);
-//					while (!toexplore.isEmpty()) {
-//						Vertex v = toexplore.remove(0);
-//						explored.add(v);
-//						for (Vertex con : v.connections) {
-//							if (explored.contains(con)) {
-//								// loop not a tree
-//								ggremove.add(tree);
-//								trashed = true;
-//								break;
-//							} else {
-//								toexplore.add(con);
-//							}
-//						}
-//					}
-//
-//					if (!explored.containsAll(vertices)) {
-//						ggremove.add(tree);
-//						trashed = true;
-//					}
-//					// valid tree, compute score for load
-//					if (!trashed) {
-//						count++;
-//						// System.out.println("goodtreee");
-//						// system print the tree levels
-//						List<Vertex> toprint = new ArrayList<>();
-//						List<Vertex> toadd = new ArrayList<>();
-//						toprint.add(rootV);
-//						// while (!toprint.isEmpty()) {
-//						//
-//						// toadd.clear();
-//						// for (Vertex vertex : toprint) {
-//						// toadd.addAll(vertex.connections);
-//						// if (vertex.parent != null) {
-//						// System.out.print("" + vertex.ID + "(" + vertex.parent.ID + ") ");
-//						// } else
-//						// System.out.print("" + vertex.ID + "(null)");
-//						// }
-//						// System.out.println();
-//						// toprint.clear();
-//						// toprint.addAll(toadd);
-//						// }
-//
-//						// compute score
-//						int score = compute_score(rootV, tree, load, minscore, vertices, 0, new ArrayList<>());
-//						// System.out.println(score);
-//						if (score < minscore) {
-//							minscore = score;
-//							topTree = tree;
-//						}
-//					}
-//				}
-//			}
-//		}
-//
-//		System.out.println("kset that were trees     " + count);
-//		end = System.currentTimeMillis();
-//		System.out.println("done tree1  " + (end-start));
+		System.out.println(" generating tree1 " +  start);
+		// generate all possible combination of edges (change to generate only the ones
+		// of size v-1)
+		load.sort(new DestSet(0, null));
+		List<List<Edge>> gg = getSubsets(edges, vertices.size() - 1);
+		List<List<Edge>> ggremove = new ArrayList<>();
+		System.out.println("All kset to explore       " + gg.size());
+		int count = 0;
+		for (List<Edge> tree : gg) {
+			// check if size == v-1
+			if (tree.size() != vertices.size() - 1) {
+				ggremove.add(tree);
+			} else {
+				// reset vertices data
+				for (Vertex v : vertices) {
+					v.inDegree = 0;
+					v.parent = null;
+					v.connections.clear();
+					v.inLatency = Integer.MAX_VALUE;
+					v.level = -1;
+					v.colored = false;
+					v.inReach.clear();
+					v.resCapacity = v.capacity;
+				}
+
+				// setup to check validity
+				for (Edge edge : tree) {
+					edge.from.colored = true;
+					edge.to.colored = true;
+					edge.to.inDegree += 1;
+				}
+				// check if all vertices are present, that there is only one root and that tha
+				// in degree is 1 for all (not root)
+				boolean root = false;
+				Vertex rootV = null;
+				boolean trashed = false;
+				boolean cover = true;
+				for (Vertex v : vertices) {
+					cover = cover && v.colored;
+					// find root
+					if (v.inDegree == 0 && root == false) {
+						rootV = v;
+						root = true;
+					}
+					// degree not 1, not a tree
+					else if (v.inDegree != 1) {
+						ggremove.add(tree);
+						trashed = true;
+						break;
+					}
+				}
+				// there is no root, invalid tree
+				if (root != true) {
+					// System.out.println("no root");
+					ggremove.add(tree);
+					trashed = true;
+				}
+
+				// good tree
+				if (!trashed && cover) {
+					// setup vertices connections
+					for (Edge edge : tree) {
+						edge.from.connections.add(edge.to);
+						edge.to.parent = edge.from;
+						edge.to.inLatency = edge.latency;
+					}
+					// check for loops
+					List<Vertex> explored = new ArrayList<>();
+					List<Vertex> toexplore = new ArrayList<>();
+					toexplore.add(rootV);
+					while (!toexplore.isEmpty()) {
+						Vertex v = toexplore.remove(0);
+						explored.add(v);
+						for (Vertex con : v.connections) {
+							if (explored.contains(con)) {
+								// loop not a tree
+								ggremove.add(tree);
+								trashed = true;
+								break;
+							} else {
+								toexplore.add(con);
+							}
+						}
+					}
+
+					if (!explored.containsAll(vertices)) {
+						ggremove.add(tree);
+						trashed = true;
+					}
+					// valid tree, compute score for load
+					if (!trashed) {
+						count++;
+						// System.out.println("goodtreee");
+						// system print the tree levels
+						List<Vertex> toprint = new ArrayList<>();
+						List<Vertex> toadd = new ArrayList<>();
+						toprint.add(rootV);
+						// while (!toprint.isEmpty()) {
+						//
+						// toadd.clear();
+						// for (Vertex vertex : toprint) {
+						// toadd.addAll(vertex.connections);
+						// if (vertex.parent != null) {
+						// System.out.print("" + vertex.ID + "(" + vertex.parent.ID + ") ");
+						// } else
+						// System.out.print("" + vertex.ID + "(null)");
+						// }
+						// System.out.println();
+						// toprint.clear();
+						// toprint.addAll(toadd);
+						// }
+
+						// compute score
+						int score = compute_score(rootV, tree, load, minscore, vertices, 0, new ArrayList<>());
+						// System.out.println(score);
+						if (score < minscore) {
+							minscore = score;
+							topTree = tree;
+						}
+					}
+				}
+			}
+		}
+
+		System.out.println("kset that were trees     " + count);
+		end = System.currentTimeMillis();
+		System.out.println("done tree1  " + (end-start));
 
 		 start = System.currentTimeMillis();
 		System.out.println(" generating tree2 " +  start);
@@ -320,8 +320,10 @@ public class Graph {
 		System.out.println("done tree2    " + (end-start));
 
 		System.out.println("asdfadsfadsfsad    " + treeees.size());
+		if(!treeees.isEmpty()) {
 		topTree = treeees.get(0);
 
+		}
 		if (topTree != null) {
 
 			System.out.println("minscore = " + minscore);
@@ -431,6 +433,20 @@ public class Graph {
 		return res;
 	}
 
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
 	// generate all possible desitations
 	public static List<List<Vertex>> getAlldestinations(List<Vertex> vertices) {
 		List<List<Vertex>> destinations = new ArrayList<>();
@@ -452,6 +468,21 @@ public class Graph {
 		getgetAlldestinations2(vertices, index + 1, destinations, previous);
 	}
 
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
 	// generate all trees, assume connected graph
 	public static List<List<Edge>> generateTrees(List<Vertex> vertices, List<Edge> edges, List<DestSet> load) {
 		List<List<Edge>> trees = new ArrayList<>();
@@ -578,7 +609,7 @@ public class Graph {
 				for (Vertex v : updated) {
 					// check if capacity is not saturated
 					if (v.resCapacity <= 0) {
-						System.out.println("saturated!!!!");
+//						System.out.println("saturated!!!!");
 						return Integer.MAX_VALUE;
 					}
 				}
