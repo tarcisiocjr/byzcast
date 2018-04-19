@@ -1,4 +1,4 @@
-package ch.usi.inf.dslab.bftamcast.client;
+package ch.usi.inf.dslab.bftamcast.direct.client;
 
 import java.io.Console;
 import java.util.HashMap;
@@ -13,12 +13,12 @@ import bftsmart.tom.AsynchServiceProxy;
 import bftsmart.tom.RequestContext;
 import bftsmart.tom.core.messages.TOMMessage;
 import bftsmart.tom.core.messages.TOMMessageType;
-import ch.usi.inf.dslab.bftamcast.graph.TreeDirect;
-import ch.usi.inf.dslab.bftamcast.graph.VertexDirect;
-import ch.usi.inf.dslab.bftamcast.kvs.RequestDirect;
+import ch.usi.inf.dslab.bftamcast.direct.graph.TreeDirect;
+import ch.usi.inf.dslab.bftamcast.direct.graph.VertexDirect;
+import ch.usi.inf.dslab.bftamcast.direct.kvs.RequestDirect;
+import ch.usi.inf.dslab.bftamcast.direct.util.RequestTrackerDirect;
 import ch.usi.inf.dslab.bftamcast.kvs.RequestType;
 import ch.usi.inf.dslab.bftamcast.util.CLIParser;
-import ch.usi.inf.dslab.bftamcast.util.RequestTrackerDirect;
 
 public class ConsoleClientDirect implements ReplyListener {
 	private static Scanner scanner;

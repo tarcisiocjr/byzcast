@@ -1,7 +1,7 @@
 /**
  * 
  */
-package ch.usi.inf.dslab.bftamcast.server;
+package ch.usi.inf.dslab.bftamcast.direct.server;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;

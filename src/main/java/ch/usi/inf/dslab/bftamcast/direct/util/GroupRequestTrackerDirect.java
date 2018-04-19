@@ -1,6 +1,6 @@
-package ch.usi.inf.dslab.bftamcast.util;
+package ch.usi.inf.dslab.bftamcast.direct.util;
 
-import ch.usi.inf.dslab.bftamcast.kvs.RequestDirect;
+import ch.usi.inf.dslab.bftamcast.direct.kvs.RequestDirect;
 import io.netty.util.internal.ConcurrentSet;
 
 /**
