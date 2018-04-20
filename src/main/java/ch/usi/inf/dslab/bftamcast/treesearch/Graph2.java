@@ -187,15 +187,15 @@ public class Graph2 {
 		List<List<Edge>> trees = new ArrayList<>();
 
 		List<List<Vertex>> sets = getAlldestinations(vertices);
-//		sets.add(new ArrayList<>());
+		// sets.add(new ArrayList<>());
 
-		// for(List<Vertex> set : sets) {
-		// System.out.println();
-		// System.out.print( "set : ");
-		// for(Vertex v : set) {
-		// System.out.print(v.ID + " ");
-		// }
-		// }
+		 for(List<Vertex> set : sets) {
+		 System.out.println();
+		 System.out.print( "set : ");
+		 for(Vertex v : set) {
+		 System.out.print(v.ID + " ");
+		 }
+		 }
 		System.out.println();
 		for (Vertex root : vertices) {
 
@@ -245,45 +245,105 @@ public class Graph2 {
 
 	public static int iteration = 0;
 
-	public void gen(List<Edge> tree, List<Vertex> visited, List<List<Edge>> trees, int numVertices,
-			List<List<Vertex>> sets, List<Vertex> fringe) throws Exception {
+	public List<List<Edge>> gexp(List<Vertex> vertices, List<Edge> edges) {
+		List<List<Edge>> trees = new ArrayList<>();
 
-		iteration++;
+		for (Vertex root : vertices) {
+			
+		}
 
-		 PrintWriter writer;
-		 try {
-		
-		 String ggq = "digraph G { ";
-		 for (Edge v : tree) {
-		
-		 if (!ggq.contains("" + v.from.ID + "->" + v.to.ID + "\n")) {
-		 ggq += "" + v.from.ID + "->" + v.to.ID + "\n";
-		 }
-		 }
-		
-		 ggq += "}";
-		 writer = new PrintWriter("graphs/graph_totassl"+iteration+".dot", "UTF-8");
-		 writer.println(ggq);
-		 writer.close();
-		
-		 } catch (FileNotFoundException e1) {
-		 e1.printStackTrace();
-		 } catch (UnsupportedEncodingException e1) {
-		 e1.printStackTrace();
-		 }
-		if (tree.size() == numVertices - 1) {
-			boolean exist = false;
-			// System.out.println("done");
+		return trees;
+	}
+	
+//	public List<List<Edge>> gdf (Vertex root, List<>){
+//		List<Edge> tree = new ArrayList<>();
+//
+//		for (Edge e : edges) {
+//			e.used = false;
+//		}
+//		List<Vertex> visited = new ArrayList<>();
+//		visited.add(root);
+//		List<Vertex> available = new ArrayList<>(visited);
+//		ddf(visited, available, tree);
+//
+//		if (tree.size() == vertices.size() - 1) {
+//
+//			for (Edge e : tree) {
+//				Edge dead = e;
+//				for (Edge e1 : edges) {
+//					e1.used = false;
+//				}
+//				e.used = true;
+//				
+//			}
+//		}
+//	}
 
-			for (List<Edge> te : trees) {
-				if (te.containsAll(tree)) {
-					exist = true;
-					System.out.println("dup dup   " + iteration);
-					throw (new Exception());
+	public void ddf(List<Vertex> visited, List<Vertex> available, List<Edge> tree) {
+		for (Vertex v : available) {
+			for (Edge e : v.outgoingEdges) {
+				if (!e.used && !visited.contains(e.to)) {
+					visited.add(e.to);
+					List<Vertex> av = new ArrayList<>(available);
+					av.remove(v);
+					av.add(e.to);
+					ddf(visited, av, tree);
+					return;
+
 				}
 			}
+		}
+
+	}
+
+	public void gen(List<Edge> tree, List<Vertex> visited, List<List<Edge>> trees, int numVertices,
+			List<List<Vertex>> sets, List<Vertex> fringe) throws Exception {
+		//TODO fix duplicates: 
+		
+		//      0
+		//    1    2
+		//
+		//add 4 to 1; add 3 to 2 return; return; add 3 to 2; add 4 to 1
+		//
+		
+
+		iteration++;
+		System.out.println("iteration  " + iteration);
+
+		PrintWriter writer;
+		try {
+
+			String ggq = "digraph G { ";
+			for (Edge v : tree) {
+
+				if (!ggq.contains("" + v.from.ID + "->" + v.to.ID + "\n")) {
+					ggq += "" + v.from.ID + "->" + v.to.ID + "\n";
+				}
+			}
+
+			ggq += "}";
+			writer = new PrintWriter("graphs/graph_totassl" + iteration + ".dot", "UTF-8");
+			writer.println(ggq);
+			writer.close();
+
+		} catch (FileNotFoundException e1) {
+			e1.printStackTrace();
+		} catch (UnsupportedEncodingException e1) {
+			e1.printStackTrace();
+		}
+		if (tree.size() == numVertices - 1) {
+			boolean exist = false;
+
+			 for (List<Edge> te : trees) {
+			 if (te.containsAll(tree)) {
+			 exist = true;
+			 System.out.println("dup dup " + iteration);
+			 throw (new Exception());
+			 }
+			 }
 			if (true)
 				trees.add(new ArrayList<>(tree));
+			System.out.println("iteration " + iteration + "done");
 			return;
 		}
 
@@ -297,7 +357,7 @@ public class Graph2 {
 					}
 				}
 				if (good) {
-			
+
 					List<Vertex> nv = new ArrayList<>(visited);
 					nv.addAll(chance);
 
@@ -306,35 +366,35 @@ public class Graph2 {
 
 					List<Edge> nt = new ArrayList<>(tree);
 
-					 System.out.print("adding to: " + v.ID + " vertices : ");
+					System.out.print("adding to: " + v.ID + " vertices : ");
 					for (Edge e : v.outgoingEdges) {
 						if (chance.contains(e.to)) {
-							 System.out.print(e.to.ID + " ");
+							System.out.print(e.to.ID + " ");
 							nf.add(e.to);
 							nt.add(e);
 						}
 					}
-					 System.out.println();
-//					if (nt.size() == numVertices - 1) {
-//						boolean a = false;
-//						for (int i = trees.size() - 1; i >= 0; i--) {
-//							List<Edge> tt = trees.get(i);
-//							if (tt.containsAll(tree)) {
-//								a = true;
-//								break;
-//							}
-//						}
-//						if (!a) {
-//							gen(nt, nv, trees, numVertices, sets, nf);
-//						}
-//					} else {
-						gen(nt, nv, trees, numVertices, sets, nf);
-//					}
+					System.out.println();
+					// if (nt.size() == numVertices - 1) {
+					// boolean a = false;
+					// for (int i = trees.size() - 1; i >= 0; i--) {
+					// List<Edge> tt = trees.get(i);
+					// if (tt.containsAll(tree)) {
+					// a = true;
+					// break;
+					// }
+					// }
+					// if (!a) {
+					// gen(nt, nv, trees, numVertices, sets, nf);
+					// }
+					// } else {
+					gen(nt, nv, trees, numVertices, sets, nf);
+					// }
 
 				}
 			}
 		}
-
+//		System.out.println("iteration " + iteration + "done");
 		// System.out.println("done recurs");
 
 	}
