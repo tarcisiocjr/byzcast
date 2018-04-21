@@ -11,8 +11,10 @@ import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 import java.util.StringTokenizer;
 
 import javax.swing.text.ChangedCharSetException;
@@ -53,7 +55,7 @@ public class Graph2 {
 						str = new StringTokenizer(line, "m/s");
 						if (str.countTokens() == 2) {
 							int loadp = Integer.valueOf(str.nextToken());
-							List<Vertex> ver = new ArrayList<>();
+							Set<Vertex> ver = new HashSet<>();
 							str = new StringTokenizer(str.nextToken(), " ");
 							while (str.hasMoreTokens()) {
 								int id = Integer.valueOf(str.nextToken());
@@ -148,7 +150,7 @@ public class Graph2 {
 		// base load (1m/s)ß
 		int baseload = 1;
 		// generate all dests and add not specified ones
-		List<List<Vertex>> allDests = getAlldestinations(vertices);
+		Set<Set<Vertex>> allDests = getAlldestinations(vertices);
 		System.out.println("done generating dests");
 		Random r = new Random();
 		// for(List<Vertex> f : allDests) {
@@ -158,8 +160,8 @@ public class Graph2 {
 		// System.out.println();
 		// }
 		for (DestSet d : load) {
-			List<Vertex> toremove = null;
-			for (List<Vertex> f : allDests) {
+			Set<Vertex> toremove = null;
+			for (Set<Vertex> f : allDests) {
 				if (f.containsAll(d.destinations)) {
 					toremove = f;
 					// System.out.println("fasljdfdksajfkljadslkfjladskfjlask");
@@ -169,7 +171,7 @@ public class Graph2 {
 			allDests.remove(toremove);
 		}
 
-		for (List<Vertex> d : allDests) {
+		for (Set<Vertex> d : allDests) {
 			// if (!existsLoad(d)) {
 
 			// load.add(new DestSet(r.nextInt(5)+1, d));
@@ -186,10 +188,10 @@ public class Graph2 {
 
 		List<List<Edge>> trees = new ArrayList<>();
 
-		List<List<Vertex>> sets = getAlldestinations(vertices);
+		Set<Set<Vertex>> sets = getAlldestinations(vertices);
 		// sets.add(new ArrayList<>());
 
-		 for(List<Vertex> set : sets) {
+		 for(Set<Vertex> set : sets) {
 		 System.out.println();
 		 System.out.print( "set : ");
 		 for(Vertex v : set) {
@@ -197,50 +199,37 @@ public class Graph2 {
 		 }
 		 }
 		System.out.println();
-		for (Vertex root : vertices) {
+		generatetrees(vertices, trees);
+		
 
-			// check dups in set
-			// List<List<Vertex>> dups2 = new ArrayList<>();
-			// for (List<Vertex> te : sets) {
-			// if (!dups2.contains(te)) {
-			// for (List<Vertex> te2 : sets) {
-			// if (te != te2) {
-			// if (te.containsAll(te2) && te2.containsAll(te)) {
-			// dups2.add(te2);
-			//// System.out.println("dup");
-			// }
-			// }
-			// }
-			// }
-			// }
-			// System.out.println("dupkdfasahkjdshfs " + dups2.size());
+//		System.out.println("asdf   " + trees.size());
+//		List<List<Edge>> dups = new ArrayList<>();
+//		for (List<Edge> te : trees) {
+//			if (!dups.contains(te)) {
+//				for (List<Edge> te2 : trees) {
+//					if (te != te2) {
+//						if (te.containsAll(te2)) {
+//							dups.add(te2);
+//							// System.out.println("dup");
+//						}
+//					}
+//				}
+//			}
+//		}
+//		System.out.println("nodups  " + (trees.size() - dups.size()));
+
+	}
+	public void generatetrees(List<Vertex> vertices, List<List<Edge>> trees) throws Exception {
+		//TODO recycle all destination when generating all loads
+		Set<Set<Vertex>> sets = getAlldestinations(vertices);
+		for (Vertex root : vertices) {
 			List<Vertex> vi = new ArrayList<>();
-			List<List<Vertex>> prevselected = new ArrayList<>();
 
 			vi.add(root);
 			List<Vertex> fr1 = new ArrayList<>();
 			fr1.add(root);
-			prevselected.add(new ArrayList<>(fr1));
 			gen(new ArrayList<>(), vi, trees, vertices.size(), sets, fr1);
-
 		}
-
-		System.out.println("asdf   " + trees.size());
-		List<List<Edge>> dups = new ArrayList<>();
-		for (List<Edge> te : trees) {
-			if (!dups.contains(te)) {
-				for (List<Edge> te2 : trees) {
-					if (te != te2) {
-						if (te.containsAll(te2)) {
-							dups.add(te2);
-							// System.out.println("dup");
-						}
-					}
-				}
-			}
-		}
-		System.out.println("nodups  " + (trees.size() - dups.size()));
-
 	}
 
 	public static int iteration = 0;
@@ -255,60 +244,14 @@ public class Graph2 {
 		return trees;
 	}
 	
-//	public List<List<Edge>> gdf (Vertex root, List<>){
-//		List<Edge> tree = new ArrayList<>();
-//
-//		for (Edge e : edges) {
-//			e.used = false;
-//		}
-//		List<Vertex> visited = new ArrayList<>();
-//		visited.add(root);
-//		List<Vertex> available = new ArrayList<>(visited);
-//		ddf(visited, available, tree);
-//
-//		if (tree.size() == vertices.size() - 1) {
-//
-//			for (Edge e : tree) {
-//				Edge dead = e;
-//				for (Edge e1 : edges) {
-//					e1.used = false;
-//				}
-//				e.used = true;
-//				
-//			}
-//		}
-//	}
 
-	public void ddf(List<Vertex> visited, List<Vertex> available, List<Edge> tree) {
-		for (Vertex v : available) {
-			for (Edge e : v.outgoingEdges) {
-				if (!e.used && !visited.contains(e.to)) {
-					visited.add(e.to);
-					List<Vertex> av = new ArrayList<>(available);
-					av.remove(v);
-					av.add(e.to);
-					ddf(visited, av, tree);
-					return;
-
-				}
-			}
-		}
-
-	}
-
+	//GOOD algorithm! works no dups, tested up to 8 vertices, generates all trees n^(n-1) 
+	//TODO move to graph.java and re-add pruning + core computation
 	public void gen(List<Edge> tree, List<Vertex> visited, List<List<Edge>> trees, int numVertices,
-			List<List<Vertex>> sets, List<Vertex> fringe) throws Exception {
-		//TODO fix duplicates: 
+			Set<Set<Vertex>> sets, List<Vertex> fringe) throws Exception {
 		
-		//      0
-		//    1    2
-		//
-		//add 4 to 1; add 3 to 2 return; return; add 3 to 2; add 4 to 1
-		//
-		
-
 		iteration++;
-		System.out.println("iteration  " + iteration);
+//		System.out.println("iteration  " + iteration);
 
 		PrintWriter writer;
 		try {
@@ -333,22 +276,25 @@ public class Graph2 {
 		}
 		if (tree.size() == numVertices - 1) {
 			boolean exist = false;
-
-			 for (List<Edge> te : trees) {
-			 if (te.containsAll(tree)) {
-			 exist = true;
-			 System.out.println("dup dup " + iteration);
-			 throw (new Exception());
-			 }
-			 }
+//
+//			 for (List<Edge> te : trees) {
+//			 if (te.containsAll(tree)) {
+//			 exist = true;
+////			 System.out.println("dup dup " + iteration);
+//			 throw (new Exception());
+//			 }
+//			 }
 			if (true)
 				trees.add(new ArrayList<>(tree));
-			System.out.println("iteration " + iteration + "done");
+//			System.out.println("iteration " + iteration + "done");
 			return;
 		}
 
+		List<Vertex> nnf = new ArrayList<>(fringe);
+		
 		for (Vertex v : fringe) {
-			for (List<Vertex> chance : sets) {
+			nnf.remove(v);
+			for (Set<Vertex> chance : sets) {
 				boolean good = true;
 				for (Vertex vertex : visited) {
 					if (chance.contains(vertex)) {
@@ -361,269 +307,52 @@ public class Graph2 {
 					List<Vertex> nv = new ArrayList<>(visited);
 					nv.addAll(chance);
 
-					List<Vertex> nf = new ArrayList<>(fringe);
+					List<Vertex> nf = new ArrayList<>(nnf);
 					nf.remove(v);
 
 					List<Edge> nt = new ArrayList<>(tree);
 
-					System.out.print("adding to: " + v.ID + " vertices : ");
+//					System.out.print("adding to: " + v.ID + " vertices : ");
 					for (Edge e : v.outgoingEdges) {
 						if (chance.contains(e.to)) {
-							System.out.print(e.to.ID + " ");
+//							System.out.print(e.to.ID + " ");
 							nf.add(e.to);
 							nt.add(e);
 						}
 					}
-					System.out.println();
-					// if (nt.size() == numVertices - 1) {
-					// boolean a = false;
-					// for (int i = trees.size() - 1; i >= 0; i--) {
-					// List<Edge> tt = trees.get(i);
-					// if (tt.containsAll(tree)) {
-					// a = true;
-					// break;
-					// }
-					// }
-					// if (!a) {
-					// gen(nt, nv, trees, numVertices, sets, nf);
-					// }
-					// } else {
+//					System.out.println();
+				
 					gen(nt, nv, trees, numVertices, sets, nf);
-					// }
+					
 
 				}
 			}
+			//remove from fringe?
 		}
 //		System.out.println("iteration " + iteration + "done");
 		// System.out.println("done recurs");
 
 	}
 
-	//
-	// public void gen2(List<Vertex> visited, List<Vertex> fringe, int graphsize,
-	// List<List<Edge>> trees,
-	// List<Edge> tree) {
-	// if (tree.size() == graphsize - 1) {
-	// trees.add(new ArrayList<>(tree));
-	// return;
-	// }
-	//
-	// for (Vertex v : fringe) {
-	// for (Edge e : v.outgoingEdges) {
-	// if (!visited.contains(e.to)) {
-	// List<Vertex> nvisited = new ArrayList<>(visited);
-	// List<Vertex> nfringe = new ArrayList<>(fringe);
-	// List<Edge> ntree = new ArrayList<>(tree);
-	//
-	// nvisited.add(e.to);
-	// nfringe.add(e.to);
-	// ntree.add(e);
-	//
-	// gen2(nvisited, nfringe, graphsize, trees, ntree);
-	// nfringe.remove(v);
-	// // stop
-	// gen2(nvisited, nfringe, graphsize, trees, ntree);
-	//
-	// }
-	// }
-	// }
-	// }
-	//
-	// public List<Edge> nonbackedges(List<Edge> tree, List<Vertex> vertices,
-	// List<Edge> edges) {
-	// List<Edge> tosort = new ArrayList<>(edges);
-	// tosort.removeAll(tree);
-	// List<Edge> nonbackedges = new ArrayList<>();
-	//
-	// for (Vertex v : vertices) {
-	// v.connections.clear();
-	// v.parent = null;
-	// v.inReach.clear();
-	// }
-	// for (Edge e : tree) {
-	// Vertex v = e.from;
-	// Vertex v2 = e.to;
-	// v.connections.add(v2);
-	// v2.parent = v;
-	// }
-	//
-	// for (Edge e : tosort) {
-	// if (e.to.inReach(e.from.ID)) {
-	// // backedge }else {
-	//
-	// } else {
-	// nonbackedges.add(e);
-	// }
-	// }
-	//
-	// return nonbackedges;
-	//
-	// }
-	//
-	// public boolean existsLoad(List<Vertex> dests) {
-	// for (DestSet s : load) {
-	// if (s.matchDests(dests)) {
-	// return true;
-	// }
-	// }
-	// return false;
-	// }
-	//
-	// public void explore(List<Edge> tree, List<Edge> noback, List<List<Edge>>
-	// trees, List<Vertex> vertices,
-	// List<Edge> edges) {
-	// if (noback.isEmpty()) {
-	// return;
-	// }
-	// for (Edge e : noback) {
-	// List<Edge> ntree = new ArrayList<>(tree);
-	// List<Edge> nnoback = new ArrayList<>(noback);
-	// nnoback.remove(e);
-	// for (Edge ee : ntree) {
-	// if (ee.to == e.to) {
-	// ntree.remove(ee);
-	// ntree.add(e);
-	// break;
-	// }
-	// }
-	// for (List<Edge> t : trees) {
-	// if (t.containsAll(ntree)) {
-	// return;
-	// }
-	// }
-	// trees.add(ntree);
-	//
-	// explore(ntree, nonbackedges(ntree, vertices, edges), trees, vertices, edges);
-	// }
-	// }
-	//
-	// public static Vertex lca(List<Vertex> vertices, Vertex root) {
-	//
-	// // tree only has one path between any two nodes, so only one child of root
-	// could
-	// // be ancestor
-	// Vertex ancestor = root;
-	// boolean reachable = true;
-	// while (reachable) {
-	// reachable = true;
-	// // if you can not go lower in the tree return current acestor
-	// if (ancestor.connections.isEmpty()) {
-	// return ancestor;
-	// }
-	// // check if any of the current ancestor's childrens can reach all
-	// destinations
-	// for (Vertex v : ancestor.connections) {
-	// reachable = true;
-	// for (Vertex target : vertices) {
-	// // check child reach for all destinations
-	// reachable = reachable & v.inReach(target.ID);
-	// if (!reachable) {
-	// break;
-	// }
-	// }
-	// // if child can reach all it is the new ancestor
-	// if (reachable) {
-	// // tree only one path between two vertices, so if found lower anchestor it is
-	// // not needed to keep searching other children
-	// ancestor = v;
-	// break;
-	// }
-	// }
-	// }
-	// return ancestor;
-	// }
-	//
+	
 	// // generate all possible desitations
-	public static List<List<Vertex>> getAlldestinations(List<Vertex> vertices) {
-		List<List<Vertex>> destinations = new ArrayList<>();
-		getgetAlldestinations2(vertices, 0, destinations, new ArrayList<>());
+	public static Set<Set<Vertex>> getAlldestinations(List<Vertex> vertices) {
+		Set<Set<Vertex>> destinations = new HashSet<>();
+		getgetAlldestinations2(vertices, 0, destinations, new HashSet<>());
 		return destinations;
 	}
 
-	private static void getgetAlldestinations2(List<Vertex> vertices, int index, List<List<Vertex>> destinations,
-			List<Vertex> previous) {
+	private static void getgetAlldestinations2(List<Vertex> vertices, int index, Set<Set<Vertex>> destinations,
+			Set<Vertex> previous) {
 		if (index >= vertices.size()) {
 			return;
 		}
 		previous.add(vertices.get(index));
-		destinations.add(new ArrayList<>(previous));
+		destinations.add(new HashSet<>(previous));
 		// consider vertex
 		getgetAlldestinations2(vertices, index + 1, destinations, previous);
 		// skip vertex
 		previous.remove(vertices.get(index));
 		getgetAlldestinations2(vertices, index + 1, destinations, previous);
 	}
-	//
-	// public static int compute_score(Vertex root, List<Edge> tree, List<DestSet>
-	// load, int minscore,
-	// List<Vertex> vertices, int prevScore, List<Edge> prevTree) {
-	// int score = prevScore;
-	// for (Vertex v : vertices) {
-	// v.inDegree = 0;
-	// v.parent = null;
-	// v.connections.clear();
-	// v.inLatency = Integer.MAX_VALUE;
-	// v.level = -1;
-	// v.colored = false;
-	// v.inReach.clear();
-	// v.resCapacity = v.capacity;
-	// }
-	//
-	// List<Vertex> treevertices = new ArrayList<>();
-	// List<Vertex> oldtreevertices = new ArrayList<>();
-	// treevertices.add(root);
-	// oldtreevertices.add(root);
-	// for (Edge edge : tree) {
-	// if (prevTree.contains(edge)) {
-	// oldtreevertices.add(edge.to);
-	// }
-	// treevertices.add(edge.to);
-	// edge.from.connections.add(edge.to);
-	// edge.to.parent = edge.from;
-	// edge.to.inLatency = edge.latency;
-	// }
-	//
-	// for (DestSet s : load) {
-	// // compute only if current tree contains all groups
-	// // if (treevertices.containsAll(s.destinations) &&
-	// // !oldtreevertices.containsAll(s.destinations)) {
-	// // find lca and lca heigh in tree
-	// Vertex lca = lca(s.destinations, root);
-	// int lcaH = lca.getLevel();
-	//
-	// List<Vertex> updated = new ArrayList<>();
-	// lca.updateLoad(s.load, s.destinations, 1, updated);
-	//
-	// boolean saturated = false;
-	// for (Vertex v : updated) {
-	// // check if capacity is not saturated
-	// if (v.resCapacity <= 0) {
-	// System.out.println("saturated!!!!");
-	// return Integer.MAX_VALUE;
-	// }
-	// }
-	//
-	// if (!saturated) {
-	// for (Vertex v : s.destinations) {
-	//
-	// // compute score for load on destination set
-	// score += (v.latecyToLCA(lca) + (v.getLevel() - lcaH) * (s.load /
-	// s.destinations.size()));
-	// // if already worst stop computing
-	// if (score >= minscore) {
-	// return Integer.MAX_VALUE;
-	// }
-	// }
-	// // if already worst stop computing
-	// if (score >= minscore) {
-	// return Integer.MAX_VALUE;
-	// }
-	// }
-	// }
-	//
-	// // }
-	//
-	// return score;
-	// }
-
 }

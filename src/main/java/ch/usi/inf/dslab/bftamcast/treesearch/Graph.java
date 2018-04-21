@@ -11,8 +11,10 @@ import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 import java.util.StringTokenizer;
 
 /**
@@ -51,7 +53,7 @@ public class Graph {
 						str = new StringTokenizer(line, "m/s");
 						if (str.countTokens() == 2) {
 							int loadp = Integer.valueOf(str.nextToken());
-							List<Vertex> ver = new ArrayList<>();
+							Set<Vertex> ver = new HashSet<>();
 							str = new StringTokenizer(str.nextToken(), " ");
 							while (str.hasMoreTokens()) {
 								int id = Integer.valueOf(str.nextToken());
@@ -146,7 +148,7 @@ public class Graph {
 		// base load (1m/s)ß
 		int baseload = 1;
 		// generate all dests and add not specified ones
-		List<List<Vertex>> allDests = getAlldestinations(vertices);
+		Set<Set<Vertex>> allDests = getAlldestinations(vertices);
 		System.out.println("done generating dests");
 		Random r = new Random();
 		System.out.println(allDests.size());
@@ -158,8 +160,8 @@ public class Graph {
 		// System.out.println();
 		// }
 		for (DestSet d : load) {
-			List<Vertex> toremove = null;
-			for (List<Vertex> f : allDests) {
+			Set<Vertex> toremove = null;
+			for (Set<Vertex> f : allDests) {
 				if (f.containsAll(d.destinations)) {
 					toremove = f;
 					// System.out.println("fasljdfdksajfkljadslkfjladskfjlask");
@@ -169,7 +171,7 @@ public class Graph {
 			allDests.remove(toremove);
 		}
 
-		for (List<Vertex> d : allDests) {
+		for (Set<Vertex> d : allDests) {
 			// if (!existsLoad(d)) {
 
 			// load.add(new DestSet(r.nextInt(5)+1, d));
@@ -192,6 +194,7 @@ public class Graph {
 		System.out.println(" generating tree1 " + start);
 		// generate all possible combination of edges (change to generate only the ones
 		// of size v-1)
+		System.out.println("generating tree       " );
 		load.sort(new DestSet(0, null));
 		List<List<Edge>> gg = getSubsets(edges, vertices.size() - 1);
 		List<List<Edge>> trees = new ArrayList<>();
@@ -431,7 +434,7 @@ public class Graph {
 
 	}
 
-	public boolean existsLoad(List<Vertex> dests) {
+	public boolean existsLoad(Set<Vertex> dests) {
 		for (DestSet s : load) {
 			if (s.matchDests(dests)) {
 				return true;
@@ -440,7 +443,7 @@ public class Graph {
 		return false;
 	}
 
-	public static Vertex lca(List<Vertex> vertices, Vertex root) {
+	public static Vertex lca(Set<Vertex> vertices, Vertex root) {
 
 		// tree only has one path between any two nodes, so only one child of root could
 		// be ancestor
@@ -507,20 +510,20 @@ public class Graph {
 		return res;
 	}
 
-	// generate all possible desitations
-	public static List<List<Vertex>> getAlldestinations(List<Vertex> vertices) {
-		List<List<Vertex>> destinations = new ArrayList<>();
-		getgetAlldestinations2(vertices, 0, destinations, new ArrayList<>());
+	// generate all possible desitations for n = (2^n)-1 kinda scalable
+	public static Set<Set<Vertex>> getAlldestinations(List<Vertex> vertices) {
+		Set<Set<Vertex>> destinations = new HashSet<>();
+		getgetAlldestinations2(vertices, 0, destinations, new HashSet<>());
 		return destinations;
 	}
 
-	private static void getgetAlldestinations2(List<Vertex> vertices, int index, List<List<Vertex>> destinations,
-			List<Vertex> previous) {
+	private static void getgetAlldestinations2(List<Vertex> vertices, int index, Set<Set<Vertex>> destinations,
+			Set<Vertex> previous) {
 		if (index >= vertices.size()) {
 			return;
 		}
 		previous.add(vertices.get(index));
-		destinations.add(new ArrayList<>(previous));
+		destinations.add(new HashSet<>(previous));
 		// consider vertex
 		getgetAlldestinations2(vertices, index + 1, destinations, previous);
 		// skip vertex
@@ -531,11 +534,11 @@ public class Graph {
 	public static long start;
 
 	// generate all trees, assume connected graph
-	public static List<List<Edge>> generateTrees(List<Vertex> vertices, List<Edge> edges, List<DestSet> load) {
-		List<List<Edge>> trees = new ArrayList<>();
+	public static List<Set<Edge>> generateTrees(List<Vertex> vertices, List<Edge> edges, List<DestSet> load) {
+		List<Set<Edge>> trees = new ArrayList<>();
 		bestbestscore = BigInteger.ZERO;
 		start = System.currentTimeMillis();
-		List<List<Vertex>> possible = new ArrayList<>();
+		Set<Set<Vertex>> possible = new HashSet<>();
 		for (DestSet d : load) {
 			possible.add(d.destinations);
 		}
@@ -546,98 +549,99 @@ public class Graph {
 			visited.add(root);
 			available.addAll(vertices);
 			available.remove(root);
-			generateTrees(root, visited, visited, available, new ArrayList<>(), trees, load, Integer.MAX_VALUE,
-					vertices, 0, new ArrayList<>(), possible);
+//			generateTrees(root, visited, visited, available, new HashSet<>(), trees, load, Integer.MAX_VALUE,
+//					vertices, 0, new ArrayList<>(), possible);
 		}
 		System.out.println(bestbestscore + " alkdsjfkadsjfjhdfkajsdfadsfadsf");
 		return trees;
 	}
 
-	public static int generateTrees(Vertex root, List<Vertex> fringe, List<Vertex> visited, List<Vertex> available,
-			List<Edge> tree, List<List<Edge>> trees, List<DestSet> load, int bestScore, List<Vertex> vertices,
-			int prevscore, List<Edge> prevTree, List<List<Vertex>> possibilities) {
-		// check performance of current tree //TODO store previous score and compute
-		// only new changes
-		if ((System.currentTimeMillis() - start) > 2 * 1000) {
-			start = System.currentTimeMillis();
-			System.out.println(bestbestscore);
-		}
-		// int score = compute_score(root, tree, load, bestbestscore, vertices,
-		// prevscore, prevTree);
-		// if (score >= bestbestscore || score >= bestScore) {
-		//// System.out.println("prune " + bestbestscore + " " + bestScore + " " +
-		// score);
-		// return Integer.MAX_VALUE;
-		// }
-		// 
-		// // visited all nodes, save tree
-		if (available.isEmpty() && tree.size() == vertices.size() - 1) {
-			bestbestscore = bestbestscore.add(BigInteger.ONE);
-
-			// System.out.println("apleanse " + score);
-			trees.add(tree);
-			// bestbestscore = score;
-			// // score
-			// return score;
-			return 1;
-		}
-		// stopped all nodes from growing, but not visited all of them. return
-		if (fringe.size() == 0) {
-			// dead path
-			return Integer.MAX_VALUE;
-			// return;
-		}
-
-		// add them to fringe or not (not with empty set)
-		int nscore = Integer.MAX_VALUE;
-		for (Vertex f : fringe) {
-			// 1toN children
-			// for (Vertex child : available) {
-			for (List<Vertex> child : possibilities) {
-				if(available.containsAll(child)) {
-				// find vertices connecting fringe node to childrens
-				List<Edge> newTree = new ArrayList();
-				for (Vertex c : child) {
-					for (Edge e : f.outgoingEdges) {
-						if (c.ID == e.to.ID) {
-							newTree.add(e);
-						}
-					}
-				}
-				newTree.addAll(tree);
-				// generate new fringe, available and visited list
-				List<Vertex> nFringe = new ArrayList<>(fringe);
-				nFringe.addAll(child);
-				List<Vertex> navailable = new ArrayList<>(available);
-				navailable.remove(f);
-				navailable.removeAll(child);
-//				navailable.remove(child);
-				List<Vertex> nvisited = new ArrayList<>(visited);
-				nvisited.add(f);
-				nvisited.addAll(child);
-
-				// f can have more children
-				nscore = generateTrees(root, nFringe, nvisited, navailable, newTree, trees, load, bestScore, vertices,
-						3, tree, possibilities);
-
-				// f has only current children
-				nFringe.remove(f);
-				nscore = generateTrees(root, nFringe, nvisited, navailable, newTree, trees, load, bestScore, vertices,
-						3, tree, possibilities);
-
-				// f has no children
-				navailable = new ArrayList<>(available);
-				navailable.remove(f);
-				nFringe.removeAll(child);
-				nvisited.removeAll(child);
-				nscore = generateTrees(root, nFringe, nvisited, navailable, tree, trees, load, bestScore, vertices, 3,
-						prevTree, possibilities);
-			}
-			}
-		}
-		return bestScore;
-
-	}
+//	//good
+//	public static int generateTrees(Vertex root, List<Vertex> fringe, List<Vertex> visited, List<Vertex> available,
+//			Set<Edge> tree, List<Set<Edge>> trees, List<DestSet> load, int bestScore, List<Vertex> vertices,
+//			int prevscore, List<Edge> prevTree, List<List<Vertex>> possibilities) {
+//		// check performance of current tree //TODO store previous score and compute
+//		// only new changes
+//		if ((System.currentTimeMillis() - start) > 2 * 1000) {
+//			start = System.currentTimeMillis();
+//			System.out.println(bestbestscore);
+//		}
+//		// int score = compute_score(root, tree, load, bestbestscore, vertices,
+//		// prevscore, prevTree);
+//		// if (score >= bestbestscore || score >= bestScore) {
+//		//// System.out.println("prune " + bestbestscore + " " + bestScore + " " +
+//		// score);
+//		// return Integer.MAX_VALUE;
+//		// }
+//		// 
+//		// // visited all nodes, save tree
+//		if (available.isEmpty() && tree.size() == vertices.size() - 1) {
+//			bestbestscore = bestbestscore.add(BigInteger.ONE);
+//
+//			// System.out.println("apleanse " + score);
+//			trees.add(tree);
+//			// bestbestscore = score;
+//			// // score
+//			// return score;
+//			return 1;
+//		}
+//		// stopped all nodes from growing, but not visited all of them. return
+//		if (fringe.size() == 0) {
+//			// dead path
+//			return Integer.MAX_VALUE;
+//			// return;
+//		}
+//
+//		// add them to fringe or not (not with empty set)
+//		int nscore = Integer.MAX_VALUE;
+//		for (Vertex f : fringe) {
+//			// 1toN children
+//			// for (Vertex child : available) {
+//			for (List<Vertex> child : possibilities) {
+//				if(available.containsAll(child)) {
+//				// find vertices connecting fringe node to childrens
+//				List<Edge> newTree = new ArrayList();
+//				for (Vertex c : child) {
+//					for (Edge e : f.outgoingEdges) {
+//						if (c.ID == e.to.ID) {
+//							newTree.add(e);
+//						}
+//					}
+//				}
+//				newTree.addAll(tree);
+//				// generate new fringe, available and visited list
+//				List<Vertex> nFringe = new ArrayList<>(fringe);
+//				nFringe.addAll(child);
+//				List<Vertex> navailable = new ArrayList<>(available);
+//				navailable.remove(f);
+//				navailable.removeAll(child);
+////				navailable.remove(child);
+//				Set<Vertex> nvisited = new ArrayList<>(visited);
+//				nvisited.add(f);
+//				nvisited.addAll(child);
+//
+//				// f can have more children
+//				nscore = generateTrees(root, nFringe, nvisited, navailable, newTree, trees, load, bestScore, vertices,
+//						3, tree, possibilities);
+//
+//				// f has only current children
+//				nFringe.remove(f);
+//				nscore = generateTrees(root, nFringe, nvisited, navailable, newTree, trees, load, bestScore, vertices,
+//						3, tree, possibilities);
+//
+//				// f has no children
+//				navailable = new ArrayList<>(available);
+//				navailable.remove(f);
+//				nFringe.removeAll(child);
+//				nvisited.removeAll(child);
+//				nscore = generateTrees(root, nFringe, nvisited, navailable, tree, trees, load, bestScore, vertices, 3,
+//						prevTree, possibilities);
+//			}
+//			}
+//		}
+//		return bestScore;
+//
+//	}
 
 	public static int compute_score(Vertex root, List<Edge> tree, List<DestSet> load, int minscore,
 			List<Vertex> vertices, int prevScore, List<Edge> prevTree) {

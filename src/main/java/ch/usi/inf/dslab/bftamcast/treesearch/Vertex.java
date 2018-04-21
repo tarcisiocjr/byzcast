@@ -2,6 +2,7 @@ package ch.usi.inf.dslab.bftamcast.treesearch;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 /**
  * 
@@ -73,7 +74,7 @@ public class Vertex {
 		}
 	}
 
-	public void updateLoad(int load, List<Vertex> destinations, int replicas, List<Vertex> updated) {
+	public void updateLoad(int load, Set<Vertex> destinations, int replicas, List<Vertex> updated) {
 		updated.add(this);
 		List<Vertex> toUpdate =  new ArrayList<>();
 		for (Vertex v : connections) {

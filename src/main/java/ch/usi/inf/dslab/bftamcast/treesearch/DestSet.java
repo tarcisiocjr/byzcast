@@ -5,15 +5,17 @@ package ch.usi.inf.dslab.bftamcast.treesearch;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * @author Christian Vuerich - christian.vuerich@usi.ch
  *
  */
 public class DestSet implements Comparator<DestSet>{
-	public List<Vertex> destinations = new ArrayList<>();
-	public List<Integer> destinationsIDS = new ArrayList<>();
+	public Set<Vertex> destinations = new HashSet<>();
+	public Set<Integer> destinationsIDS = new HashSet<>();
 	public int load;
 	public int penalty = 0;
 
@@ -21,7 +23,7 @@ public class DestSet implements Comparator<DestSet>{
 	public List<DestSet> overlaps = new ArrayList<>();
 
 
-	public DestSet(int load, List<Vertex> dests) {
+	public DestSet(int load, Set<Vertex> dests) {
 		this.load = load;
 		this.destinations =  dests;
 		if(destinations !=null) {
@@ -31,7 +33,7 @@ public class DestSet implements Comparator<DestSet>{
 		
 	}
 
-	public boolean matchDests(List<Vertex> dests) {
+	public boolean matchDests(Set<Vertex> dests) {
 		for (Vertex i : dests) {
 			if (!destinationsIDS.contains(i.ID)) {
 				return false;
