@@ -28,14 +28,14 @@ public class DestSet implements Comparator<DestSet>{
 		this.destinations =  dests;
 		if(destinations !=null) {
 		for (Vertex vertex : dests) {
-			destinationsIDS.add(vertex.ID);
+			destinationsIDS.add(vertex.getID());
 		}}
 		
 	}
 
 	public boolean matchDests(Set<Vertex> dests) {
 		for (Vertex i : dests) {
-			if (!destinationsIDS.contains(i.ID)) {
+			if (!destinationsIDS.contains(i.getID())) {
 				return false;
 			}
 		}

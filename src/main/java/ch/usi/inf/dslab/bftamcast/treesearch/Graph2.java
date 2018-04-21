@@ -4,20 +4,16 @@
 package ch.usi.inf.dslab.bftamcast.treesearch;
 
 import java.io.BufferedReader;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
 import java.util.StringTokenizer;
-
-import javax.swing.text.ChangedCharSetException;
 
 /**
  * @author Christian Vuerich - christian.vuerich@usi.ch
@@ -60,7 +56,7 @@ public class Graph2 {
 							while (str.hasMoreTokens()) {
 								int id = Integer.valueOf(str.nextToken());
 								for (Vertex v : vertices) {
-									if (v.ID == id) {
+									if (v.getID() == id) {
 										ver.add(v);
 										break;
 									}
@@ -86,10 +82,10 @@ public class Graph2 {
 							int latency = Integer.valueOf(str.nextToken());
 							Vertex aa = null, bb = null;
 							for (Vertex v : vertices) {
-								if (a == v.ID) {
+								if (a == v.getID()) {
 									aa = v;
 								}
-								if (b == v.ID) {
+								if (b == v.getID()) {
 									bb = v;
 								}
 							}
@@ -100,8 +96,8 @@ public class Graph2 {
 							// edges are bidirectional
 							Edge e1 = new Edge(aa, bb, latency);
 							Edge e2 = new Edge(bb, aa, latency);
-							aa.outgoingEdges.add(e1);
-							bb.outgoingEdges.add(e2);
+							aa.addEdge(e1);
+							bb.addEdge(e2);
 
 							edges.add(e1);
 							edges.add(e2);
@@ -133,13 +129,13 @@ public class Graph2 {
 		// }
 		for (Vertex v1 : vertices) {
 			for (Vertex v2 : vertices) {
-				v1.capacity = 100000;
-				v1.resCapacity = 100000;
-				v2.capacity = 100000;
-				v2.resCapacity = 100000;
+				v1.setCapacity(100000);
+				v1.setResCapacity(100000);
+				v2.setCapacity(100000);
+				v2.setResCapacity(100000);
 				if (v1 != v2) {
 					Edge e = new Edge(v1, v2, 100);
-					v1.outgoingEdges.add(e);
+					v1.addEdge(e);
 					edges.add(e);
 				}
 			}
@@ -184,157 +180,101 @@ public class Graph2 {
 
 		load.sort(new DestSet(0, null));
 
-		List<Edge> tZero = new ArrayList<>(vertices.get(0).outgoingEdges);
 
 		List<List<Edge>> trees = new ArrayList<>();
 
-		Set<Set<Vertex>> sets = getAlldestinations(vertices);
-		// sets.add(new ArrayList<>());
-
-		 for(Set<Vertex> set : sets) {
-		 System.out.println();
-		 System.out.print( "set : ");
-		 for(Vertex v : set) {
-		 System.out.print(v.ID + " ");
-		 }
-		 }
-		System.out.println();
 		generatetrees(vertices, trees);
-		
 
-//		System.out.println("asdf   " + trees.size());
-//		List<List<Edge>> dups = new ArrayList<>();
-//		for (List<Edge> te : trees) {
-//			if (!dups.contains(te)) {
-//				for (List<Edge> te2 : trees) {
-//					if (te != te2) {
-//						if (te.containsAll(te2)) {
-//							dups.add(te2);
-//							// System.out.println("dup");
-//						}
-//					}
-//				}
-//			}
-//		}
-//		System.out.println("nodups  " + (trees.size() - dups.size()));
+		System.out.println("#generated trees are:  " + trees.size() + "  expected: " + ((long) numtree) + "   total iterations: " + iteration );
 
 	}
+
 	public void generatetrees(List<Vertex> vertices, List<List<Edge>> trees) throws Exception {
-		//TODO recycle all destination when generating all loads
+		// TODO recycle all destination when generating all loads initialy
 		Set<Set<Vertex>> sets = getAlldestinations(vertices);
+		time = System.nanoTime();
+		double n = vertices.size();
+		numtree = Math.pow(n, n - 1);
 		for (Vertex root : vertices) {
 			List<Vertex> vi = new ArrayList<>();
-
+			Set<Set<Vertex>> setsToUse = new HashSet<>();
+			for (Set<Vertex> set : sets) {
+				if (!set.contains(root)) {
+					setsToUse.add(set);
+				}
+			}
 			vi.add(root);
 			List<Vertex> fr1 = new ArrayList<>();
 			fr1.add(root);
-			gen(new ArrayList<>(), vi, trees, vertices.size(), sets, fr1);
+			gen(new ArrayList<>(), vi, trees, vertices.size(), setsToUse, fr1);
 		}
 	}
 
 	public static int iteration = 0;
+	public static long time = 0;
+	public static double numtree = 0;
+	public static DecimalFormat myFormat = new DecimalFormat("0.00000000");
 
-	public List<List<Edge>> gexp(List<Vertex> vertices, List<Edge> edges) {
-		List<List<Edge>> trees = new ArrayList<>();
-
-		for (Vertex root : vertices) {
-			
-		}
-
-		return trees;
-	}
-	
-
-	//GOOD algorithm! works no dups, tested up to 8 vertices, generates all trees n^(n-1) 
-	//TODO move to graph.java and re-add pruning + core computation
+	// GOOD algorithm! works no dups, tested up to 8 vertices, generates all trees
+	// n^(n-1)
+	// TODO move to graph.java and re-add pruning + core computation
 	public void gen(List<Edge> tree, List<Vertex> visited, List<List<Edge>> trees, int numVertices,
 			Set<Set<Vertex>> sets, List<Vertex> fringe) throws Exception {
-		
+
 		iteration++;
-//		System.out.println("iteration  " + iteration);
 
-		PrintWriter writer;
-		try {
-
-			String ggq = "digraph G { ";
-			for (Edge v : tree) {
-
-				if (!ggq.contains("" + v.from.ID + "->" + v.to.ID + "\n")) {
-					ggq += "" + v.from.ID + "->" + v.to.ID + "\n";
-				}
-			}
-
-			ggq += "}";
-			writer = new PrintWriter("graphs/graph_totassl" + iteration + ".dot", "UTF-8");
-			writer.println(ggq);
-			writer.close();
-
-		} catch (FileNotFoundException e1) {
-			e1.printStackTrace();
-		} catch (UnsupportedEncodingException e1) {
-			e1.printStackTrace();
-		}
 		if (tree.size() == numVertices - 1) {
-			boolean exist = false;
-//
-//			 for (List<Edge> te : trees) {
-//			 if (te.containsAll(tree)) {
-//			 exist = true;
-////			 System.out.println("dup dup " + iteration);
-//			 throw (new Exception());
-//			 }
-//			 }
-			if (true)
-				trees.add(new ArrayList<>(tree));
-//			System.out.println("iteration " + iteration + "done");
+			trees.add(new ArrayList<>(tree));
+			if (System.nanoTime() - time >= 1 * 1e9) {
+				System.out.println(myFormat.format((((((double) trees.size()) / numtree) * 100))) + "%");
+				time = System.nanoTime();
+			}
 			return;
 		}
 
 		List<Vertex> nnf = new ArrayList<>(fringe);
-		
+
 		for (Vertex v : fringe) {
 			nnf.remove(v);
 			for (Set<Vertex> chance : sets) {
-				boolean good = true;
-				for (Vertex vertex : visited) {
-					if (chance.contains(vertex)) {
-						good = false;
-						break;
-					}
-				}
-				if (good) {
+				//TODO this assume node v can reach every other node(they all have the same possible children), if not connected keep possible childs in
 
-					List<Vertex> nv = new ArrayList<>(visited);
-					nv.addAll(chance);
+				List<Vertex> nv = new ArrayList<>(visited);
+				nv.addAll(chance);
 
-					List<Vertex> nf = new ArrayList<>(nnf);
-					nf.remove(v);
+				List<Vertex> nf = new ArrayList<>(nnf);
+				nf.remove(v);
 
-					List<Edge> nt = new ArrayList<>(tree);
+				List<Edge> nt = new ArrayList<>(tree);
 
-//					System.out.print("adding to: " + v.ID + " vertices : ");
-					for (Edge e : v.outgoingEdges) {
-						if (chance.contains(e.to)) {
-//							System.out.print(e.to.ID + " ");
-							nf.add(e.to);
-							nt.add(e);
+				Set<Set<Vertex>> nsets = new HashSet<>(sets);
+				Set<Set<Vertex>> toremove = new HashSet<>();
+
+				// System.out.print("adding to: " + v.ID + " vertices : ");
+				for (Edge e : v.getOutgoingEdges()) {
+					if (chance.contains(e.to)) {
+						// System.out.print(e.to.ID + " ");
+						nf.add(e.to);
+						nt.add(e);
+						for (Set<Vertex> set : nsets) {
+							if (set.contains(e.to)) {
+								toremove.add(set);
+							}
 						}
+						nsets.removeAll(toremove);
+						toremove.clear();
 					}
-//					System.out.println();
-				
-					gen(nt, nv, trees, numVertices, sets, nf);
-					
-
 				}
-			}
-			//remove from fringe?
-		}
-//		System.out.println("iteration " + iteration + "done");
-		// System.out.println("done recurs");
+				// System.out.println();
 
+				gen(nt, nv, trees, numVertices, nsets, nf);
+
+			}
+			// }
+		}
+		// System.out.println("iteration " + iteration + "done");
 	}
 
-	
 	// // generate all possible desitations
 	public static Set<Set<Vertex>> getAlldestinations(List<Vertex> vertices) {
 		Set<Set<Vertex>> destinations = new HashSet<>();
