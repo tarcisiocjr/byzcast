@@ -44,7 +44,6 @@ public class ClientThread implements Runnable, ReplyListener {
 	private int maxoustanding;
 	private volatile int out = 0;
 
-	// TODO pending
 
 	public ClientThread(int clientId, int groupId, boolean verbose, int runTime, int valueSize, int globalPerc,
 			boolean ng, String treeConfigPath, int maxOutstanding) {
@@ -114,8 +113,8 @@ public class ClientThread implements Runnable, ReplyListener {
 
 					AsynchServiceProxy prox = lca.getProxy();
 					prox.invokeAsynchRequest(req.toBytes(), this, TOMMessageType.ORDERED_REQUEST);
-					// TODO maybe needed to cancel requests, but will check later for performance
-					// prox.cleanAsynchRequest(requestId);
+					// TODO  needed to cancel requests, but will check later for performance
+					// prox.cleanAsynchRequest(requestId); when received reply
 					repliesTracker.put(seqNumber, new GroupRequestTracker(prox.getViewManager().getCurrentViewF() + 1));
 					}else {			lock.unlock();
 }

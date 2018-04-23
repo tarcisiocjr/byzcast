@@ -266,11 +266,12 @@ public class Graph2 {
 		iteration++;
 //		 long score = compute_score(root, tree, loads, bestbestscore, vertices,previousScore, prevTree);
 		long score = compute_score(root, tree, loads, bestbestscore, vertices,0, new ArrayList<>());
-//		 if (score >= bestbestscore ) {
-//		 // System.out.println("prune " + bestbestscore + " " + bestScore + " " +
-////		 score);
-//		 return;
-//		 }
+		 score = Graph.compute_score(root, tree, loads, bestbestscore, vertices,0, new ArrayList<>());
+		 if (score >= bestbestscore ) {
+		 // System.out.println("prune " + bestbestscore + " " + bestScore + " " +
+//		 score);
+		 return;
+		 }
 
 		if (tree.size() == numVertices - 1) {
 			  System.out.println("new best " + score );
@@ -330,6 +331,7 @@ public class Graph2 {
 		}
 	}
 
+	//TODO check with graph.compute_score, they produce different results.
 	public static long compute_score(Vertex root, List<Edge> tree, List<Load> loads, long minscore, List<Vertex> vertices,
 			long prevScore, List<Edge> prevTree) {
 
@@ -429,9 +431,6 @@ public class Graph2 {
 
 		}
 
-		if (score == 15904) {
-			System.out.println(treevertices.size());
-		}
 		return score;
 	}
 

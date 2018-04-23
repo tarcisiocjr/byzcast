@@ -23,6 +23,7 @@ import bftsmart.tom.core.messages.TOMMessageType;
 import bftsmart.tom.server.BatchExecutable;
 import bftsmart.tom.server.FIFOExecutable;
 import bftsmart.tom.server.Replier;
+import bftsmart.tom.util.TOMUtil;
 import ch.usi.inf.dslab.bftamcast.graph.Tree;
 import ch.usi.inf.dslab.bftamcast.graph.Vertex;
 import ch.usi.inf.dslab.bftamcast.kvs.Request;
@@ -81,7 +82,7 @@ import io.netty.util.internal.ConcurrentSet;
 
 	@Override
 	public void manageReply(TOMMessage request, MessageContext msgCtx) {
-		//TODO limit outstanding 
+		//TODO limit outstanding ?
 		req = new Request(request.getContent());
 
 		while (rc == null) {
@@ -134,7 +135,7 @@ import io.netty.util.internal.ConcurrentSet;
 			// majority of replicas sent request and this replica is not already
 			// processing
 			// the request (not processing it more than once)
-			//count TODO
+			//count 
 			if (msgs.size() >= majReplicasOfSender && (repliesTracker.get(req.getClient()) == null
 					|| !repliesTracker.get(req.getClient()).containsKey(req.getSeqNumber()))) {
 
@@ -356,8 +357,9 @@ import io.netty.util.internal.ConcurrentSet;
 //		return command;
 //	}
 	
-	
+	//TODO faster way to check msgs content, perhaps check how library does it in synch system TOMUtil.computeHash(tomMessage.getContent());
 	public Request getMajreq(ConcurrentSet<TOMMessage> msgs, int majority) {
+				
 //		System.out.println("majjj    " +  majority);
 //		System.out.println("msgs    " +  msgs.size());
 		Request r, r2;

@@ -226,7 +226,7 @@ public class Graph {
 					edge.to.colored = true;
 					edge.to.inDegree += 1;
 				}
-				// check if all vertices are present, that there is only one root and that tha
+				// check if all vertices are present, that there is only one root and that that
 				// in degree is 1 for all (not root)
 				boolean root = false;
 				Vertex rootV = null;
@@ -287,32 +287,18 @@ public class Graph {
 					// valid tree, compute score for load
 					if (!trashed) {
 						trees.add(tree);
-						count++;
 						// System.out.println("goodtreee");
 						// system print the tree levels
-						List<Vertex> toprint = new ArrayList<>();
-						List<Vertex> toadd = new ArrayList<>();
-						toprint.add(rootV);
-						// while (!toprint.isEmpty()) {
-						//
-						// toadd.clear();
-						// for (Vertex vertex : toprint) {
-						// toadd.addAll(vertex.connections);
-						// if (vertex.parent != null) {
-						// System.out.print("" + vertex.ID + "(" + vertex.parent.ID + ") ");
-						// } else
-						// System.out.print("" + vertex.ID + "(null)");
-						// }
-						// System.out.println();
-						// toprint.clear();
-						// toprint.addAll(toadd);
-						// }
 
 						// compute score
+						long score2 = Graph2.compute_score(rootV, tree, load, minscore, vertices, 0, new ArrayList<>());
+
 						long score = compute_score(rootV, tree, load, minscore, vertices, 0, new ArrayList<>());
-						// System.out.println(score);
-						// System.out.println(score);
+
 						if (score < minscore) {
+							System.out.println(score);
+							System.out.println(score2);
+							System.out.println();
 							minscore = score;
 							topTree = tree;
 						}
@@ -326,111 +312,7 @@ public class Graph {
 		end = System.currentTimeMillis();
 		System.out.println("done tree1  " + (end - start));
 
-		System.out.println("asdf   " + trees.size());
-		List<List<Edge>> dups = new ArrayList<>();
-		for (List<Edge> te : trees) {
-			if (!dups.contains(te)) {
-				for (List<Edge> te2 : trees) {
-					if (te != te2) {
-						if (te.containsAll(te2)) {
-							dups.add(te2);
-							// System.out.println("dup");
-						}
-					}
-				}
-			}
-		}
-		System.out.println("nodups  " + (trees.size() - dups.size()));
-
 		start = System.currentTimeMillis();
-		// System.out.println(" generating tree2 " + start);
-		// List<List<Edge>> treeees = generateTrees(vertices, edges, load);
-		// end = System.currentTimeMillis();
-		// System.out.println("done tree2 " + (end - start));
-		//
-		// System.out.println("asdfadsfadsfsad " + treeees.size());
-		// System.out.println("BESTSGJHYGDUYGSJHSKHS " + bestbestscore);
-		// List<List<Edge>> dups = new ArrayList<>();
-		//
-		// while (!treeees.isEmpty()) {
-		// List<Edge> check = treeees.remove(0);
-		// dups.add(check);
-		// while (treeees.contains(check)) {
-		// treeees.remove(check);
-		// }
-		// }
-		// int dsaf = 0;
-		// for (List<Edge> list : dups) {
-		// PrintWriter writer;
-		// try {
-		//
-		// String ggq = "digraph G { ";
-		//// System.out.println(topTree);
-		// for (Edge v : list) {
-		//
-		// if (!ggq.contains("" + v.from.ID + "->" + v.to.ID + "\n")) {
-		// ggq += "" + v.from.ID + "->" + v.to.ID + "\n";
-		// }
-		// }
-		//
-		// ggq += "}";
-		// writer = new PrintWriter("graphs/graph_totassl" + dsaf + ".dot", "UTF-8");
-		// dsaf++;
-		// writer.println(ggq);
-		// writer.close();
-		//
-		// } catch (FileNotFoundException e1) {
-		// e1.printStackTrace();
-		// } catch (UnsupportedEncodingException e1) {
-		// e1.printStackTrace();
-		// }
-		// }
-		// for (List<Edge> tr : treeees) {
-		//// System.out.println("treesize " + tr.size());
-		// if (!dups.contains(tr)) {
-		// for (List<Edge> tr2 : treeees) {
-		// if (tr!= tr2 & tr2.containsAll(tr)) {
-		//// System.out.println("dups");
-		// dups.add(tr2);
-		// }
-		// }
-		// }
-
-		// }
-		// System.out.println("asdfadsfaddsfdssfsad " + (dups.size()));
-		//
-		// if (!treeees.isEmpty()) {
-		// topTree = treeees.get(0);
-		//
-		// }
-		if (topTree != null) {
-
-			System.out.println("minscore = " + minscore);
-			// print tree on dot file
-			PrintWriter writer;
-			try {
-
-				String ggq = "digraph G { ";
-				System.out.println(topTree);
-				for (Edge v : topTree) {
-
-					if (!ggq.contains("" + v.from.ID + "->" + v.to.ID + "\n")) {
-						ggq += "" + v.from.ID + "->" + v.to.ID + "\n";
-					}
-				}
-
-				ggq += "}";
-				writer = new PrintWriter("graphs/graph_totassl.dot", "UTF-8");
-				writer.println(ggq);
-				writer.close();
-
-			} catch (FileNotFoundException e1) {
-				e1.printStackTrace();
-			} catch (UnsupportedEncodingException e1) {
-				e1.printStackTrace();
-			}
-
-		}
 
 	}
 
@@ -477,10 +359,6 @@ public class Graph {
 		return ancestor;
 	}
 
-	// TODO permutation of size k function, to generate possible trees, or use
-	// something like
-	// http://research.nii.ac.jp/~uno/papers/isaac96web.pdf or
-	// http://www.scielo.br/pdf/pope/v25n2/25707.pdf
 
 	// while building check cost of tree, if already found a better one stop, if
 	// possible
@@ -496,8 +374,7 @@ public class Graph {
 			return;
 		Edge x = superSet.get(idx);
 		current.add(x);
-		// TODO check if adding x violates the tree
-		// "guess" x is in the subset
+	
 		getSubsets(superSet, k, idx + 1, current, solution);
 		current.remove(x);
 		// "guess" x is not in the subset
@@ -531,124 +408,6 @@ public class Graph {
 		getgetAlldestinations2(vertices, index + 1, destinations, previous);
 	}
 
-//	public static long start;
-//
-//	// generate all trees, assume connected graph
-//	public static List<Set<Edge>> generateTrees(List<Vertex> vertices, List<Edge> edges, List<DestSet> load) {
-//		List<Set<Edge>> trees = new ArrayList<>();
-//		bestbestscore = BigInteger.ZERO;
-//		start = System.currentTimeMillis();
-//		Set<Set<Vertex>> possible = new HashSet<>();
-//		for (DestSet d : load) {
-//			possible.add(d.destinations);
-//		}
-//
-//		for (Vertex root : vertices) {
-//			List<Vertex> visited = new ArrayList<>();
-//			List<Vertex> available = new ArrayList<>();
-//			visited.add(root);
-//			available.addAll(vertices);
-//			available.remove(root);
-//			// generateTrees(root, visited, visited, available, new HashSet<>(), trees,
-//			// load, Integer.MAX_VALUE,
-//			// vertices, 0, new ArrayList<>(), possible);
-//		}
-//		System.out.println(bestbestscore + " alkdsjfkadsjfjhdfkajsdfadsfadsf");
-//		return trees;
-//	}
-
-	// //good
-	// public static int generateTrees(Vertex root, List<Vertex> fringe,
-	// List<Vertex> visited, List<Vertex> available,
-	// Set<Edge> tree, List<Set<Edge>> trees, List<DestSet> load, int bestScore,
-	// List<Vertex> vertices,
-	// int prevscore, List<Edge> prevTree, List<List<Vertex>> possibilities) {
-	// // check performance of current tree //TODO store previous score and compute
-	// // only new changes
-	// if ((System.currentTimeMillis() - start) > 2 * 1000) {
-	// start = System.currentTimeMillis();
-	// System.out.println(bestbestscore);
-	// }
-	// // int score = compute_score(root, tree, load, bestbestscore, vertices,
-	// // prevscore, prevTree);
-	// // if (score >= bestbestscore || score >= bestScore) {
-	// //// System.out.println("prune " + bestbestscore + " " + bestScore + " " +
-	// // score);
-	// // return Integer.MAX_VALUE;
-	// // }
-	// //
-	// // // visited all nodes, save tree
-	// if (available.isEmpty() && tree.size() == vertices.size() - 1) {
-	// bestbestscore = bestbestscore.add(BigInteger.ONE);
-	//
-	// // System.out.println("apleanse " + score);
-	// trees.add(tree);
-	// // bestbestscore = score;
-	// // // score
-	// // return score;
-	// return 1;
-	// }
-	// // stopped all nodes from growing, but not visited all of them. return
-	// if (fringe.size() == 0) {
-	// // dead path
-	// return Integer.MAX_VALUE;
-	// // return;
-	// }
-	//
-	// // add them to fringe or not (not with empty set)
-	// int nscore = Integer.MAX_VALUE;
-	// for (Vertex f : fringe) {
-	// // 1toN children
-	// // for (Vertex child : available) {
-	// for (List<Vertex> child : possibilities) {
-	// if(available.containsAll(child)) {
-	// // find vertices connecting fringe node to childrens
-	// List<Edge> newTree = new ArrayList();
-	// for (Vertex c : child) {
-	// for (Edge e : f.outgoingEdges) {
-	// if (c.ID == e.to.ID) {
-	// newTree.add(e);
-	// }
-	// }
-	// }
-	// newTree.addAll(tree);
-	// // generate new fringe, available and visited list
-	// List<Vertex> nFringe = new ArrayList<>(fringe);
-	// nFringe.addAll(child);
-	// List<Vertex> navailable = new ArrayList<>(available);
-	// navailable.remove(f);
-	// navailable.removeAll(child);
-	//// navailable.remove(child);
-	// Set<Vertex> nvisited = new ArrayList<>(visited);
-	// nvisited.add(f);
-	// nvisited.addAll(child);
-	//
-	// // f can have more children
-	// nscore = generateTrees(root, nFringe, nvisited, navailable, newTree, trees,
-	// load, bestScore, vertices,
-	// 3, tree, possibilities);
-	//
-	// // f has only current children
-	// nFringe.remove(f);
-	// nscore = generateTrees(root, nFringe, nvisited, navailable, newTree, trees,
-	// load, bestScore, vertices,
-	// 3, tree, possibilities);
-	//
-	// // f has no children
-	// navailable = new ArrayList<>(available);
-	// navailable.remove(f);
-	// nFringe.removeAll(child);
-	// nvisited.removeAll(child);
-	// nscore = generateTrees(root, nFringe, nvisited, navailable, tree, trees,
-	// load, bestScore, vertices, 3,
-	// prevTree, possibilities);
-	// }
-	// }
-	// }
-	// return bestScore;
-	//
-	// }
-
 	public static long compute_score(Vertex root, List<Edge> tree, List<Load> load, long minscore,
 			List<Vertex> vertices, long prevScore, List<Edge> prevTree) {
 		long score = prevScore;
@@ -661,8 +420,8 @@ public class Graph {
 			v.colored = false;
 			v.inReach.clear();
 			v.resCapacity = v.capacity;
-	
- 		}
+
+		}
 
 		List<Vertex> treevertices = new ArrayList<>();
 		List<Vertex> oldtreevertices = new ArrayList<>();
@@ -680,46 +439,43 @@ public class Graph {
 
 		for (Load s : load) {
 			// compute only if current tree contains all groups
-			// if (treevertices.containsAll(s.destinations) &&
-			// !oldtreevertices.containsAll(s.destinations)) {
-			// find lca and lca heigh in tree
-			Vertex lca = lca(s.destinations, root);
-			int lcaH = lca.getLevel();
+			if (treevertices.containsAll(s.destinations)) {// &&
+				// !oldtreevertices.containsAll(s.destinations)) {
+				// find lca and lca heigh in tree
+				Vertex lca = lca(s.destinations, root);
+				int lcaH = lca.getLevel();
 
-			List<Vertex> updated = new ArrayList<>();
-			lca.updateLoad(s.load, s.destinations, 1, updated);
+				List<Vertex> updated = new ArrayList<>();
+				lca.updateLoad(s.load, s.destinations, 1, updated);
 
-			boolean saturated = false;
-			for (Vertex v : updated) {
-				// check if capacity is not saturated
-				if (v.resCapacity <= 0) {
-					System.out.println("saturated!!!!");
-					return Long.MAX_VALUE;
+				boolean saturated = false;
+				for (Vertex v : updated) {
+					// check if capacity is not saturated
+					if (v.resCapacity <= 0) {
+						System.out.println("saturated!!!!");
+						return Long.MAX_VALUE;
+					}
 				}
-			}
 
-			if (!saturated) {
-				for (Vertex v : s.destinations) {
+				if (!saturated) {
+					for (Vertex v : s.destinations) {
 
-					// compute score for load on destination set
-					score += (v.latecyToLCA(lca) + (v.getLevel() - lcaH) * (s.load / s.destinations.size()));
+						// compute score for load on destination set
+						score += (v.latecyToLCA(lca) + (v.getLevel() - lcaH) * (s.load / s.destinations.size()));
+						// if already worst stop computing
+						if (score >= minscore) {
+							return Long.MAX_VALUE;
+						}
+					}
 					// if already worst stop computing
 					if (score >= minscore) {
 						return Long.MAX_VALUE;
 					}
 				}
-				// if already worst stop computing
-				if (score >= minscore) {
-					return Long.MAX_VALUE;
-				}
 			}
+
 		}
 
-		// }
-
-		if (score == 15500) {
-			System.out.println(treevertices.size());
-		}
 		return score;
 	}
 
