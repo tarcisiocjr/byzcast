@@ -13,17 +13,17 @@ import java.util.Set;
  * @author Christian Vuerich - christian.vuerich@usi.ch
  *
  */
-public class DestSet implements Comparator<DestSet>{
+public class Load implements Comparator<Load>{
 	public Set<Vertex> destinations = new HashSet<>();
 	public Set<Integer> destinationsIDS = new HashSet<>();
 	public int load;
 	public int penalty = 0;
 
 	public Vertex root;
-	public List<DestSet> overlaps = new ArrayList<>();
+	public List<Load> overlaps = new ArrayList<>();
 
 
-	public DestSet(int load, Set<Vertex> dests) {
+	public Load(int load, Set<Vertex> dests) {
 		this.load = load;
 		this.destinations =  dests;
 		if(destinations !=null) {
@@ -49,7 +49,7 @@ public class DestSet implements Comparator<DestSet>{
 
 
 	@Override
-	public int compare(DestSet arg0, DestSet arg1) {
+	public int compare(Load arg0, Load arg1) {
 		
 		return   arg1.load -arg0.load;
 	}

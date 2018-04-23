@@ -11,16 +11,16 @@ import java.util.Set;
  *
  */
 public class Vertex {
-	private int ID, replicas;
-	private double capacity, resCapacity;
-	private List<Vertex> connections = new ArrayList<>();
-	private Set<Set<Edge>> possibleConnections = new HashSet<>();
-	private Vertex parent;
-	private List<Edge> outgoingEdges =  new ArrayList<>();
-	private List<Integer> inReach = new ArrayList<>();
-	private int inDegree = 0;
-	private int inLatency = 0;
-	private int level = -1;
+	public int ID, replicas;
+	public double capacity, resCapacity;
+	public List<Vertex> connections = new ArrayList<>();
+//	private Set<Set<Vertex>> possibleConnections = new HashSet<>();
+	public Vertex parent;
+	public List<Edge> outgoingEdges =  new ArrayList<>();
+	public List<Integer> inReach = new ArrayList<>();
+	public int inLatency = 0;
+	public int level = -1, inDegree = 0;
+	public boolean colored = false;
 
 	public Vertex(int ID, String conf, double capacity, int replicas) {
 		this.ID = ID;
@@ -209,19 +209,6 @@ public class Vertex {
 		this.inReach = inReach;
 	}
 
-	/**
-	 * @return the inDegree
-	 */
-	public int getInDegree() {
-		return inDegree;
-	}
-
-	/**
-	 * @param inDegree the inDegree to set
-	 */
-	public void setInDegree(int inDegree) {
-		this.inDegree = inDegree;
-	}
 
 	/**
 	 * @return the inLatency
@@ -244,36 +231,45 @@ public class Vertex {
 		this.level = level;
 	}
 	
-	
 	public void addEdge(Edge edge) {
 		this.outgoingEdges.add(edge);
 		
-		Set<Set<Edge>> tmp = new HashSet<>(this.possibleConnections);
-		for (Set<Edge> set : tmp) {
-			set.add(edge);
-		}
-		Set<Edge> tmp2 = new HashSet<>();
-		tmp2.add(edge);
-		tmp.add(tmp2);
-		this.possibleConnections.addAll(tmp);
-	}
-	
-	public  Set<Set<Edge>> getPossibleConnections(){
-		return this.possibleConnections;
-	}
-	
-	public Set<Set<Edge>> removeEdge(Edge edge) {
-		this.outgoingEdges.add(edge);
+		//not used anymore
 		
-		Set<Set<Edge>> toRemove = new HashSet<>();
-		for (Set<Edge> set : this.possibleConnections) {
-			if(set.contains(edge)) {
-				toRemove.add(set);
-			}
-		}
-		this.possibleConnections.removeAll(toRemove);
-		return toRemove;
-
+//		Set<Set<Vertex>> newPossibleConnections = new HashSet<>();
+//		Set<Vertex> extendedExistingconnections;
+//		for (Set<Vertex> set : this.possibleConnections) {
+//			extendedExistingconnections = new HashSet<>(set);
+//			extendedExistingconnections.add(edge.to);
+//			newPossibleConnections.add(extendedExistingconnections);
+//		}
+//		Set<Vertex> newPossiblility = new HashSet<>();
+//		newPossiblility.add(edge.to);
+//		newPossibleConnections.add(newPossiblility);
+//		this.possibleConnections.addAll(newPossibleConnections);
 	}
+	
+//	public  Set<Set<Vertex>> getPossibleConnections(){
+//		return this.possibleConnections;
+//	}
+	
+//	public Set<Set<Vertex>> removeEdge(Edge edge) {
+//		this.outgoingEdges.add(edge);
+//		
+//		Set<Set<Vertex>> toRemove = new HashSet<>();
+//		for (Set<Vertex> set : this.possibleConnections) {
+//			if(set.contains(edge.to)) {
+//				toRemove.add(set);
+//			}
+//		}
+//		this.possibleConnections.removeAll(toRemove);
+//		return toRemove;
+//
+//	}
+
+	public void resetResCapacity() {
+		this.resCapacity= this.capacity;
+	}
+
 
 }
