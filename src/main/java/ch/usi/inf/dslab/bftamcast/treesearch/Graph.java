@@ -291,13 +291,11 @@ public class Graph {
 						// system print the tree levels
 
 						// compute score
-						long score2 = Graph2.compute_score(rootV, tree, load, minscore, vertices, 0, new ArrayList<>());
 
 						long score = compute_score(rootV, tree, load, minscore, vertices, 0, new ArrayList<>());
 
 						if (score < minscore) {
 							System.out.println(score);
-							System.out.println(score2);
 							System.out.println();
 							minscore = score;
 							topTree = tree;
@@ -311,6 +309,7 @@ public class Graph {
 		System.out.println("minscore      " + minscore);
 		end = System.currentTimeMillis();
 		System.out.println("done tree1  " + (end - start));
+		Graph2.printTree(topTree,-122);
 
 		start = System.currentTimeMillis();
 
@@ -410,7 +409,7 @@ public class Graph {
 
 	public static long compute_score(Vertex root, List<Edge> tree, List<Load> load, long minscore,
 			List<Vertex> vertices, long prevScore, List<Edge> prevTree) {
-		long score = prevScore;
+		long score = 0;
 		for (Vertex v : vertices) {
 			v.inDegree = 0;
 			v.parent = null;
@@ -452,7 +451,7 @@ public class Graph {
 				for (Vertex v : updated) {
 					// check if capacity is not saturated
 					if (v.resCapacity <= 0) {
-						System.out.println("saturated!!!!");
+//						System.out.println("saturated!!!!");
 						return Long.MAX_VALUE;
 					}
 				}

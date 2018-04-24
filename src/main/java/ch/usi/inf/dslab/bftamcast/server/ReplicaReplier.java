@@ -359,7 +359,7 @@ import io.netty.util.internal.ConcurrentSet;
 	
 	//TODO faster way to check msgs content, perhaps check how library does it in synch system TOMUtil.computeHash(tomMessage.getContent());
 	public Request getMajreq(ConcurrentSet<TOMMessage> msgs, int majority) {
-				
+//		TOMUtil.computeHash(tomMessage.getContent());
 //		System.out.println("majjj    " +  majority);
 //		System.out.println("msgs    " +  msgs.size());
 		Request r, r2;

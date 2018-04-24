@@ -13,9 +13,9 @@ public class Vertex {
 	public int ID, replicas;
 	public double capacity, resCapacity;
 	public List<Vertex> connections = new ArrayList<>();
-//	private Set<Set<Vertex>> possibleConnections = new HashSet<>();
+	// private Set<Set<Vertex>> possibleConnections = new HashSet<>();
 	public Vertex parent;
-	public List<Edge> outgoingEdges =  new ArrayList<>();
+	public List<Edge> outgoingEdges = new ArrayList<>();
 	public List<Integer> inReach = new ArrayList<>();
 	public int inLatency = 0;
 	public int level = -1, inDegree = 0;
@@ -75,10 +75,10 @@ public class Vertex {
 
 	public void updateLoad(int load, Set<Vertex> destinations, int replicas, List<Vertex> updated) {
 		updated.add(this);
-		List<Vertex> toUpdate =  new ArrayList<>();
+		List<Vertex> toUpdate = new ArrayList<>();
 		for (Vertex v : connections) {
-			for(Vertex d : destinations) {
-				if(!toUpdate.contains(v) && v.inReach(d.ID)) {
+			for (Vertex d : destinations) {
+				if (!toUpdate.contains(v) && v.inReach(d.ID)) {
 					toUpdate.add(v);
 				}
 			}
@@ -87,12 +87,12 @@ public class Vertex {
 		for (Vertex v : toUpdate) {
 			replies += v.replicas;
 		}
-		
-		resCapacity -= load *(replicas+replies);
+
+		resCapacity -= load * (replicas + replies);
 		for (Vertex v : toUpdate) {
 			v.updateLoad(load, destinations, this.replicas, updated);
 		}
-		
+
 	}
 
 	/**
@@ -103,7 +103,8 @@ public class Vertex {
 	}
 
 	/**
-	 * @param iD the iD to set
+	 * @param iD
+	 *            the iD to set
 	 */
 	public void setID(int iD) {
 		ID = iD;
@@ -117,7 +118,8 @@ public class Vertex {
 	}
 
 	/**
-	 * @param replicas the replicas to set
+	 * @param replicas
+	 *            the replicas to set
 	 */
 	public void setReplicas(int replicas) {
 		this.replicas = replicas;
@@ -131,7 +133,8 @@ public class Vertex {
 	}
 
 	/**
-	 * @param capacity the capacity to set
+	 * @param capacity
+	 *            the capacity to set
 	 */
 	public void setCapacity(double capacity) {
 		this.capacity = capacity;
@@ -145,26 +148,37 @@ public class Vertex {
 	}
 
 	/**
-	 * @param resCapacity the resCapacity to set
+	 * @param resCapacity
+	 *            the resCapacity to set
 	 */
 	public void setResCapacity(double resCapacity) {
 		this.resCapacity = resCapacity;
 	}
 
-	/**
+	public void reset() {
+		parent = null;
+		connections.clear();
+		inLatency = Integer.MAX_VALUE;
+		level = -1;
+		colored = false;
+		inReach.clear();
+		resCapacity = capacity;
+
+	}
+
+	 /**
 	 * @return the connections
 	 */
-	public List<Vertex> getConnections() {
-		return connections;
-	}
+	 public List<Vertex> getConnections() {
+	 return connections;
+	 }
 
-	/**
-	 * @param connections the connections to set
-	 */
-	public void setConnections(List<Vertex> connections) {
-		this.connections = connections;
-	}
-
+	// /**
+	// * @param connections the connections to set
+	// */
+	// public void setConnections(List<Vertex> connections) {
+	// this.connections = connections;
+	// }
 
 	/**
 	 * @return the parent
@@ -174,7 +188,8 @@ public class Vertex {
 	}
 
 	/**
-	 * @param parent the parent to set
+	 * @param parent
+	 *            the parent to set
 	 */
 	public void setParent(Vertex parent) {
 		this.parent = parent;
@@ -188,7 +203,8 @@ public class Vertex {
 	}
 
 	/**
-	 * @param outgoingEdges the outgoingEdges to set
+	 * @param outgoingEdges
+	 *            the outgoingEdges to set
 	 */
 	public void setOutgoingEdges(List<Edge> outgoingEdges) {
 		this.outgoingEdges = outgoingEdges;
@@ -202,12 +218,12 @@ public class Vertex {
 	}
 
 	/**
-	 * @param inReach the inReach to set
+	 * @param inReach
+	 *            the inReach to set
 	 */
 	public void setInReach(List<Integer> inReach) {
 		this.inReach = inReach;
 	}
-
 
 	/**
 	 * @return the inLatency
@@ -217,58 +233,63 @@ public class Vertex {
 	}
 
 	/**
-	 * @param inLatency the inLatency to set
+	 * @param inLatency
+	 *            the inLatency to set
 	 */
 	public void setInLatency(int inLatency) {
 		this.inLatency = inLatency;
 	}
 
 	/**
-	 * @param level the level to set
+	 * @param level
+	 *            the level to set
 	 */
 	public void setLevel(int level) {
 		this.level = level;
 	}
-	
+
 	public void addEdge(Edge edge) {
 		this.outgoingEdges.add(edge);
-		
-		//not used anymore
-		
-//		Set<Set<Vertex>> newPossibleConnections = new HashSet<>();
-//		Set<Vertex> extendedExistingconnections;
-//		for (Set<Vertex> set : this.possibleConnections) {
-//			extendedExistingconnections = new HashSet<>(set);
-//			extendedExistingconnections.add(edge.to);
-//			newPossibleConnections.add(extendedExistingconnections);
-//		}
-//		Set<Vertex> newPossiblility = new HashSet<>();
-//		newPossiblility.add(edge.to);
-//		newPossibleConnections.add(newPossiblility);
-//		this.possibleConnections.addAll(newPossibleConnections);
+
+		// not used anymore
+
+		// Set<Set<Vertex>> newPossibleConnections = new HashSet<>();
+		// Set<Vertex> extendedExistingconnections;
+		// for (Set<Vertex> set : this.possibleConnections) {
+		// extendedExistingconnections = new HashSet<>(set);
+		// extendedExistingconnections.add(edge.to);
+		// newPossibleConnections.add(extendedExistingconnections);
+		// }
+		// Set<Vertex> newPossiblility = new HashSet<>();
+		// newPossiblility.add(edge.to);
+		// newPossibleConnections.add(newPossiblility);
+		// this.possibleConnections.addAll(newPossibleConnections);
 	}
-	
-//	public  Set<Set<Vertex>> getPossibleConnections(){
-//		return this.possibleConnections;
-//	}
-	
-//	public Set<Set<Vertex>> removeEdge(Edge edge) {
-//		this.outgoingEdges.add(edge);
-//		
-//		Set<Set<Vertex>> toRemove = new HashSet<>();
-//		for (Set<Vertex> set : this.possibleConnections) {
-//			if(set.contains(edge.to)) {
-//				toRemove.add(set);
-//			}
-//		}
-//		this.possibleConnections.removeAll(toRemove);
-//		return toRemove;
-//
-//	}
+
+	// public Set<Set<Vertex>> getPossibleConnections(){
+	// return this.possibleConnections;
+	// }
+
+	// public Set<Set<Vertex>> removeEdge(Edge edge) {
+	// this.outgoingEdges.add(edge);
+	//
+	// Set<Set<Vertex>> toRemove = new HashSet<>();
+	// for (Set<Vertex> set : this.possibleConnections) {
+	// if(set.contains(edge.to)) {
+	// toRemove.add(set);
+	// }
+	// }
+	// this.possibleConnections.removeAll(toRemove);
+	// return toRemove;
+	//
+	// }
 
 	public void resetResCapacity() {
-		this.resCapacity= this.capacity;
+		this.resCapacity = this.capacity;
 	}
 
+	public void addConnections(Vertex to) {
+		this.connections.add(to);
+	}
 
 }

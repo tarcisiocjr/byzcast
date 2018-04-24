@@ -142,10 +142,10 @@ public class Graph2 {
 		// }
 		for (Vertex vertex1 : vertices) {
 			for (Vertex vertex2 : vertices) {
-//				vertex1.setCapacity(100000);
-//				vertex1.setResCapacity(100000);
-//				vertex2.setCapacity(100000);
-//				vertex2.setResCapacity(100000);
+				vertex1.setCapacity(Integer.MAX_VALUE);
+				vertex1.setResCapacity(Integer.MAX_VALUE);
+				vertex2.setCapacity(Integer.MAX_VALUE);
+				vertex2.setResCapacity(Integer.MAX_VALUE);
 				if (vertex1 != vertex2) {
 					Edge edge = new Edge(vertex1, vertex2, 100);
 					vertex1.addEdge(edge);
@@ -201,8 +201,7 @@ public class Graph2 {
 		
 		
 
-		System.out.println("#generated trees are:  " + trees.size() + "  expected: " + ((long) numberOfTrees)
-				+ "   total iterations: " + iteration);
+
 		
 		if(!trees.isEmpty()) {
 		printTree(trees.get(trees.size()-1), -100);
@@ -212,12 +211,16 @@ public class Graph2 {
 	}
 
 	public void generateTrees(List<Vertex> vertices, List<List<Edge>> trees, List<Load> loads) {
+		long start = 0, end = 0;
+
+		System.out.println("start generating trees");
+		start = System.nanoTime();
+
 		// TODO recycle all destination when generating all loads initially
 		Set<Set<Vertex>> possibleChilds = getAllPossibleDestinations(vertices);
 		time = System.nanoTime();
 		double numberOfVertices = vertices.size();
 		numberOfTrees = Math.pow(numberOfVertices, numberOfVertices - 1);
-		long start = 0, end = 0;
 		for (Vertex root : vertices) {
 			for(Vertex vertex : vertices) {
 				vertex.setParent(null);
@@ -238,13 +241,13 @@ public class Graph2 {
 			visited.add(root);
 			List<Vertex> fringe = new ArrayList<>();
 			fringe.add(root);
-			start = System.nanoTime();
 
-			generateTreesRec(root, new ArrayList<>(), visited, trees, vertices.size(), cleanSet, fringe, loads, 0 , new ArrayList<>());
+			generateTreesRec(root, new ArrayList<>(), visited, trees, vertices.size(), cleanSet, fringe, loads);
 
-			end = System.nanoTime();
 
 		}
+		end = System.nanoTime();
+
 		System.out.println("#generated trees are:  " + trees.size() + "  expected: " + ((long) numberOfTrees)
 				+ "   total iterations: " + iteration);
 
@@ -260,21 +263,19 @@ public class Graph2 {
 	// GOOD algorithm! works no dups, tested up to 8 vertices, generates all trees
 	// n^(n-1)
 	public void generateTreesRec(Vertex  root, List<Edge> tree, List<Vertex> visited, List<List<Edge>> trees, int numVertices,
-			Set<Set<Vertex>> possibleChilds, List<Vertex> fringe, List<Load> loads, long previousScore, List<Edge> prevTree)
+			Set<Set<Vertex>> possibleChilds, List<Vertex> fringe, List<Load> loads)
 	{
 
 		iteration++;
-//		 long score = compute_score(root, tree, loads, bestbestscore, vertices,previousScore, prevTree);
-		long score = compute_score(root, tree, loads, bestbestscore, vertices,0, new ArrayList<>());
-		 score = Graph.compute_score(root, tree, loads, bestbestscore, vertices,0, new ArrayList<>());
+		 long score = compute_score(root, tree, loads, bestbestscore, vertices);
+//		long score = compute_score(root, tree, loads, bestbestscore, vertices,0, new ArrayList<>());
+//		 score = Graph.compute_score(root, tree, loads, bestbestscore, vertices,0, new ArrayList<>());
 		 if (score >= bestbestscore ) {
-		 // System.out.println("prune " + bestbestscore + " " + bestScore + " " +
-//		 score);
 		 return;
 		 }
 
 		if (tree.size() == numVertices - 1) {
-			  System.out.println("new best " + score );
+//			  System.out.println("new best " + score );
 			// printTree(tree, iteration) ;
 			trees.add(new ArrayList<>(tree));
 			bestbestscore = score;
@@ -324,7 +325,7 @@ public class Graph2 {
 					List<Vertex> newFringe = new ArrayList<>(keptFringe);
 					newFringe.remove(visiting);
 					newFringe.addAll(childs);
-					generateTreesRec(root, newTree, newVisited, trees, numVertices, newPossibleChilds, newFringe, loads, score, tree);
+					generateTreesRec(root, newTree, newVisited, trees, numVertices, newPossibleChilds, newFringe, loads);
 				}
 
 			}
@@ -332,67 +333,31 @@ public class Graph2 {
 	}
 
 	//TODO check with graph.compute_score, they produce different results.
-	public static long compute_score(Vertex root, List<Edge> tree, List<Load> loads, long minscore, List<Vertex> vertices,
-			long prevScore, List<Edge> prevTree) {
+	public static long compute_score(Vertex root, List<Edge> tree, List<Load> loads, long minscore, List<Vertex> vertices) {
 
-		long score = prevScore;
-		
-		
-		
-//		for (Edge edge : tree) {
-//			Vertex v = edge.from;
-//			v.inDegree = 0;
-//			v.parent = null;
-//			v.connections.clear();
-//			v.inLatency = Integer.MAX_VALUE;
-//			v.level = -1;
-//			v.colored = false;
-//			v.inReach.clear();
-//			v.resCapacity = v.capacity;
-//			v = edge.to;
-//			v.inDegree = 0;
-//			v.parent = null;
-//			v.connections.clear();
-//			v.inLatency = Integer.MAX_VALUE;
-//			v.level = -1;
-//			v.colored = false;
-//			v.inReach.clear();
-//			v.resCapacity = v.capacity;
-//		}
+		long score = 0;
 		
 
-		List<Vertex> treevertices = new ArrayList<>();
-		List<Vertex> oldtreevertices = new ArrayList<>();
-		treevertices.add(root);
-		oldtreevertices.add(root);
-		for (Edge edge : tree) {
-//			if (prevTree.contains(edge)) {
-//				oldtreevertices.add(edge.to);
-//			} else {
-				edge.to.getConnections().clear();
-				edge.to.getInReach().clear();
-				edge.to.setLevel(-1);
-				edge.to.resetResCapacity();
-				edge.to.setParent(edge.from);
-				edge.to.setInLatency(edge.latency);
-				
-				oldtreevertices.remove(edge.from);
-				edge.from.getConnections().clear();
-				edge.from.getInReach().clear();
-				edge.from.resetResCapacity();
-				
-				edge.from.getConnections().add(edge.to);
-				edge.from.getInReach().add(edge.to.getID());
-				
-
-//			}
-			treevertices.add(edge.to);
+		for (Vertex vertex : vertices) {
+			vertex.reset();
 		}
 
+		List<Vertex> treevertices = new ArrayList<>();
+		treevertices.add(root);
+
+
+		for (Edge edge : tree) {
+			treevertices.add(edge.to);
+			edge.from.addConnections(edge.to);
+			edge.to.setParent( edge.from);
+			edge.to.setInLatency(edge.latency);
+		}
+		
+//		System.out.println(oldtreevertices.size());
 		for (Load load : loads) {
 			// compute only if current tree contains all groups and not computed for
 			// previous tree
-			if (treevertices.containsAll(load.destinations) ) {// && !oldtreevertices.containsAll(load.destinations)) {
+			if (treevertices.containsAll(load.destinations)) {
 				// find lca and lca heigh in tree
 				Vertex lca = lca(load.destinations, root);
 				int lcaH = lca.getLevel();
