@@ -25,15 +25,15 @@ public class RequestTracker {
 		tracker = new ConcurrentHashMap<>();
 		for (Vertex groupId : groups.keySet()) {
 
-			tracker.put(groupId.getGroupId(), new GroupRequestTracker(groups.get(groupId)));
+			tracker.put(groupId.getID(), new GroupRequestTracker(groups.get(groupId)));
 
 		}
 	}
 
-	public boolean addReply(Request req) {
-		System.out.println(req.getSender());
-		System.out.println(tracker.get(req.getSender()));
-		tracker.get(req.getSender()).addReply(req);
+	public boolean addReply(TOMMessage req, int senderId) {
+//		System.out.println(req.getSender());
+//		System.out.println(tracker.get(req.getSender()));
+		tracker.get(senderId).addReply(req);
 		return checkAll();
 	}
 

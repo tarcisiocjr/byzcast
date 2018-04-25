@@ -1,9 +1,16 @@
 package ch.usi.inf.dslab.bftamcast.kvs;
 
-import ch.usi.inf.dslab.bftamcast.RequestIf;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
 
-import java.io.*;
-import java.util.Arrays;
+import ch.usi.inf.dslab.bftamcast.RequestIf;
+import ch.usi.inf.dslab.bftamcast.graph.Tree;
 
 /**
  * @author Paulo Coelho - paulo.coelho@usi.ch
@@ -24,6 +31,7 @@ public class Request implements RequestIf, Serializable {
 	private int[] destination;
 	private int[] destinationhandled;
 	private int seqNumber;
+	private long destIdentifier;
 
 	/**
 	 * create a request object from a byte[]
@@ -44,7 +52,7 @@ public class Request implements RequestIf, Serializable {
 	 * @param sender
 	 */
 	public Request(RequestType type, int key, byte[] value, int[] destination, int seqNumber, int client, int sender,
-			int lcaID) {
+			int lcaID, long destIdentifier) {
 		this.client = client;
 		this.lcaID = lcaID;
 		this.sender = sender;
@@ -58,6 +66,11 @@ public class Request implements RequestIf, Serializable {
 			destinationhandled[i] = -1;
 		}
 		this.seqNumber = seqNumber;
+		this.destIdentifier = destIdentifier;
+	}
+	
+	public long getDestIdentifier() {
+		return destIdentifier;
 	}
 
 	/**
@@ -256,6 +269,7 @@ public class Request implements RequestIf, Serializable {
 			dos.writeUTF(this.type.name());
 			dos.writeInt(this.key);
 			dos.writeInt(this.lcaID);
+			dos.writeLong(this.destIdentifier);
 			dos.writeInt(this.value == null ? 0 : this.value.length);
 			if (value != null)
 				dos.write(this.value);
@@ -297,6 +311,7 @@ public class Request implements RequestIf, Serializable {
 			this.type = RequestType.valueOf(dis.readUTF());
 			this.key = dis.readInt();
 			this.lcaID = dis.readInt();
+			this.destIdentifier = dis.readLong();
 			vSize = dis.readInt();
 			if (vSize > 0) {
 				this.value = new byte[vSize];
@@ -353,64 +368,64 @@ public class Request implements RequestIf, Serializable {
 	 * @param r
 	 * @return
 	 */
-	public boolean equals(Request r) {
-//		System.out.println("res = " + Arrays.equals(this.getResult(), r.getResult()));
-//		System.out.println("res = " + this.getResult().equals(r.getResult()));
-//		System.out.println();
-		
-//		System.out.println(this.key == r.key && this.type == r.type && this.seqNumber == r.seqNumber && this.client == r.client &&
-//				this.lcaID == r.lcaID && Arrays.equals(this.getValue(), r.getValue()) && Arrays.equals(this.getDestination(), r.getDestination())
-//				&&  Arrays.equals(this.getResult(), r.getResult()));
+//	public boolean equals(Request r) {
+////		System.out.println("res = " + Arrays.equals(this.getResult(), r.getResult()));
+////		System.out.println("res = " + this.getResult().equals(r.getResult()));
+////		System.out.println();
 //		
-//		return (this.key == r.key && this.type == r.type && this.seqNumber == r.seqNumber && this.client == r.client &&
-//				this.lcaID == r.lcaID && Arrays.equals(this.getValue(), r.getValue()) && Arrays.equals(this.getDestination(), r.getDestination())
-//				&&  Arrays.equals(this.getResult(), r.getResult()));
-		if (this.key != r.key) {
-			System.out.println("key problem");
-			return false;
-		}
-		if (this.type != r.type) {
-			System.out.println("type problem");
-			return false;
-		}
-		if (this.seqNumber != r.seqNumber) {
-			System.out.println("seq problem");
-			return false;
-		}
-		if (this.client != r.client) {
-			System.out.println("sender problem");
-			return false;
-		}
-		if(!Arrays.equals(this.getValue(), r.getValue())){
-			return false;
-		}
-		if(!Arrays.equals(this.getDestination(), r.getDestination())){
-			return false;
-		}
-
-		if (result == null && r.result != null) {
-			return false;
-		}
-		if (r.result == null && result != null) {
-			return false;
-		}
-		if (result != null) {
-
-			for (int i = 0; i < result.length; i++) {
-				if (result[i] == null && r.result[i] != null) {
-					return false;
-				}
-				if (r.result[i] == null && result[i] != null) {
-					return false;
-				}
-				if (result[i] != null && !Arrays.equals(result[i], r.result[i])) {
-					return false;
-				}
-			}
-
-		}
-
-		return true;
-	}
+////		System.out.println(this.key == r.key && this.type == r.type && this.seqNumber == r.seqNumber && this.client == r.client &&
+////				this.lcaID == r.lcaID && Arrays.equals(this.getValue(), r.getValue()) && Arrays.equals(this.getDestination(), r.getDestination())
+////				&&  Arrays.equals(this.getResult(), r.getResult()));
+////		
+////		return (this.key == r.key && this.type == r.type && this.seqNumber == r.seqNumber && this.client == r.client &&
+////				this.lcaID == r.lcaID && Arrays.equals(this.getValue(), r.getValue()) && Arrays.equals(this.getDestination(), r.getDestination())
+////				&&  Arrays.equals(this.getResult(), r.getResult()));
+//		if (this.key != r.key) {
+//			System.out.println("key problem");
+//			return false;
+//		}
+//		if (this.type != r.type) {
+//			System.out.println("type problem");
+//			return false;
+//		}
+//		if (this.seqNumber != r.seqNumber) {
+//			System.out.println("seq problem");
+//			return false;
+//		}
+//		if (this.client != r.client) {
+//			System.out.println("sender problem");
+//			return false;
+//		}
+//		if(!Arrays.equals(this.getValue(), r.getValue())){
+//			return false;
+//		}
+//		if(!Arrays.equals(this.getDestination(), r.getDestination())){
+//			return false;
+//		}
+//
+//		if (result == null && r.result != null) {
+//			return false;
+//		}
+//		if (r.result == null && result != null) {
+//			return false;
+//		}
+//		if (result != null) {
+//
+//			for (int i = 0; i < result.length; i++) {
+//				if (result[i] == null && r.result[i] != null) {
+//					return false;
+//				}
+//				if (r.result[i] == null && result[i] != null) {
+//					return false;
+//				}
+//				if (result[i] != null && !Arrays.equals(result[i], r.result[i])) {
+//					return false;
+//				}
+//			}
+//
+//		}
+//
+//		return true;
+//	}
 
 }

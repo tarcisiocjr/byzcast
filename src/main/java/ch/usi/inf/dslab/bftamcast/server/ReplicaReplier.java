@@ -4,6 +4,7 @@ package ch.usi.inf.dslab.bftamcast.server;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -20,13 +21,12 @@ import bftsmart.tom.ReplicaContext;
 import bftsmart.tom.RequestContext;
 import bftsmart.tom.core.messages.TOMMessage;
 import bftsmart.tom.core.messages.TOMMessageType;
-import bftsmart.tom.server.BatchExecutable;
 import bftsmart.tom.server.FIFOExecutable;
 import bftsmart.tom.server.Replier;
-import bftsmart.tom.util.TOMUtil;
 import ch.usi.inf.dslab.bftamcast.graph.Tree;
 import ch.usi.inf.dslab.bftamcast.graph.Vertex;
 import ch.usi.inf.dslab.bftamcast.kvs.Request;
+import ch.usi.inf.dslab.bftamcast.util.GroupRequestTracker;
 import ch.usi.inf.dslab.bftamcast.util.RequestTracker;
 import io.netty.util.internal.ConcurrentSet;
 
@@ -139,51 +139,26 @@ import io.netty.util.internal.ConcurrentSet;
 			if (msgs.size() >= majReplicasOfSender && (repliesTracker.get(req.getClient()) == null
 					|| !repliesTracker.get(req.getClient()).containsKey(req.getSeqNumber()))) {
 
-				req = getMajreq(msgs, majReplicasOfSender);
+				req = GroupRequestTracker.getMajreq(msgs, majReplicasOfSender);
 				req.setSender(groupId);
 //				System.out.println("asdflkhjadsfdka    " + req);
-				int[] destinations = req.getDestination();
-				int[] destinationsH = req.getDestinationHandled();
 				boolean addreq = false;
 				Map<Vertex, Integer> toSend = new HashMap<>();
 				// List<Vertex>
-				for (int i = 0; i < destinations.length; i++) {
-					if(destinationsH[i] == -1) {
-					// I am a target, compute but wait for majority of other destination to
-					// execute
-					// the same to asnwer
-					if (destinations[i] == groupId) {
-						destinationsH[i] = destinations[i];
-						execute(req);
-						// System.out.println(req.getValue());
-						addreq = true;
-					}
-					// my child in tree is a destination, forward it
-					else if (me.getChildernIDs().contains(destinations[i])) {
-						Vertex v = me.getChild(destinations[i]);
-						destinationsH[i] = destinations[i];
-						toSend.put(v, v.getProxy().getViewManager().getCurrentViewF() + 1);
-					}
-					// destination must be in the path of only one of my childrens
-					else {
-
-						for (Vertex v : me.getChildren()) {
-							if (v.inReach(destinations[i])) {
-								if (!toSend.keySet().contains(v)) {
-									destinationsH[i] = destinations[i];
-									toSend.put(v, v.getProxy().getViewManager().getCurrentViewF() + 1);
-								}
-								break;// only one path
-							}
-						}
-					}
-					}
-
+				Set<Vertex> involved = overlayTree.getRoute(req.getDestIdentifier(), me);
+				if(involved.contains(me)) {
+					execute(req);
+					addreq = true;
 				}
-				req.setDestinationHandled(destinationsH);
+				for(Vertex dest : involved) {
+					if(dest != me) {
+						toSend.put(dest, dest.getProxy().getViewManager().getCurrentViewF() + 1);
+					}
+				}
+			
 
 				// no other destination is in my reach, send reply back
-				if (toSend.keySet().isEmpty()) {
+				if (toSend.keySet().isEmpty() && addreq) {
 					// create entry for client replies if not already these
 					processedReplies.computeIfAbsent(req.getClient(), k -> new ConcurrentHashMap<>());
 					// add processed reply to client replies
@@ -289,7 +264,7 @@ import io.netty.util.internal.ConcurrentSet;
 		// get the tracker for that request
 		RequestTracker tracker = repliesTracker.get(replyReq.getClient()).get(replyReq.getSeqNumber());
 		// add the reply to tracker and if all involved groups reached their f+1 quota
-		if (tracker != null && tracker.addReply(replyReq)) {
+		if (tracker != null && tracker.addReply(reply, replyReq.getSender())) {
 			// get reply with all groups replies
 			Request sendReply = tracker.getMergedReply();
 			sendReply.setSender(groupId);
@@ -358,26 +333,33 @@ import io.netty.util.internal.ConcurrentSet;
 //	}
 	
 	//TODO faster way to check msgs content, perhaps check how library does it in synch system TOMUtil.computeHash(tomMessage.getContent());
-	public Request getMajreq(ConcurrentSet<TOMMessage> msgs, int majority) {
-//		TOMUtil.computeHash(tomMessage.getContent());
-//		System.out.println("majjj    " +  majority);
-//		System.out.println("msgs    " +  msgs.size());
-		Request r, r2;
-		for (TOMMessage m : msgs) {
-			int count = 0;
-			r = new Request(m.getContent());
-			for (TOMMessage m2 : msgs) {
-				r2 = new Request(m2.getContent());
-				if (r.equals(r2)) {
-					count++;
-//					System.out.println(count);
-					if(count >= majority) {
-						return r;
-					}
-				}
-			}
-		}
-		return null;
-		
-	}
+//	public Request getMajreq(ConcurrentSet<TOMMessage> msgs, int majority) {
+//		System.out.println("msg size " + msgs.size() ) ;
+//		System.out.println("maj size " + majority) ;
+//		byte[][] hashes = new byte[msgs.size()][];
+//		TOMMessage[] accessableMsgs = new TOMMessage[msgs.size()];
+//		int i =0;
+//		for (TOMMessage msg : msgs) {
+//			hashes[i] = TOMUtil.computeHash(msg.getContent());;
+//			accessableMsgs[i] = msg;
+//			i++;
+//		}
+//		for (int j = 0; j < hashes.length; j++) {
+//			int count = 1;
+//			for (int k = 0; k < hashes.length; k++) {
+//				if(k!=j) {
+//					if(Arrays.equals(hashes[j], hashes[k])) {
+//						count++;
+//						
+//					}
+//				}
+//				if(count >= majority) {
+//					return new Request(accessableMsgs[j].getContent());
+//				}
+//				
+//			}
+//		}
+//	return null;
+//	
+//	}
 }

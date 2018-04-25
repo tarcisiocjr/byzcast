@@ -4,8 +4,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.locks.ReentrantLock;
 
 import bftsmart.communication.client.ReplyListener;
@@ -81,6 +79,7 @@ public class ClientThread implements Runnable, ReplyListener {
 		byte[] value = randomString(size).getBytes();
 		int[] destinations;
 		int[] local = new int[] { dests[r.nextInt(dests.length)] };
+		long destIdentifier =0;
 
 		while (elapsed / 1e9 < runTime) {
 
@@ -101,9 +100,12 @@ public class ClientThread implements Runnable, ReplyListener {
 					// }
 
 					RequestType type = destinations.length > 1 ? RequestType.SIZE : RequestType.PUT;
+					
 
-					Vertex lca =overlayTree.lca(destinations);
-					req = new Request(type, key, value, destinations, seqNumber, clientId, clientId, lca.getGroupId());
+					destIdentifier = overlayTree.getIdentifier(destinations);
+					Vertex lca =overlayTree.getLca(destIdentifier);
+					
+					req = new Request(type, key, value, destinations, seqNumber, clientId, clientId, lca.getID(), destIdentifier);
 //					lock.lock();
 					lock.lock();
 
@@ -177,7 +179,7 @@ public class ClientThread implements Runnable, ReplyListener {
 		GroupRequestTracker tracker = repliesTracker.get(replyReq.getSeqNumber());
 
 		
-		if (tracker != null && tracker.addReply(replyReq)) {
+		if (tracker != null && tracker.addReply(reply)) {
 			lock.lock();
 
 			out--;

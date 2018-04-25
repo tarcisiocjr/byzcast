@@ -7,8 +7,15 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.StringTokenizer;
+
+import ch.usi.inf.dslab.bftamcast.graph.Vertex;
 
 /**
  * @author Christian Vuerich - christian.vuerich@usi.ch
@@ -21,6 +28,12 @@ public class Tree implements Serializable {
 	private static final long serialVersionUID = -1340477045756411763L;
 	private Vertex root;
 	private List<Integer> destinations;
+	private final int replicas = 4;
+	
+	private Map<Long,Map<Vertex, Set<Vertex>>> routingmap = new  HashMap<>();
+	private Map<Long, Vertex> lcaMap = new HashMap<>();
+	
+	
 
 	/**
 	 * Main for testing
@@ -66,8 +79,8 @@ public class Tree implements Serializable {
 					StringTokenizer str = new StringTokenizer(line, " ");
 					// vertex declaration (group)
 					if (str.countTokens() == 2) {
-						vertices.add(new Vertex(Integer.valueOf(str.nextToken()), configFile.replace("tree.conf", "") + str.nextToken(), proxyID));
-						destinations.add(vertices.get(vertices.size() - 1).getGroupId());
+						vertices.add(new Vertex(Integer.valueOf(str.nextToken()), configFile.replace("tree.conf", "") + str.nextToken(),0,replicas, proxyID));
+						destinations.add(vertices.get(vertices.size() - 1).getID());
 //						System.out.println("adding vertex: " + vertices.get(vertices.size()-1));
 					}
 					// connection declaration
@@ -81,11 +94,10 @@ public class Tree implements Serializable {
 
 						// add connections in vertices
 						for (Vertex v1 : vertices) {
-							if (v1.getGroupId() == from) {
+							if (v1.getID() == from) {
 								for (Vertex v2 : vertices) {
-									if (v2.getGroupId() == to) {
-										v1.getChildren().add(v2);
-										v1.getChildernIDs().add(v2.getGroupId());
+									if (v2.getID() == to) {
+										v1.getConnections().add(v2);
 										v2.setParent(v1);
 									}
 								}
@@ -106,6 +118,54 @@ public class Tree implements Serializable {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+		//TODO build map for quick lookup to who forward msgs Map<Destinations, Map<Id, Targets>>
+		Set<Set<Vertex>> allPossibleDestinations = getAllPossibleDestinations(vertices);
+		
+		for(Set<Vertex> destination : allPossibleDestinations) {
+			int[] destsids = new int[destination.size()];
+			
+			int index = 0;
+			for (Vertex dest : destination) {
+				destsids[index] = dest.ID;
+				index++;
+			}
+			
+			long identifier = getIdentifier(destsids);
+			Vertex lcav = lca(destination);
+			lcaMap.put(identifier, lcav);
+			
+			routingmap.put(identifier, new HashMap<>());
+			for(Vertex vertex : vertices) {
+				Set<Vertex> toSendto = new HashSet<>();
+				for (Vertex dest : destination) {
+					// I am a target, compute but wait for majority of other destination to
+					// execute
+					// the same to asnwer
+					if (vertex== dest) {
+						toSendto.add(vertex);
+					}
+					// my child in tree is a destination, forward it
+					else if (vertex.getConnections().contains(dest)) {
+						toSendto.add(dest);
+					}
+					// destination must be in the path of only one of my childrens
+					else {
+
+						for (Vertex child : vertex.getConnections()) {
+							if (child.inReach(dest.ID)) {
+								toSendto.add(child);
+								break;// only one path
+							}
+						}
+					}
+				}
+				routingmap.get(identifier).put(vertex, toSendto);
+			}
+		}
+
+		
+		
+		
 	}
 
 	/**
@@ -116,13 +176,7 @@ public class Tree implements Serializable {
 	 * @return the lowest common ancestor in the tree of all the vertices in the
 	 *         input vertices list.
 	 */
-	public Vertex lca(int[] ids) {
-
-		
-		List<Vertex> vertices = new ArrayList<>();
-		for (int i = 0; i < ids.length; i++) {
-			vertices.add(findVertexById(ids[i]));
-		}
+	private  Vertex lca(Set<Vertex> vertices) {
 
 		// tree only has one path between any two nodes, so only one child of root could
 		// be ancestor
@@ -130,21 +184,21 @@ public class Tree implements Serializable {
 		boolean reachable = true;
 		while (reachable) {
 			reachable = true;
-			//if you can not go lower in the tree return current acestor
-			if(ancestor.getChildren().isEmpty()) {
+			// if you can not go lower in the tree return current acestor
+			if (ancestor.connections.isEmpty()) {
 				return ancestor;
 			}
-			//check if any of the current ancestor's childrens can reach all destinations
-			for (Vertex v : ancestor.getChildren()) {
+			// check if any of the current ancestor's childrens can reach all destinations
+			for (Vertex v : ancestor.connections) {
 				reachable = true;
 				for (Vertex target : vertices) {
-					//check child reach for all destinations
-					reachable = reachable & v.inReach(target.getGroupId());
+					// check child reach for all destinations
+					reachable = reachable & v.inReach(target.ID);
 					if (!reachable) {
 						break;
 					}
 				}
-				//if child can reach all it is the new ancestor
+				// if child can reach all it is the new ancestor
 				if (reachable) {
 					// tree only one path between two vertices, so if found lower anchestor it is
 					// not needed to keep searching other children
@@ -166,5 +220,48 @@ public class Tree implements Serializable {
 //		System.out.println(root);
 		return root.findVertexByID(id);
 	}
+	
+	// // generate all possible desitations
+		public static Set<Set<Vertex>> getAllPossibleDestinations(List<Vertex> vertices) {
+			Set<Set<Vertex>> destinations = new HashSet<>();
+			getAllPossibleDestinations2(vertices, 0, destinations, new HashSet<>());
+			return destinations;
+		}
+
+		private static void getAllPossibleDestinations2(List<Vertex> vertices, int indexInList,
+				Set<Set<Vertex>> destinations, Set<Vertex> previousSet) {
+			if (indexInList >= vertices.size()) {
+				return;
+			}
+			previousSet.add(vertices.get(indexInList));
+			destinations.add(new HashSet<>(previousSet));
+			// consider vertex
+			getAllPossibleDestinations2(vertices, indexInList + 1, destinations, previousSet);
+			// skip vertex
+			previousSet.remove(vertices.get(indexInList));
+			getAllPossibleDestinations2(vertices, indexInList + 1, destinations, previousSet);
+		}
+
+		public Set<Vertex> getRoute(long identifier, Vertex me) {
+			
+			return routingmap.get(identifier).get(me);
+
+		}
+	
+		
+		public  long getIdentifier(int[] destinations) {
+			Arrays.sort(destinations);
+			long identifier = 0;
+			for (int i = 0; i < destinations.length; i++) {
+				//TODO this ensure no collisions
+				identifier += (10000*i) + destinations[i];
+			}
+			return identifier;
+		}
+
+		public Vertex getLca(long destIdentifier) {
+			return lcaMap.get(destIdentifier);
+		}
+	
 
 }

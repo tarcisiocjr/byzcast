@@ -9,7 +9,6 @@ import java.util.StringTokenizer;
 import java.util.UUID;
 
 import bftsmart.communication.client.ReplyListener;
-import bftsmart.tom.AsynchServiceProxy;
 import bftsmart.tom.RequestContext;
 import bftsmart.tom.core.messages.TOMMessage;
 import bftsmart.tom.core.messages.TOMMessageType;
@@ -62,6 +61,7 @@ public class ConsoleClient implements ReplyListener {
 			int[] destinations;
 			int key;
 			RequestType type;
+			long destIdentifier = 0;
 			
 
 			switch (cmd) {
@@ -79,12 +79,12 @@ public class ConsoleClient implements ReplyListener {
 				}
 				destinations = n;
 				value = console.readLine("Enter the value: ").getBytes();
-				target = overlayTree.lca(destinations);
+				destIdentifier = overlayTree.getIdentifier(destinations);
+				target = overlayTree.getLca(destIdentifier);
 
+				req = new Request(type, key, value, destinations, seqNumber, clientId, clientId, target.getID(), destIdentifier);
 
-				req = new Request(type, key, value, destinations, seqNumber, clientId, clientId, target.getGroupId());
-
-				System.out.println("id ==    " + overlayTree.lca(n).getGroupId());
+				System.out.println("id ==    " + target.getID());
 				c.repliesTracker.put(seqNumber, new GroupRequestTracker(target.getProxy().getViewManager().getCurrentViewF() + 1));
 				target.getProxy().invokeAsynchRequest(req.toBytes(), c, TOMMessageType.ORDERED_REQUEST);
 				System.out.println("sent");
@@ -102,9 +102,12 @@ public class ConsoleClient implements ReplyListener {
 					index++;
 				}
 				destinations = n;
-				target = overlayTree.lca(destinations);
-				System.out.println("id ==    " + overlayTree.lca(n).getGroupId());
-				req = new Request(type, key, value, destinations, seqNumber, clientId, clientId, target.getGroupId());
+				destIdentifier = overlayTree.getIdentifier(destinations);
+				target = overlayTree.getLca(destIdentifier);
+
+				req = new Request(type, key, value, destinations, seqNumber, clientId, clientId, target.getID(), destIdentifier);
+
+				System.out.println("id ==    " + target.getID());
 				c.repliesTracker.put(seqNumber, new GroupRequestTracker(target.getProxy().getViewManager().getCurrentViewF() + 1));
 				target.getProxy().invokeAsynchRequest(req.toBytes(), c, TOMMessageType.ORDERED_REQUEST);
 				break;
@@ -121,8 +124,12 @@ public class ConsoleClient implements ReplyListener {
 					index++;
 				}
 				destinations = n;
-				target = overlayTree.lca(destinations);				System.out.println("id ==    " + overlayTree.lca(n).getGroupId());
-				req = new Request(type, key, value, destinations, seqNumber, clientId, clientId,target.getGroupId());
+				destIdentifier = overlayTree.getIdentifier(destinations);
+				target = overlayTree.getLca(destIdentifier);
+
+				req = new Request(type, key, value, destinations, seqNumber, clientId, clientId, target.getID(), destIdentifier);
+
+				System.out.println("id ==    " + target.getID());
 				c.repliesTracker.put(seqNumber, new GroupRequestTracker(target.getProxy().getViewManager().getCurrentViewF() + 1));
 				target.getProxy().invokeAsynchRequest(req.toBytes(), c, TOMMessageType.ORDERED_REQUEST);
 				break;
@@ -137,8 +144,12 @@ public class ConsoleClient implements ReplyListener {
 				for (int i = 0; i < destinations.length; i++) {
 					destinations[i] = overlayTree.getDestinations().get(i);
 				}
-				target = overlayTree.lca(destinations);				System.out.println("id ==    " + overlayTree.lca(destinations).getGroupId());
-				req = new Request(type, key, value, destinations, seqNumber, clientId, clientId,target.getGroupId());
+				destIdentifier = overlayTree.getIdentifier(destinations);
+				target = overlayTree.getLca(destIdentifier);
+
+				req = new Request(type, key, value, destinations, seqNumber, clientId, clientId, target.getID(), destIdentifier);
+
+				System.out.println("id ==    " + target.getID());
 				c.repliesTracker.put(seqNumber, new GroupRequestTracker(target.getProxy().getViewManager().getCurrentViewF() + 1));
 				target.getProxy().invokeAsynchRequest(req.toBytes(), c, TOMMessageType.ORDERED_REQUEST);
 				break;
@@ -157,7 +168,7 @@ public class ConsoleClient implements ReplyListener {
 
 		Request replyReq = new Request(reply.getContent());
 		GroupRequestTracker tracker = repliesTracker.get(replyReq.getSeqNumber());
-		if (tracker != null && tracker.addReply(replyReq)) {
+		if (tracker != null && tracker.addReply(reply)) {
 			replyReq = tracker.getMajorityReply();
 			System.out.println("finish, sent up req # " + replyReq.getSeqNumber());
 
