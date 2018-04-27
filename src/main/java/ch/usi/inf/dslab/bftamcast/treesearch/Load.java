@@ -9,11 +9,13 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import ch.usi.inf.dslab.bftamcast.graph.Vertex;
+
 /**
  * @author Christian Vuerich - christian.vuerich@usi.ch
  *
  */
-public class Load implements Comparator<Load>{
+public class Load implements Comparator<Load> {
 	public Set<Vertex> destinations = new HashSet<>();
 	public Set<Integer> destinationsIDS = new HashSet<>();
 	public int load;
@@ -22,15 +24,15 @@ public class Load implements Comparator<Load>{
 	public Vertex root;
 	public List<Load> overlaps = new ArrayList<>();
 
-
 	public Load(int load, Set<Vertex> dests) {
 		this.load = load;
-		this.destinations =  dests;
-		if(destinations !=null) {
-		for (Vertex vertex : dests) {
-			destinationsIDS.add(vertex.getID());
-		}}
-		
+		this.destinations = dests;
+		if (destinations != null) {
+			for (Vertex vertex : dests) {
+				destinationsIDS.add(vertex.getID());
+			}
+		}
+
 	}
 
 	public boolean matchDests(Set<Vertex> dests) {
@@ -45,12 +47,11 @@ public class Load implements Comparator<Load>{
 			}
 		}
 		return true;
-	} 
-
+	}
 
 	@Override
 	public int compare(Load arg0, Load arg1) {
-		
-		return   arg1.load -arg0.load;
+
+		return arg1.load - arg0.load;
 	}
 }

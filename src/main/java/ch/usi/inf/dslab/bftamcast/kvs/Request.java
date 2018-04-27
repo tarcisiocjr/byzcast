@@ -10,7 +10,6 @@ import java.io.ObjectOutputStream;
 import java.io.Serializable;
 
 import ch.usi.inf.dslab.bftamcast.RequestIf;
-import ch.usi.inf.dslab.bftamcast.graph.Tree;
 
 /**
  * @author Paulo Coelho - paulo.coelho@usi.ch
@@ -18,12 +17,11 @@ import ch.usi.inf.dslab.bftamcast.graph.Tree;
  */
 public class Request implements RequestIf, Serializable {
 	/**
-	 * 
+	 * TODO remove unused fields
 	 */
 	private static final long serialVersionUID = -8560523066225958549L;
 	private RequestType type;
 	private int key;
-	private int lcaID;
 	private int client;
 	private int sender;
 	private byte[] value;
@@ -51,10 +49,8 @@ public class Request implements RequestIf, Serializable {
 	 * @param seqNumber
 	 * @param sender
 	 */
-	public Request(RequestType type, int key, byte[] value, int[] destination, int seqNumber, int client, int sender,
-			int lcaID, long destIdentifier) {
+	public Request(RequestType type, int key, byte[] value, int[] destination, int seqNumber, int client, int sender, long destIdentifier) {
 		this.client = client;
-		this.lcaID = lcaID;
 		this.sender = sender;
 		this.type = type;
 		this.key = key;
@@ -68,7 +64,7 @@ public class Request implements RequestIf, Serializable {
 		this.seqNumber = seqNumber;
 		this.destIdentifier = destIdentifier;
 	}
-	
+
 	public long getDestIdentifier() {
 		return destIdentifier;
 	}
@@ -132,9 +128,6 @@ public class Request implements RequestIf, Serializable {
 		return type;
 	}
 
-	public int getLcaID() {
-		return lcaID;
-	}
 
 	/**
 	 * set the result for a groupiD, at the same index of the groupID in
@@ -214,10 +207,11 @@ public class Request implements RequestIf, Serializable {
 	public int[] getDestination() {
 		return destination;
 	}
-	
+
 	public int[] getDestinationHandled() {
 		return destinationhandled;
 	}
+
 	public void setDestinationHandled(int[] dh) {
 		this.destinationhandled = dh;
 	}
@@ -268,7 +262,6 @@ public class Request implements RequestIf, Serializable {
 		try {
 			dos.writeUTF(this.type.name());
 			dos.writeInt(this.key);
-			dos.writeInt(this.lcaID);
 			dos.writeLong(this.destIdentifier);
 			dos.writeInt(this.value == null ? 0 : this.value.length);
 			if (value != null)
@@ -310,7 +303,6 @@ public class Request implements RequestIf, Serializable {
 		try {
 			this.type = RequestType.valueOf(dis.readUTF());
 			this.key = dis.readInt();
-			this.lcaID = dis.readInt();
 			this.destIdentifier = dis.readLong();
 			vSize = dis.readInt();
 			if (vSize > 0) {
@@ -364,68 +356,75 @@ public class Request implements RequestIf, Serializable {
 	}
 
 	/**
-	 * compare a input request to this object, return true if all content is the same
+	 * compare a input request to this object, return true if all content is the
+	 * same
+	 * 
 	 * @param r
 	 * @return
 	 */
-//	public boolean equals(Request r) {
-////		System.out.println("res = " + Arrays.equals(this.getResult(), r.getResult()));
-////		System.out.println("res = " + this.getResult().equals(r.getResult()));
-////		System.out.println();
-//		
-////		System.out.println(this.key == r.key && this.type == r.type && this.seqNumber == r.seqNumber && this.client == r.client &&
-////				this.lcaID == r.lcaID && Arrays.equals(this.getValue(), r.getValue()) && Arrays.equals(this.getDestination(), r.getDestination())
-////				&&  Arrays.equals(this.getResult(), r.getResult()));
-////		
-////		return (this.key == r.key && this.type == r.type && this.seqNumber == r.seqNumber && this.client == r.client &&
-////				this.lcaID == r.lcaID && Arrays.equals(this.getValue(), r.getValue()) && Arrays.equals(this.getDestination(), r.getDestination())
-////				&&  Arrays.equals(this.getResult(), r.getResult()));
-//		if (this.key != r.key) {
-//			System.out.println("key problem");
-//			return false;
-//		}
-//		if (this.type != r.type) {
-//			System.out.println("type problem");
-//			return false;
-//		}
-//		if (this.seqNumber != r.seqNumber) {
-//			System.out.println("seq problem");
-//			return false;
-//		}
-//		if (this.client != r.client) {
-//			System.out.println("sender problem");
-//			return false;
-//		}
-//		if(!Arrays.equals(this.getValue(), r.getValue())){
-//			return false;
-//		}
-//		if(!Arrays.equals(this.getDestination(), r.getDestination())){
-//			return false;
-//		}
-//
-//		if (result == null && r.result != null) {
-//			return false;
-//		}
-//		if (r.result == null && result != null) {
-//			return false;
-//		}
-//		if (result != null) {
-//
-//			for (int i = 0; i < result.length; i++) {
-//				if (result[i] == null && r.result[i] != null) {
-//					return false;
-//				}
-//				if (r.result[i] == null && result[i] != null) {
-//					return false;
-//				}
-//				if (result[i] != null && !Arrays.equals(result[i], r.result[i])) {
-//					return false;
-//				}
-//			}
-//
-//		}
-//
-//		return true;
-//	}
+	// public boolean equals(Request r) {
+	//// System.out.println("res = " + Arrays.equals(this.getResult(),
+	// r.getResult()));
+	//// System.out.println("res = " + this.getResult().equals(r.getResult()));
+	//// System.out.println();
+	//
+	//// System.out.println(this.key == r.key && this.type == r.type &&
+	// this.seqNumber == r.seqNumber && this.client == r.client &&
+	//// this.lcaID == r.lcaID && Arrays.equals(this.getValue(), r.getValue()) &&
+	// Arrays.equals(this.getDestination(), r.getDestination())
+	//// && Arrays.equals(this.getResult(), r.getResult()));
+	////
+	//// return (this.key == r.key && this.type == r.type && this.seqNumber ==
+	// r.seqNumber && this.client == r.client &&
+	//// this.lcaID == r.lcaID && Arrays.equals(this.getValue(), r.getValue()) &&
+	// Arrays.equals(this.getDestination(), r.getDestination())
+	//// && Arrays.equals(this.getResult(), r.getResult()));
+	// if (this.key != r.key) {
+	// System.out.println("key problem");
+	// return false;
+	// }
+	// if (this.type != r.type) {
+	// System.out.println("type problem");
+	// return false;
+	// }
+	// if (this.seqNumber != r.seqNumber) {
+	// System.out.println("seq problem");
+	// return false;
+	// }
+	// if (this.client != r.client) {
+	// System.out.println("sender problem");
+	// return false;
+	// }
+	// if(!Arrays.equals(this.getValue(), r.getValue())){
+	// return false;
+	// }
+	// if(!Arrays.equals(this.getDestination(), r.getDestination())){
+	// return false;
+	// }
+	//
+	// if (result == null && r.result != null) {
+	// return false;
+	// }
+	// if (r.result == null && result != null) {
+	// return false;
+	// }
+	// if (result != null) {
+	//
+	// for (int i = 0; i < result.length; i++) {
+	// if (result[i] == null && r.result[i] != null) {
+	// return false;
+	// }
+	// if (r.result[i] == null && result[i] != null) {
+	// return false;
+	// }
+	// if (result[i] != null && !Arrays.equals(result[i], r.result[i])) {
+	// return false;
+	// }
+	// }
+	//
+	// }
+	//
+	// return true;
+	// }
 
 }

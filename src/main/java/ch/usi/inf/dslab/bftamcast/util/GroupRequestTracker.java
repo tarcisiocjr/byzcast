@@ -16,7 +16,6 @@ public class GroupRequestTracker {
 	private ConcurrentSet<TOMMessage> replies;
 	private int majority;
 	private boolean majreached = false;
-	private int currentMajority = 0;
 	private Request majorityReply;
 
 	private long startTime, endTime;
@@ -40,22 +39,21 @@ public class GroupRequestTracker {
 		return false;
 	}
 
-//	public Request getMajReply() {
-//
-//		for (Request r : replies) {
-//			int count = 0;
-//			for (Request r2 : replies) {
-//				if (r.equals(r2)) {
-//					count++;
-//					if (count >= majority) {
-//						return r;
-//					}
-//				}
-//			}
-//		}
-//		return null;
-//	}
-	
+	// public Request getMajReply() {
+	//
+	// for (Request r : replies) {
+	// int count = 0;
+	// for (Request r2 : replies) {
+	// if (r.equals(r2)) {
+	// count++;
+	// if (count >= majority) {
+	// return r;
+	// }
+	// }
+	// }
+	// }
+	// return null;
+	// }
 
 	public boolean getMajReached() {
 		return majreached;
@@ -76,35 +74,36 @@ public class GroupRequestTracker {
 	public int getMajNeed() {
 		return majority;
 	}
-	
+
 	public static Request getMajreq(Set<TOMMessage> msgs, int majority) {
-		System.out.println("msg size " + msgs.size() ) ;
-		System.out.println("maj size " + majority) ;
+		// System.out.println("msg size " + msgs.size() ) ;
+		// System.out.println("maj size " + majority) ;
 		byte[][] hashes = new byte[msgs.size()][];
 		TOMMessage[] accessableMsgs = new TOMMessage[msgs.size()];
-		int i =0;
+		int i = 0;
 		for (TOMMessage msg : msgs) {
-			hashes[i] = TOMUtil.computeHash(msg.getContent());;
+			hashes[i] = TOMUtil.computeHash(msg.getContent());
+			;
 			accessableMsgs[i] = msg;
 			i++;
 		}
 		for (int j = 0; j < hashes.length; j++) {
 			int count = 1;
 			for (int k = 0; k < hashes.length; k++) {
-				if(k!=j) {
-					if(Arrays.equals(hashes[j], hashes[k])) {
+				if (k != j) {
+					if (Arrays.equals(hashes[j], hashes[k])) {
 						count++;
-						
+
 					}
 				}
-				if(count >= majority) {
+				if (count >= majority) {
 					return new Request(accessableMsgs[j].getContent());
 				}
-				
+
 			}
 		}
-	return null;
-	
+		return null;
+
 	}
 
 }

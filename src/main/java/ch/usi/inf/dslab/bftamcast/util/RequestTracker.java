@@ -12,8 +12,8 @@ import ch.usi.inf.dslab.bftamcast.graph.Vertex;
 import ch.usi.inf.dslab.bftamcast.kvs.Request;
 
 /**
- * @author Christian Vuerich - christian.vuerich@usi.ch
- * Tracker for replies for a given set of groups
+ * @author Christian Vuerich - christian.vuerich@usi.ch Tracker for replies for
+ *         a given set of groups
  */
 public class RequestTracker {
 	private ConcurrentMap<Integer, GroupRequestTracker> tracker;
@@ -31,8 +31,8 @@ public class RequestTracker {
 	}
 
 	public boolean addReply(TOMMessage req, int senderId) {
-//		System.out.println(req.getSender());
-//		System.out.println(tracker.get(req.getSender()));
+		// System.out.println(req.getSender());
+		// System.out.println(tracker.get(req.getSender()));
 		tracker.get(senderId).addReply(req);
 		return checkAll();
 	}
@@ -57,7 +57,11 @@ public class RequestTracker {
 			if (myreply == null) {
 				myreply = tmp;
 			} else {
-//				myreply.setResult(tmp.getGroupResult(groupID), groupID);
+				// myreply.setResult(tmp.getGroupResult(groupID), groupID);
+				System.out.println(myreply);
+				System.out.println(tmp);
+				System.out.println(tmp.getResult());
+				System.out.println();
 				myreply.mergeReplies(tmp.getResult());
 			}
 		}

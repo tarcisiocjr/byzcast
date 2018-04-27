@@ -19,13 +19,19 @@ import ch.usi.inf.dslab.bftamcast.treesearch.Edge;
  *
  */
 
-public class Vertex implements Serializable{
-//	private static final long serialVersionUID = -9019158149126879510L;
+public class Vertex implements Serializable {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+
+	// private static final long serialVersionUID = -9019158149126879510L;
 	private String confPath;
 
 	public int ID, replicas, proxyID;
 	public double capacity, resCapacity;
 	private transient AsynchServiceProxy proxy;
+	public boolean colored = false;
 
 	public List<Vertex> connections = new ArrayList<>();
 	// private Set<Set<Vertex>> possibleConnections = new HashSet<>();
@@ -34,7 +40,25 @@ public class Vertex implements Serializable{
 	public List<Integer> inReach = new ArrayList<>();
 	public int inLatency = 0;
 	public int level = -1, inDegree = 0;
-	public boolean colored = false;
+
+	public Vertex(Vertex v) {
+		confPath = v.confPath;
+		ID = v.ID;
+		replicas = v.replicas;
+		proxyID = v.proxyID;
+		capacity = v.capacity;
+		resCapacity = v.resCapacity;
+		proxy = v.proxy;
+
+		connections = new ArrayList<>(v.connections);
+		parent = v.parent;
+		outgoingEdges = new ArrayList<>(v.outgoingEdges);
+		inReach = new ArrayList<>(v.inReach);
+		inLatency = v.inLatency;
+		level = v.level;
+		inDegree = v.inDegree;
+
+	}
 
 	public Vertex(int ID, String conf, double capacity, int replicas, int proxyID) {
 		this.ID = ID;
@@ -45,6 +69,15 @@ public class Vertex implements Serializable{
 		this.proxyID = proxyID;
 
 		this.proxy = new AsynchServiceProxy(proxyID, confPath);
+
+	}
+
+	public Vertex(int ID, String conf, double capacity, int replicas) {
+		this.ID = ID;
+		this.capacity = capacity;
+		this.resCapacity = capacity;
+		this.replicas = replicas;
+		this.confPath = conf;
 
 	}
 
@@ -107,7 +140,7 @@ public class Vertex implements Serializable{
 			replies += v.replicas;
 		}
 
-		resCapacity -= load * (replicas + replies);
+		resCapacity -= load * (replicas * replies);
 		for (Vertex v : toUpdate) {
 			v.updateLoad(load, destinations, this.replicas, updated);
 		}
@@ -179,18 +212,18 @@ public class Vertex implements Serializable{
 		connections.clear();
 		inLatency = Integer.MAX_VALUE;
 		level = -1;
-		colored = false;
+		// colored = false;
 		inReach.clear();
 		resCapacity = capacity;
 
 	}
 
-	 /**
+	/**
 	 * @return the connections
 	 */
-	 public List<Vertex> getConnections() {
-	 return connections;
-	 }
+	public List<Vertex> getConnections() {
+		return connections;
+	}
 
 	// /**
 	// * @param connections the connections to set
@@ -311,9 +344,10 @@ public class Vertex implements Serializable{
 		this.connections.add(to);
 	}
 
-	
 	/**
-	 * Service proxy is not serialazable, so ignore with transient and while doing "readObject" create new proxy 
+	 * Service proxy is not serialazable, so ignore with transient and while doing
+	 * "readObject" create new proxy
+	 * 
 	 * @param oos
 	 * @throws IOException
 	 */
@@ -324,7 +358,9 @@ public class Vertex implements Serializable{
 	}
 
 	/**
-	 * Service proxy is not serialazable, so ignore with transient and while doing "readObject" create new proxy 
+	 * Service proxy is not serialazable, so ignore with transient and while doing
+	 * "readObject" create new proxy
+	 * 
 	 * @param ois
 	 * @throws ClassNotFoundException
 	 * @throws IOException
@@ -335,18 +371,19 @@ public class Vertex implements Serializable{
 		this.proxy = new AsynchServiceProxy(proxyID, confPath);
 
 	}
-	
+
 	/**
 	 * @return the proxy
 	 */
 	public AsynchServiceProxy getProxy() {
 		return proxy;
 	}
-	
-	
+
 	/**
 	 * check itself and all children (subtree) to find a vertex with a given id
-	 * @param id of the vertex you search
+	 * 
+	 * @param id
+	 *            of the vertex you search
 	 * @return the vertex if found or null
 	 */
 	public Vertex findVertexByID(int id) {
@@ -362,96 +399,28 @@ public class Vertex implements Serializable{
 		}
 		return ret;
 	}
-	
+
+	public void copysett(Vertex v) {
+		confPath = v.confPath;
+		ID = v.ID;
+		replicas = v.replicas;
+		proxyID = v.proxyID;
+		capacity = v.capacity;
+		resCapacity = v.resCapacity;
+		proxy = v.proxy;
+
+		connections = new ArrayList<>(v.connections);
+		parent = v.parent;
+		outgoingEdges = new ArrayList<>(v.outgoingEdges);
+		inReach = new ArrayList<>(v.inReach);
+		inLatency = v.inLatency;
+		level = v.level;
+		inDegree = v.inDegree;
+
+	}
+
 	public String getConfPath() {
-	return confPath;
-}
+		return confPath;
+	}
 
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-//	/**
-//	 * @return the proxy
-//	 */
-//	public AsynchServiceProxy getProxy() {
-//		return proxy;
-//	}
-//
-//
-//
-//	/**
-//	 * @return the groupId
-//	 */
-//	public int getGroupId() {
-//		return groupId;
-//	}
-//
-//	/**
-//	 * @return the children
-//	 */
-//	public List<Vertex> getChildren() {
-//		return children;
-//	}
-//
-//	/**
-//	 * @return the childernIDs
-//	 */
-//	public List<Integer> getChildernIDs() {
-//		return childernIDs;
-//	}
-//	
-//	/**
-//	 * @return the childernIDs
-//	 */
-//	public Vertex getChild(int id) {
-//		for (Vertex c : children) {
-//			if (c.getGroupId() == id) {
-//				return c;
-//			}
-//		}
-//		return null;
-//	}
-//
-//	/**
-//	 * @return the parent
-//	 */
-//	public Vertex getParent() {
-//		return parent;
-//	}
-//
-//
-//	/**
-//	 * @param parent the parent to set
-//	 */
-//	public void setParent(Vertex parent) {
-//		this.parent = parent;
-//	}
-//	
-//	public String getConfPath() {
-//		return confPath;
-//	}
-//	
-//	
-//	
-//
-//}

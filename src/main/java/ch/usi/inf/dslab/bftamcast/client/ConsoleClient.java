@@ -40,7 +40,6 @@ public class ConsoleClient implements ReplyListener {
 		Tree overlayTree = new Tree(treeConfigPath, UUID.randomUUID().hashCode());
 		Request req;
 
-
 		Console console = System.console();
 		scanner = new Scanner(System.in);
 		while (true) {
@@ -62,7 +61,6 @@ public class ConsoleClient implements ReplyListener {
 			int key;
 			RequestType type;
 			long destIdentifier = 0;
-			
 
 			switch (cmd) {
 
@@ -82,10 +80,11 @@ public class ConsoleClient implements ReplyListener {
 				destIdentifier = overlayTree.getIdentifier(destinations);
 				target = overlayTree.getLca(destIdentifier);
 
-				req = new Request(type, key, value, destinations, seqNumber, clientId, clientId, target.getID(), destIdentifier);
+				req = new Request(type, key, value, destinations, seqNumber, clientId, clientId, destIdentifier);
 
 				System.out.println("id ==    " + target.getID());
-				c.repliesTracker.put(seqNumber, new GroupRequestTracker(target.getProxy().getViewManager().getCurrentViewF() + 1));
+				c.repliesTracker.put(seqNumber,
+						new GroupRequestTracker(target.getProxy().getViewManager().getCurrentViewF() + 1));
 				target.getProxy().invokeAsynchRequest(req.toBytes(), c, TOMMessageType.ORDERED_REQUEST);
 				System.out.println("sent");
 				break;
@@ -105,10 +104,11 @@ public class ConsoleClient implements ReplyListener {
 				destIdentifier = overlayTree.getIdentifier(destinations);
 				target = overlayTree.getLca(destIdentifier);
 
-				req = new Request(type, key, value, destinations, seqNumber, clientId, clientId, target.getID(), destIdentifier);
+				req = new Request(type, key, value, destinations, seqNumber, clientId, clientId, destIdentifier);
 
 				System.out.println("id ==    " + target.getID());
-				c.repliesTracker.put(seqNumber, new GroupRequestTracker(target.getProxy().getViewManager().getCurrentViewF() + 1));
+				c.repliesTracker.put(seqNumber,
+						new GroupRequestTracker(target.getProxy().getViewManager().getCurrentViewF() + 1));
 				target.getProxy().invokeAsynchRequest(req.toBytes(), c, TOMMessageType.ORDERED_REQUEST);
 				break;
 			case 3:
@@ -127,17 +127,18 @@ public class ConsoleClient implements ReplyListener {
 				destIdentifier = overlayTree.getIdentifier(destinations);
 				target = overlayTree.getLca(destIdentifier);
 
-				req = new Request(type, key, value, destinations, seqNumber, clientId, clientId, target.getID(), destIdentifier);
+				req = new Request(type, key, value, destinations, seqNumber, clientId, clientId, destIdentifier);
 
 				System.out.println("id ==    " + target.getID());
-				c.repliesTracker.put(seqNumber, new GroupRequestTracker(target.getProxy().getViewManager().getCurrentViewF() + 1));
+				c.repliesTracker.put(seqNumber,
+						new GroupRequestTracker(target.getProxy().getViewManager().getCurrentViewF() + 1));
 				target.getProxy().invokeAsynchRequest(req.toBytes(), c, TOMMessageType.ORDERED_REQUEST);
 				break;
 			case 4:
 				System.out.println("Getting the map size");
 				type = RequestType.SIZE;
 				key = 0;
-				
+
 				value = null;
 
 				destinations = new int[overlayTree.getDestinations().size()];
@@ -147,10 +148,11 @@ public class ConsoleClient implements ReplyListener {
 				destIdentifier = overlayTree.getIdentifier(destinations);
 				target = overlayTree.getLca(destIdentifier);
 
-				req = new Request(type, key, value, destinations, seqNumber, clientId, clientId, target.getID(), destIdentifier);
+				req = new Request(type, key, value, destinations, seqNumber, clientId, clientId, destIdentifier);
 
 				System.out.println("id ==    " + target.getID());
-				c.repliesTracker.put(seqNumber, new GroupRequestTracker(target.getProxy().getViewManager().getCurrentViewF() + 1));
+				c.repliesTracker.put(seqNumber,
+						new GroupRequestTracker(target.getProxy().getViewManager().getCurrentViewF() + 1));
 				target.getProxy().invokeAsynchRequest(req.toBytes(), c, TOMMessageType.ORDERED_REQUEST);
 				break;
 			default:
@@ -160,7 +162,7 @@ public class ConsoleClient implements ReplyListener {
 	}
 
 	/**
-	 * Async reply reciever 
+	 * Async reply reciever
 	 */
 	@Override
 	public void replyReceived(RequestContext context, TOMMessage reply) {

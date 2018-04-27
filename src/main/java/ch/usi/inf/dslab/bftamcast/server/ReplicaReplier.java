@@ -34,9 +34,11 @@ import io.netty.util.internal.ConcurrentSet;
  * @author Christian Vuerich - christian.vuerich@usi.ch
  *
  */
-//TODO since BatchExecutable calls the same method as FIFOExecutable in performance try to remove BatchExecutable to check perf.
-//public class ReplicaReplier implements Replier, FIFOExecutable, BatchExecutable, Serializable, ReplyListener {
-	public class ReplicaReplier implements Replier, FIFOExecutable, Serializable, ReplyListener {
+// TODO since BatchExecutable calls the same method as FIFOExecutable in
+// performance try to remove BatchExecutable to check perf.
+// public class ReplicaReplier implements Replier, FIFOExecutable,
+// BatchExecutable, Serializable, ReplyListener {
+public class ReplicaReplier implements Replier, FIFOExecutable, Serializable, ReplyListener {
 
 	private static final long serialVersionUID = 1L;
 	// keep the proxy of all groups and compute lca etc/
@@ -82,7 +84,7 @@ import io.netty.util.internal.ConcurrentSet;
 
 	@Override
 	public void manageReply(TOMMessage request, MessageContext msgCtx) {
-		//TODO limit outstanding ?
+		// TODO limit outstanding ?
 		req = new Request(request.getContent());
 
 		while (rc == null) {
@@ -121,8 +123,9 @@ import io.netty.util.internal.ConcurrentSet;
 		else {
 			// majority of parent group replicas f+1
 			int majReplicasOfSender = 0;
+
 			// this group is not the lcs, so not contacted directly from client
-			if (groupId != req.getLcaID()) {
+			if (groupId != overlayTree.getLca(overlayTree.getIdentifier(req.getDestination())).getID()) {
 				majReplicasOfSender = me.getParent().getProxy().getViewManager().getCurrentViewF() + 1;
 			}
 
@@ -130,32 +133,30 @@ import io.netty.util.internal.ConcurrentSet;
 			ConcurrentSet<TOMMessage> msgs = saveRequest(request, req.getSeqNumber(), req.getClient());
 			// check if majority of parent contacted me, and request is the same
 			// -1 because the request used to compare other is already in msgs
-			
 
 			// majority of replicas sent request and this replica is not already
 			// processing
 			// the request (not processing it more than once)
-			//count 
+			// count
 			if (msgs.size() >= majReplicasOfSender && (repliesTracker.get(req.getClient()) == null
 					|| !repliesTracker.get(req.getClient()).containsKey(req.getSeqNumber()))) {
 
 				req = GroupRequestTracker.getMajreq(msgs, majReplicasOfSender);
 				req.setSender(groupId);
-//				System.out.println("asdflkhjadsfdka    " + req);
+				// System.out.println("asdflkhjadsfdka " + req);
 				boolean addreq = false;
 				Map<Vertex, Integer> toSend = new HashMap<>();
 				// List<Vertex>
 				Set<Vertex> involved = overlayTree.getRoute(req.getDestIdentifier(), me);
-				if(involved.contains(me)) {
+				if (involved.contains(me)) {
 					execute(req);
 					addreq = true;
 				}
-				for(Vertex dest : involved) {
-					if(dest != me) {
+				for (Vertex dest : involved) {
+					if (dest != me) {
 						toSend.put(dest, dest.getProxy().getViewManager().getCurrentViewF() + 1);
 					}
 				}
-			
 
 				// no other destination is in my reach, send reply back
 				if (toSend.keySet().isEmpty() && addreq) {
@@ -258,7 +259,7 @@ import io.netty.util.internal.ConcurrentSet;
 	 */
 	@Override
 	public void replyReceived(RequestContext context, TOMMessage reply) {
-		System.out.println("recieved");
+		// System.out.println("recieved");
 		// unpack request from reply
 		Request replyReq = new Request(reply.getContent());
 		// get the tracker for that request
@@ -276,7 +277,7 @@ import io.netty.util.internal.ConcurrentSet;
 			processedReplies.get(sendReply.getClient()).put(sendReply.getSeqNumber(), sendReply);
 			// reply to all
 			if (msgs != null) {
-				System.out.println("replying");
+				// System.out.println("replying");
 				for (TOMMessage msg : msgs) {
 					msg.reply.setContent(sendReply.toBytes());
 					rc.getServerCommunicationSystem().send(new int[] { msg.getSender() }, msg.reply);
@@ -325,41 +326,11 @@ import io.netty.util.internal.ConcurrentSet;
 		throw new UnsupportedOperationException("All ordered messages should be FIFO");
 	}
 
-//	@Override
-//	public byte[][] executeBatch(byte[][] command, MessageContext[] msgCtx) {
-//		// System.out.println("BATCH");
-//
-//		return command;
-//	}
-	
-	//TODO faster way to check msgs content, perhaps check how library does it in synch system TOMUtil.computeHash(tomMessage.getContent());
-//	public Request getMajreq(ConcurrentSet<TOMMessage> msgs, int majority) {
-//		System.out.println("msg size " + msgs.size() ) ;
-//		System.out.println("maj size " + majority) ;
-//		byte[][] hashes = new byte[msgs.size()][];
-//		TOMMessage[] accessableMsgs = new TOMMessage[msgs.size()];
-//		int i =0;
-//		for (TOMMessage msg : msgs) {
-//			hashes[i] = TOMUtil.computeHash(msg.getContent());;
-//			accessableMsgs[i] = msg;
-//			i++;
-//		}
-//		for (int j = 0; j < hashes.length; j++) {
-//			int count = 1;
-//			for (int k = 0; k < hashes.length; k++) {
-//				if(k!=j) {
-//					if(Arrays.equals(hashes[j], hashes[k])) {
-//						count++;
-//						
-//					}
-//				}
-//				if(count >= majority) {
-//					return new Request(accessableMsgs[j].getContent());
-//				}
-//				
-//			}
-//		}
-//	return null;
-//	
-//	}
+	// @Override
+	// public byte[][] executeBatch(byte[][] command, MessageContext[] msgCtx) {
+	// // System.out.println("BATCH");
+	//
+	// return command;
+	// }
+
 }

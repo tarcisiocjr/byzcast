@@ -60,7 +60,7 @@ public class Server extends DefaultRecoverable {
 			System.exit(-1);
 		}
 
-//		System.out.println(replier.getMyVertex().getConfPath());
+		// System.out.println(replier.getMyVertex().getConfPath());
 		new ServiceReplica(this.id, replier.getMyVertex().getConfPath(), replier, this, null, replier);
 	}
 
@@ -109,8 +109,6 @@ public class Server extends DefaultRecoverable {
 		}
 	}
 
-	
-	
 	@Override
 	public byte[][] appExecuteBatch(byte[][] commands, MessageContext[] msgCtxs) {
 		throw new UnsupportedOperationException("Implemented by UniversalReplier");

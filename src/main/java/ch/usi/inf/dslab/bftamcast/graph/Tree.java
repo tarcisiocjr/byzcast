@@ -29,11 +29,9 @@ public class Tree implements Serializable {
 	private Vertex root;
 	private List<Integer> destinations;
 	private final int replicas = 4;
-	
-	private Map<Long,Map<Vertex, Set<Vertex>>> routingmap = new  HashMap<>();
+
+	private Map<Long, Map<Vertex, Set<Vertex>>> routingmap = new HashMap<>();
 	private Map<Long, Vertex> lcaMap = new HashMap<>();
-	
-	
 
 	/**
 	 * Main for testing
@@ -79,18 +77,19 @@ public class Tree implements Serializable {
 					StringTokenizer str = new StringTokenizer(line, " ");
 					// vertex declaration (group)
 					if (str.countTokens() == 2) {
-						vertices.add(new Vertex(Integer.valueOf(str.nextToken()), configFile.replace("tree.conf", "") + str.nextToken(),0,replicas, proxyID));
+						vertices.add(new Vertex(Integer.valueOf(str.nextToken()),
+								configFile.replace("tree.conf", "") + str.nextToken(), 0, replicas, proxyID));
 						destinations.add(vertices.get(vertices.size() - 1).getID());
-//						System.out.println("adding vertex: " + vertices.get(vertices.size()-1));
+						// System.out.println("adding vertex: " + vertices.get(vertices.size()-1));
 					}
 					// connection declaration
 					if (str.countTokens() == 3) {
-						
+
 						int from = Integer.valueOf(str.nextToken());
 						str.nextToken();// throw away "->"
 						int to = Integer.valueOf(str.nextToken());
-						
-//						System.out.println("adding edge: " + from +" -> " + to);
+
+						// System.out.println("adding edge: " + from +" -> " + to);
 
 						// add connections in vertices
 						for (Vertex v1 : vertices) {
@@ -118,30 +117,31 @@ public class Tree implements Serializable {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		//TODO build map for quick lookup to who forward msgs Map<Destinations, Map<Id, Targets>>
+		// TODO build map for quick lookup to who forward msgs Map<Destinations, Map<Id,
+		// Targets>>
 		Set<Set<Vertex>> allPossibleDestinations = getAllPossibleDestinations(vertices);
-		
-		for(Set<Vertex> destination : allPossibleDestinations) {
+
+		for (Set<Vertex> destination : allPossibleDestinations) {
 			int[] destsids = new int[destination.size()];
-			
+
 			int index = 0;
 			for (Vertex dest : destination) {
 				destsids[index] = dest.ID;
 				index++;
 			}
-			
+
 			long identifier = getIdentifier(destsids);
 			Vertex lcav = lca(destination);
 			lcaMap.put(identifier, lcav);
-			
+
 			routingmap.put(identifier, new HashMap<>());
-			for(Vertex vertex : vertices) {
+			for (Vertex vertex : vertices) {
 				Set<Vertex> toSendto = new HashSet<>();
 				for (Vertex dest : destination) {
 					// I am a target, compute but wait for majority of other destination to
 					// execute
 					// the same to asnwer
-					if (vertex== dest) {
+					if (vertex == dest) {
 						toSendto.add(vertex);
 					}
 					// my child in tree is a destination, forward it
@@ -163,9 +163,6 @@ public class Tree implements Serializable {
 			}
 		}
 
-		
-		
-		
 	}
 
 	/**
@@ -176,7 +173,7 @@ public class Tree implements Serializable {
 	 * @return the lowest common ancestor in the tree of all the vertices in the
 	 *         input vertices list.
 	 */
-	private  Vertex lca(Set<Vertex> vertices) {
+	private Vertex lca(Set<Vertex> vertices) {
 
 		// tree only has one path between any two nodes, so only one child of root could
 		// be ancestor
@@ -217,51 +214,49 @@ public class Tree implements Serializable {
 	 * @return vertex with specified id or null
 	 */
 	public Vertex findVertexById(int id) {
-//		System.out.println(root);
+		// System.out.println(root);
 		return root.findVertexByID(id);
 	}
-	
+
 	// // generate all possible desitations
-		public static Set<Set<Vertex>> getAllPossibleDestinations(List<Vertex> vertices) {
-			Set<Set<Vertex>> destinations = new HashSet<>();
-			getAllPossibleDestinations2(vertices, 0, destinations, new HashSet<>());
-			return destinations;
-		}
+	public static Set<Set<Vertex>> getAllPossibleDestinations(List<Vertex> vertices) {
+		Set<Set<Vertex>> destinations = new HashSet<>();
+		getAllPossibleDestinations2(vertices, 0, destinations, new HashSet<>());
+		return destinations;
+	}
 
-		private static void getAllPossibleDestinations2(List<Vertex> vertices, int indexInList,
-				Set<Set<Vertex>> destinations, Set<Vertex> previousSet) {
-			if (indexInList >= vertices.size()) {
-				return;
-			}
-			previousSet.add(vertices.get(indexInList));
-			destinations.add(new HashSet<>(previousSet));
-			// consider vertex
-			getAllPossibleDestinations2(vertices, indexInList + 1, destinations, previousSet);
-			// skip vertex
-			previousSet.remove(vertices.get(indexInList));
-			getAllPossibleDestinations2(vertices, indexInList + 1, destinations, previousSet);
+	private static void getAllPossibleDestinations2(List<Vertex> vertices, int indexInList,
+			Set<Set<Vertex>> destinations, Set<Vertex> previousSet) {
+		if (indexInList >= vertices.size()) {
+			return;
 		}
+		previousSet.add(vertices.get(indexInList));
+		destinations.add(new HashSet<>(previousSet));
+		// consider vertex
+		getAllPossibleDestinations2(vertices, indexInList + 1, destinations, previousSet);
+		// skip vertex
+		previousSet.remove(vertices.get(indexInList));
+		getAllPossibleDestinations2(vertices, indexInList + 1, destinations, previousSet);
+	}
 
-		public Set<Vertex> getRoute(long identifier, Vertex me) {
-			
-			return routingmap.get(identifier).get(me);
+	public Set<Vertex> getRoute(long identifier, Vertex me) {
 
-		}
-	
-		
-		public  long getIdentifier(int[] destinations) {
-			Arrays.sort(destinations);
-			long identifier = 0;
-			for (int i = 0; i < destinations.length; i++) {
-				//TODO this ensure no collisions
-				identifier += (10000*i) + destinations[i];
-			}
-			return identifier;
-		}
+		return routingmap.get(identifier).get(me);
 
-		public Vertex getLca(long destIdentifier) {
-			return lcaMap.get(destIdentifier);
+	}
+
+	public long getIdentifier(int[] destinations) {
+		Arrays.sort(destinations);
+		long identifier = 0;
+		for (int i = 0; i < destinations.length; i++) {
+			// TODO modify this ensure no collisions
+			identifier += (100000 * i) + destinations[i];
 		}
-	
+		return identifier;
+	}
+
+	public Vertex getLca(long destIdentifier) {
+		return lcaMap.get(destIdentifier);
+	}
 
 }
