@@ -81,6 +81,7 @@ public class ClientThread implements Runnable, ReplyListener {
 		long destIdentifier = 0;
 
 		while (elapsed / 1e9 < runTime) {
+			
 
 			// System.err.println("tracketsize " + repliesTracker.size() );
 			// System.out.println("out: " + repliesTracker.size() + " max: " +
@@ -109,6 +110,7 @@ public class ClientThread implements Runnable, ReplyListener {
 
 				if (out.get() < maxoustanding) {
 					out.incrementAndGet();
+					System.out.println("increment");
 
 					AsynchServiceProxy prox = lca.getProxy();
 					prox.invokeAsynchRequest(req.toBytes(), this, TOMMessageType.ORDERED_REQUEST);
@@ -173,7 +175,7 @@ public class ClientThread implements Runnable, ReplyListener {
 		GroupRequestTracker tracker = repliesTracker.get(replyReq.getSeqNumber());
 
 		if (tracker != null && tracker.addReply(reply)) {
-
+			System.out.println("decrement");
 			out.decrementAndGet();
 			try {
 				if (replyReq.getDestination().length > 1)
