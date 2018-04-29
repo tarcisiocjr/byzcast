@@ -2,13 +2,16 @@
 package ch.usi.inf.dslab.bftamcast.server;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -45,9 +48,12 @@ public class ReplicaReplier implements Replier, FIFOExecutable, Serializable, Re
 	private Tree overlayTree;
 	private int groupId, maxOutstanding;
 	protected transient Lock replyLock;
+	private transient AtomicInteger out = new AtomicInteger(0);
 	protected transient Condition contextSet;
 	protected transient ReplicaContext rc;
 	protected Request req;
+
+	private List<TOMMessage> pending = new ArrayList<>();
 
 	// key store map
 	private Map<Integer, byte[]> table;
@@ -84,7 +90,7 @@ public class ReplicaReplier implements Replier, FIFOExecutable, Serializable, Re
 
 	@Override
 	public void manageReply(TOMMessage request, MessageContext msgCtx) {
-		// TODO limit outstanding ?
+
 		req = new Request(request.getContent());
 
 		while (rc == null) {
@@ -185,8 +191,16 @@ public class ReplicaReplier implements Replier, FIFOExecutable, Serializable, Re
 					}
 				}
 
-				for (Vertex v : toSend.keySet()) {
-					v.getProxy().invokeAsynchRequest(request.getContent(), this, TOMMessageType.ORDERED_REQUEST);
+				if (out.get() < maxOutstanding) {
+					// TODO you are sendong more than one message (all toSend replicas)
+					for (Vertex v : toSend.keySet()) {
+						// TODO limit outstanding ?
+						out.incrementAndGet();
+						// save targets and message without sending;
+						v.getProxy().invokeAsynchRequest(request.getContent(), this, TOMMessageType.ORDERED_REQUEST);
+					}
+				}else {
+					//TODO save in pending
 				}
 			}
 		}
@@ -254,6 +268,10 @@ public class ReplicaReplier implements Replier, FIFOExecutable, Serializable, Re
 		this.replyLock.unlock();
 	}
 
+	public void handlePending() {
+		// TODO add implementation
+	}
+
 	/**
 	 * Async reply reciever
 	 */
@@ -266,6 +284,11 @@ public class ReplicaReplier implements Replier, FIFOExecutable, Serializable, Re
 		RequestTracker tracker = repliesTracker.get(replyReq.getClient()).get(replyReq.getSeqNumber());
 		// add the reply to tracker and if all involved groups reached their f+1 quota
 		if (tracker != null && tracker.addReply(reply, replyReq.getSender())) {
+			out.decrementAndGet();
+
+			// TODO call other pending messages asynchronously
+			handlePending();
+
 			// get reply with all groups replies
 			Request sendReply = tracker.getMergedReply();
 			sendReply.setSender(groupId);

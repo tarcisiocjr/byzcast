@@ -58,10 +58,10 @@ public class RequestTracker {
 				myreply = tmp;
 			} else {
 				// myreply.setResult(tmp.getGroupResult(groupID), groupID);
-				System.out.println(myreply);
-				System.out.println(tmp);
-				System.out.println(tmp.getResult());
-				System.out.println();
+//				System.out.println(myreply);
+//				System.out.println(tmp);
+//				System.out.println(tmp.getResult());
+//				System.out.println();
 				myreply.mergeReplies(tmp.getResult());
 			}
 		}
