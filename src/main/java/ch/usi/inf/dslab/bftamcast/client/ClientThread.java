@@ -28,6 +28,7 @@ public class ClientThread implements Runnable, ReplyListener {
 	final int clientId;
 	final int groupId;
 	final boolean verbose;
+	private boolean printed = false;
 	final int runTime;
 	final int size;
 	final int globalPerc;
@@ -41,6 +42,8 @@ public class ClientThread implements Runnable, ReplyListener {
 	private long now;
 	private int maxoustanding;
 	private AtomicInteger out = new AtomicInteger(0);
+	private int[] dests, destinations, local;
+	Random r = new Random();
 
 	public ClientThread(int clientId, int groupId, boolean verbose, int runTime, int valueSize, int globalPerc,
 			boolean ng, String treeConfigPath, int maxOutstanding) {
@@ -63,11 +66,11 @@ public class ClientThread implements Runnable, ReplyListener {
 	@Override
 	public void run() {
 		// setup
-		Random r = new Random();
+
 		startTime = System.nanoTime();
 
 		Request req;
-		int[] dests = new int[overlayTree.getDestinations().size()];
+		dests = new int[overlayTree.getDestinations().size()];
 		for (int j = 0; j < dests.length; j++) {
 			dests[j] = overlayTree.getDestinations().get(j);
 		}
@@ -76,73 +79,31 @@ public class ClientThread implements Runnable, ReplyListener {
 		System.out.println("global perc = " + globalPerc);
 
 		byte[] value = randomString(size).getBytes();
-		int[] destinations;
-		int[] local = new int[] { dests[r.nextInt(dests.length)] };
+		local = new int[] { dests[r.nextInt(dests.length)] };
 		long destIdentifier = 0;
 
-		while (elapsed / 1e9 < runTime) {
-			
+		for (int i = 0; i < maxoustanding; i++) {
+			int key = r.nextInt(Integer.MAX_VALUE);
+			destinations = (r.nextInt(100) >= globalPerc ? local : dests);
+			seqNumber++;
+			RequestType type = destinations.length > 1 ? RequestType.SIZE : RequestType.PUT;
 
-			// System.err.println("tracketsize " + repliesTracker.size() );
-			// System.out.println("out: " + repliesTracker.size() + " max: " +
-			// maxoustanding);
-			// System.out.println("send");
-			try {
+			destIdentifier = overlayTree.getIdentifier(destinations);
+			Vertex lca = overlayTree.getLca(destIdentifier);
 
-				seqNumber++;
-				int key = r.nextInt(Integer.MAX_VALUE);
-				destinations = (r.nextInt(100) >= globalPerc ? local : dests);
+			req = new Request(type, key, value, destinations, seqNumber, clientId, clientId, destIdentifier);
+			//
 
-				// Collections.shuffle(list);
-				// if (r.nextDouble() <= perc) {
-				// destinations = dests;
-				// } else {
-				// destinations = new int[] { dests[r.nextInt(dests.length)] };
-				// }
+			// System.out.println("increment");
 
-				RequestType type = destinations.length > 1 ? RequestType.SIZE : RequestType.PUT;
-
-				destIdentifier = overlayTree.getIdentifier(destinations);
-				Vertex lca = overlayTree.getLca(destIdentifier);
-
-				req = new Request(type, key, value, destinations, seqNumber, clientId, clientId, destIdentifier);
-				//
-
-				if (out.get() < maxoustanding) {
-					out.incrementAndGet();
-//					System.out.println("increment");
-
-					AsynchServiceProxy prox = lca.getProxy();
-					prox.invokeAsynchRequest(req.toBytes(), this, TOMMessageType.ORDERED_REQUEST);
-					// TODO needed to cancel requests, but will check later for performance
-					// prox.cleanAsynchRequest(requestId); when received reply
-					repliesTracker.put(seqNumber, new GroupRequestTracker(prox.getViewManager().getCurrentViewF() + 1));
-				}
-
-				now = System.nanoTime();
-				elapsed = (now - startTime);
-			} catch (Exception e) {
-				e.printStackTrace();
-			} finally {
-			}
+			AsynchServiceProxy prox = lca.getProxy();
+			prox.invokeAsynchRequest(req.toBytes(), this, TOMMessageType.ORDERED_REQUEST);
+			// TODO needed to cancel requests, but will check later for performance
+			// prox.cleanAsynchRequest(requestId); when received reply
+			repliesTracker.put(seqNumber, new GroupRequestTracker(prox.getViewManager().getCurrentViewF() + 1));
 
 		}
-		try {
-			Thread.sleep(1000 * 4);
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-			System.out.println("done");
-			if (localStats.getCount() > 0) {
-				localStats.persist("localStats-client-g" + groupId + "-" + clientId + ".txt", 15);
-				System.out.println("LOCAL STATS:" + localStats);
-			}
 
-			if (globalStats.getCount() > 0) {
-				globalStats.persist("globalStats-client-g" + groupId + "-" + clientId + ".txt", 15);
-				System.out.println("\nGLOBAL STATS:" + globalStats);
-			}
 	}
 
 	/**
@@ -164,8 +125,24 @@ public class ClientThread implements Runnable, ReplyListener {
 	 */
 	@Override
 	public void replyReceived(RequestContext context, TOMMessage reply) {
+		now = System.nanoTime();
+		elapsed = (now - startTime);
 		if (reply == null) {
 			System.err.println("answer is null");
+			return;
+		}
+		if(elapsed / 1e9 >= runTime) {
+			System.out.println("done");
+			if (localStats.getCount() > 0 && !printed) {
+				localStats.persist("localStats-client-g" + groupId + "-" + clientId + ".txt", 15);
+				System.out.println("LOCAL STATS:" + localStats);
+			}
+
+			if (globalStats.getCount() > 0 && !printed) {
+				globalStats.persist("globalStats-client-g" + groupId + "-" + clientId + ".txt", 15);
+				System.out.println("\nGLOBAL STATS:" + globalStats);
+			}
+			printed = true;
 			return;
 		}
 
@@ -175,8 +152,6 @@ public class ClientThread implements Runnable, ReplyListener {
 		GroupRequestTracker tracker = repliesTracker.get(replyReq.getSeqNumber());
 
 		if (tracker != null && tracker.addReply(reply)) {
-//			System.out.println("decrement");
-			out.decrementAndGet();
 			try {
 				if (replyReq.getDestination().length > 1)
 					globalStats.store(tracker.getElapsedTime() / 1000000);
@@ -197,7 +172,31 @@ public class ClientThread implements Runnable, ReplyListener {
 			// remove finished request tracker
 			repliesTracker.remove(replyReq.getSeqNumber());
 
+			if (elapsed / 1e9 < runTime) {
+				int key = r.nextInt(Integer.MAX_VALUE);
+				byte[] value = randomString(size).getBytes();
+				destinations = (r.nextInt(100) >= globalPerc ? local : dests);
+				seqNumber++;
+				RequestType type = destinations.length > 1 ? RequestType.SIZE : RequestType.PUT;
+
+				long destIdentifier = overlayTree.getIdentifier(destinations);
+				Vertex lca = overlayTree.getLca(destIdentifier);
+
+				Request req = new Request(type, key, value, destinations, seqNumber, clientId, clientId,
+						destIdentifier);
+				//
+
+				// System.out.println("increment");
+
+				AsynchServiceProxy prox = lca.getProxy();
+				prox.invokeAsynchRequest(req.toBytes(), this, TOMMessageType.ORDERED_REQUEST);
+				// TODO needed to cancel requests, but will check later for performance
+				// prox.cleanAsynchRequest(requestId); when received reply
+				repliesTracker.put(seqNumber, new GroupRequestTracker(prox.getViewManager().getCurrentViewF() + 1));
+			}
+
 		}
+		
 
 	}
 

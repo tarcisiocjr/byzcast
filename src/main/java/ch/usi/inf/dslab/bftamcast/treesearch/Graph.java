@@ -146,10 +146,10 @@ public class Graph {
 		// }
 		for (Vertex vertex1 : vertices) {
 			for (Vertex vertex2 : vertices) {
-				// vertex1.setCapacity(Integer.MAX_VALUE);
-				// vertex1.setResCapacity(Integer.MAX_VALUE);
-				// vertex2.setCapacity(Integer.MAX_VALUE);
-				// vertex2.setResCapacity(Integer.MAX_VALUE);
+				vertex1.setCapacity(Integer.MAX_VALUE);
+				vertex1.setResCapacity(Integer.MAX_VALUE);
+				vertex2.setCapacity(Integer.MAX_VALUE);
+				vertex2.setResCapacity(Integer.MAX_VALUE);
 				if (vertex1 != vertex2) {
 					Edge edge = new Edge(vertex1, vertex2, 100);
 					vertex1.addEdge(edge);

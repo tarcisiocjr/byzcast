@@ -19,15 +19,34 @@ public class RequestTracker {
 	private ConcurrentMap<Integer, GroupRequestTracker> tracker;
 	private TOMMessage recivedRequest;
 	private Request myreply;
-
-	public RequestTracker(Map<Vertex, Integer> groups, Request myreply) {
+	private Map<Vertex, Integer> groups;
+	private  byte[] requestsent;
+	private long start;
+	
+	public RequestTracker(Map<Vertex, Integer> groups, Request myreply, byte[] requestsent) {
 		this.myreply = myreply;
 		tracker = new ConcurrentHashMap<>();
+		this.groups = groups;
+		this.requestsent = requestsent;
 		for (Vertex groupId : groups.keySet()) {
 
 			tracker.put(groupId.getID(), new GroupRequestTracker(groups.get(groupId)));
 
 		}
+	}
+	
+	public void start() {
+		this.start = System.nanoTime();
+	}
+	
+	public long getElapsed() {
+		return System.nanoTime() - start;
+	}
+	public  Map<Vertex, Integer> getGroups(){
+		return groups;
+	}
+	public byte[] getRequest() {
+		return   requestsent;
 	}
 
 	public boolean addReply(TOMMessage req, int senderId) {
