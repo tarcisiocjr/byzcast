@@ -3,6 +3,7 @@
  */
 package ch.usi.inf.dslab.bftamcast.util;
 
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -82,6 +83,22 @@ public class RequestTracker {
 //				System.out.println(tmp.getResult());
 //				System.out.println();
 				myreply.mergeReplies(tmp.getResult());
+			}
+		}
+		return myreply;
+	}
+	
+	public Request getMergedReplyFromList(List<Request> replies) {
+		for (Request reply : replies) {
+			if (myreply == null) {
+				myreply = reply;
+			} else {
+				// myreply.setResult(tmp.getGroupResult(groupID), groupID);
+//				System.out.println(myreply);
+//				System.out.println(tmp);
+//				System.out.println(tmp.getResult());
+//				System.out.println();
+				myreply.mergeReplies(reply.getResult());
 			}
 		}
 		return myreply;

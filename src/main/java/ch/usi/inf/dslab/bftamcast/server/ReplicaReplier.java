@@ -2,7 +2,9 @@
 package ch.usi.inf.dslab.bftamcast.server;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
@@ -285,7 +287,7 @@ public class ReplicaReplier implements Replier, FIFOExecutable, Serializable, Re
 		this.replyLock.unlock();
 	}
 
-	public synchronized void handleMsg(TOMMessage message, boolean reply) {
+	public void handleMsg(TOMMessage message, boolean reply) {
 		if (reply) {
 			if (message == null) {
 
@@ -457,24 +459,53 @@ public class ReplicaReplier implements Replier, FIFOExecutable, Serializable, Re
 						}
 						//if pending empty send
 
-						if (repliesTracker.size() < maxOutstanding) {
+						//TODO remove async and try sync instead, latency too high and low throughput
+//						if (repliesTracker.size() < maxOutstanding) {
 							tracker.start();
-							repliesTracker.computeIfAbsent(req.getClient(), k -> new ConcurrentHashMap<>());
-
-							System.out.println("other destination, queue empty, send");
-
-							repliesTracker.get(req.getClient()).put(req.getSeqNumber(),
-									tracker);
+//							repliesTracker.computeIfAbsent(req.getClient(), k -> new ConcurrentHashMap<>());
+//
+//							System.out.println("other destination, queue empty, send");
+//
+//							repliesTracker.get(req.getClient()).put(req.getSeqNumber(),
+//									tracker);
 							// TODO if pending empty send
+							List<Request> answers = new ArrayList<>();
 							for (Vertex v : toSend.keySet()) {
-								v.getProxy().invokeAsynchRequest(message.getContent(), this,
-										TOMMessageType.ORDERED_REQUEST);
+								byte[] response = v.getProxy().invokeOrdered(message.getContent());
+								if(response !=null) {
+									answers.add(new Request(response));
+								}
+//								v.getProxy().invokeAsynchRequest(message.getContent(), this,
+//										TOMMessageType.ORDERED_REQUEST);
 							}
-						}
-						else {
-							System.out.println("save to process later");
-							pendingRequests.add(tracker);
-						}
+							
+							//merge replies
+							Request res = tracker.getMergedReplyFromList(answers);
+							
+							res.setSender(groupId);
+							// get all requests waiting for this answer
+							ConcurrentSet<TOMMessage> msgs2 = RequestWaiingToReachQuorumSize.get(res.getClient())
+									.get(res.getSeqNumber());
+							// add finished request result to map, for storage and eventual later
+							// re-submission
+							processedReplies.computeIfAbsent(res.getClient(), k -> new ConcurrentHashMap<>());
+							processedReplies.get(res.getClient()).put(res.getSeqNumber(), res);
+							// reply to all
+							if (msgs2 != null) {
+								// System.out.println("replying");
+								for (TOMMessage msg : msgs2) {
+									msg.reply.setContent(res.toBytes());
+									rc.getServerCommunicationSystem().send(new int[] { msg.getSender() }, msg.reply);
+								}
+							}
+							
+							
+
+//						}
+//						else {
+//							System.out.println("save to process later");
+//							pendingRequests.add(tracker);
+//						}
 					}
 
 					
@@ -490,6 +521,7 @@ public class ReplicaReplier implements Replier, FIFOExecutable, Serializable, Re
 	 */
 	@Override
 	public void replyReceived(RequestContext context, TOMMessage reply) {
+		System.out.println("magic");
 		handleMsg(reply, true);
 	}
 
