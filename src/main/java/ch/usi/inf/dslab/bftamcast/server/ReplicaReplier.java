@@ -462,15 +462,24 @@ public class ReplicaReplier implements Replier, FIFOExecutable, Serializable, Re
 //
 //							repliesTracker.get(req.getClient()).put(req.getSeqNumber(),
 //									tracker);
+							List<Thread> threads = new ArrayList<>();
 							List<Request> answers = new ArrayList<>();
 							for (Vertex v : toSend.keySet()) {
-								// TODO this in separate threads
-								byte[] response = v.getProxy().invokeOrdered(message.getContent());
-								if(response !=null) {
-									answers.add(new Request(response));
-								}
+								threads.add( new Thread(
+										() -> answers.add(new Request(v.getProxy().invokeOrdered(message.getContent())))));
+								threads.get(threads.size()-1).start();
+								
 //								v.getProxy().invokeAsynchRequest(message.getContent(), this,
 //										TOMMessageType.ORDERED_REQUEST);
+							}
+							
+							for(Thread t : threads) {
+								try {
+									t.join();
+								} catch (InterruptedException e) {
+									// TODO Auto-generated catch block
+									e.printStackTrace();
+								}
 							}
 							
 							//merge replies
