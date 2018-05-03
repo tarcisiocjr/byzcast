@@ -41,8 +41,7 @@ public class Server extends DefaultRecoverable {
 	 * @param group
 	 *            id the replica belongs to
 	 * @param configPath
-	 *            path for bftsmart for the replica (//TODO could extract that from
-	 *            tree config)
+	 *            path for bftsmart for the replica
 	 * @param treeConfigPath
 	 *            path of the configuration file representing the overlay tree of
 	 *            groups

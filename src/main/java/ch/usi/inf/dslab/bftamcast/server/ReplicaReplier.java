@@ -210,16 +210,13 @@ public class ReplicaReplier implements Replier, FIFOExecutable, Serializable, Re
 		// }
 		//
 		// if (out.get() < maxOutstanding) {
-		// // TODO you are sending more than one message (all toSend replicas)
 		// for (Vertex v : toSend.keySet()) {
-		// // TODO limit outstanding ?
 		// out.incrementAndGet();
 		// // save targets and message without sending;
 		// v.getProxy().invokeAsynchRequest(request.getContent(), this,
 		// TOMMessageType.ORDERED_REQUEST);
 		// }
 		// } else {
-		// // TODO save in pending
 		// }
 		// }
 		// }
@@ -342,7 +339,6 @@ public class ReplicaReplier implements Replier, FIFOExecutable, Serializable, Re
 					repliesTracker.get(req.getClient()).put(req.getSeqNumber(),
 							reqtracker);
 					reqtracker.start();
-					// TODO if pending empty send
 					for (Vertex v : reqtracker.getGroups().keySet()) {
 						v.getProxy().invokeAsynchRequest(reqtracker.getRequest(), this,
 								TOMMessageType.ORDERED_REQUEST);
@@ -350,8 +346,7 @@ public class ReplicaReplier implements Replier, FIFOExecutable, Serializable, Re
 
 				}
 
-				// TODO call other pending messages asynchronously
-				// handlePending();
+			
 
 			}
 		} else {
@@ -459,7 +454,6 @@ public class ReplicaReplier implements Replier, FIFOExecutable, Serializable, Re
 						}
 						//if pending empty send
 
-						//TODO remove async and try sync instead, latency too high and low throughput
 //						if (repliesTracker.size() < maxOutstanding) {
 							tracker.start();
 //							repliesTracker.computeIfAbsent(req.getClient(), k -> new ConcurrentHashMap<>());
@@ -468,9 +462,9 @@ public class ReplicaReplier implements Replier, FIFOExecutable, Serializable, Re
 //
 //							repliesTracker.get(req.getClient()).put(req.getSeqNumber(),
 //									tracker);
-							// TODO if pending empty send
 							List<Request> answers = new ArrayList<>();
 							for (Vertex v : toSend.keySet()) {
+								// TODO this in separate threads
 								byte[] response = v.getProxy().invokeOrdered(message.getContent());
 								if(response !=null) {
 									answers.add(new Request(response));

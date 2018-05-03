@@ -353,7 +353,6 @@ public class Graph {
 
 	}
 
-	// TODO check with graph.compute_score, they produce different results.
 	public static long compute_score(Vertex root, List<Edge> tree, List<Load> loads, long minscore,
 			List<Vertex> vertices, long prevscore, List<Edge> prevtree) {
 		long score = prevscore;

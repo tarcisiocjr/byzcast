@@ -72,8 +72,7 @@ public class Tree implements Serializable {
 			String line = null;
 			while ((line = rd.readLine()) != null) {
 				if (!line.startsWith("#") && !line.isEmpty()) {
-					// TODO instead of reading nodes and then tree, read nodes and specs (througput
-					// etc and build optimal tree)
+					// TODO use Graph tree builder
 					StringTokenizer str = new StringTokenizer(line, " ");
 					// vertex declaration (group)
 					if (str.countTokens() == 2) {
@@ -117,7 +116,6 @@ public class Tree implements Serializable {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		// TODO build map for quick lookup to who forward msgs Map<Destinations, Map<Id,
 		// Targets>>
 		Set<Set<Vertex>> allPossibleDestinations = getAllPossibleDestinations(vertices);
 
