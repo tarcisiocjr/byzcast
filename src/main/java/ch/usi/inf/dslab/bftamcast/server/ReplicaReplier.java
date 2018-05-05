@@ -1,6 +1,8 @@
 
 package ch.usi.inf.dslab.bftamcast.server;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -31,6 +33,7 @@ import bftsmart.tom.server.Replier;
 import ch.usi.inf.dslab.bftamcast.graph.Tree;
 import ch.usi.inf.dslab.bftamcast.graph.Vertex;
 import ch.usi.inf.dslab.bftamcast.kvs.Request;
+import ch.usi.inf.dslab.bftamcast.kvs.RequestType;
 import ch.usi.inf.dslab.bftamcast.util.GroupRequestTracker;
 import ch.usi.inf.dslab.bftamcast.util.RequestTracker;
 import io.netty.util.internal.ConcurrentSet;
@@ -43,17 +46,19 @@ import io.netty.util.internal.ConcurrentSet;
 // performance try to remove BatchExecutable to check perf.
 // public class ReplicaReplier implements Replier, FIFOExecutable,
 // BatchExecutable, Serializable, ReplyListener {
-public class ReplicaReplier implements Replier, Serializable, ReplyListener, FIFOExecutable {
+public class ReplicaReplier implements Replier, Serializable, ReplyListener, FIFOExecutable, BatchExecutable {
 
 	private static final long serialVersionUID = 1L;
 	// keep the proxy of all groups and compute lca etc/
 	private Tree overlayTree;
+	private int batchsize = 10;
+	private int sequencenumber = 0;
+	private List<Request> toprocess = new ArrayList<>();
 	private int groupId, maxOutstanding;
 	protected transient Lock replyLock;
 	protected transient Condition contextSet;
 	protected transient ReplicaContext rc;
 	protected Request req;
-
 
 	// key store map
 	private Map<Integer, byte[]> table;
@@ -80,7 +85,7 @@ public class ReplicaReplier implements Replier, Serializable, ReplyListener, FIF
 		this.overlayTree = new Tree(treeConfig, UUID.randomUUID().hashCode());
 		this.groupId = groupID;
 		this.maxOutstanding = maxOutstanding;
-		System.out.println("max out = "+ maxOutstanding);
+		System.out.println("max out = " + maxOutstanding);
 		me = overlayTree.findVertexById(groupID);
 		replyLock = new ReentrantLock();
 		contextSet = replyLock.newCondition();
@@ -94,9 +99,9 @@ public class ReplicaReplier implements Replier, Serializable, ReplyListener, FIF
 
 	@Override
 	public void manageReply(TOMMessage request, MessageContext msgCtx) {
-
+		System.out.println("call manage reply");
 		handleMsg(request, false);
-	
+
 	}
 
 	/**
@@ -160,71 +165,69 @@ public class ReplicaReplier implements Replier, Serializable, ReplyListener, FIF
 		this.replyLock.unlock();
 	}
 
-	public void handleMsg(TOMMessage message, boolean reply) {
+	public byte[] handleMsg(TOMMessage message, boolean reply) {
 		if (reply) {
-			if (message == null) {
-
-			}
-			// System.out.println("recieved");
-			// unpack request from reply
-			Request replyReq = new Request(message.getContent());
-//			System.out.println(replyReq);
-			// get the tracker for that request
-			if(repliesTracker.get(replyReq.getClient()) == null) {
-				return;
-			}
-			RequestTracker tracker = repliesTracker.get(replyReq.getClient()).get(replyReq.getSeqNumber());
-			// add the reply to tracker and if all involved groups reached their f+1 quota
-			if (tracker != null && tracker.addReply(message, replyReq.getSender())) {
-
-				System.out.println(tracker.getElapsed() + "   nanoseconds");
-				// get reply with all groups replies
-				Request sendReply = tracker.getMergedReply();
-				sendReply.setSender(groupId);
-				// get all requests waiting for this answer
-				ConcurrentSet<TOMMessage> msgs = RequestWaiingToReachQuorumSize.get(sendReply.getClient())
-						.get(sendReply.getSeqNumber());
-				// add finished request result to map, for storage and eventual later
-				// re-submission
-				processedReplies.computeIfAbsent(sendReply.getClient(), k -> new ConcurrentHashMap<>());
-				processedReplies.get(sendReply.getClient()).put(sendReply.getSeqNumber(), sendReply);
-				// reply to all
-				if (msgs != null) {
-					// System.out.println("replying");
-					for (TOMMessage msg : msgs) {
-						msg.reply.setContent(sendReply.toBytes());
-						rc.getServerCommunicationSystem().send(new int[] { msg.getSender() }, msg.reply);
-					}
-				}
-				// remove entries for processed and save reply
-				RequestWaiingToReachQuorumSize.get(req.getClient()).remove(sendReply.getSeqNumber());
-				if(RequestWaiingToReachQuorumSize.get(req.getClient()).isEmpty()) {
-					RequestWaiingToReachQuorumSize.remove(req.getClient(), RequestWaiingToReachQuorumSize.get(req.getClient()));
-					}
-				repliesTracker.get(req.getClient()).remove(sendReply.getSeqNumber());
-				if(repliesTracker.get(req.getClient()).isEmpty()) {
-				 repliesTracker.remove(req.getClient(), repliesTracker.get(req.getClient()));
-				}
-				
-				if(!pendingRequests.isEmpty()) {
-					System.out.println("other destination, queue empty, send");
-					RequestTracker reqtracker = pendingRequests.poll();
-					req = new Request(reqtracker.getRequest());
-					repliesTracker.computeIfAbsent(req.getClient(), k -> new ConcurrentHashMap<>());
-					
-					repliesTracker.get(req.getClient()).put(req.getSeqNumber(),
-							reqtracker);
-					reqtracker.start();
-					for (Vertex v : reqtracker.getGroups().keySet()) {
-						v.getProxy().invokeAsynchRequest(reqtracker.getRequest(), this,
-								TOMMessageType.ORDERED_REQUEST);
-					}
-
-				}
-
-			
-
-			}
+//			if (message == null) {
+//
+//			}
+//			// System.out.println("recieved");
+//			// unpack request from reply
+//			Request replyReq = new Request(message.getContent());
+//			// System.out.println(replyReq);
+//			// get the tracker for that request
+//			if (repliesTracker.get(replyReq.getClient()) == null) {
+//				return;
+//			}
+//			RequestTracker tracker = repliesTracker.get(replyReq.getClient()).get(replyReq.getSeqNumber());
+//			// add the reply to tracker and if all involved groups reached their f+1 quota
+//			if (tracker != null && tracker.addReply(message, replyReq.getSender())) {
+//
+//				System.out.println(tracker.getElapsed() + "   nanoseconds");
+//				// get reply with all groups replies
+//				Request sendReply = tracker.getMergedReply();
+//				sendReply.setSender(groupId);
+//				// get all requests waiting for this answer
+//				ConcurrentSet<TOMMessage> msgs = RequestWaiingToReachQuorumSize.get(sendReply.getClient())
+//						.get(sendReply.getSeqNumber());
+//				// add finished request result to map, for storage and eventual later
+//				// re-submission
+//				processedReplies.computeIfAbsent(sendReply.getClient(), k -> new ConcurrentHashMap<>());
+//				processedReplies.get(sendReply.getClient()).put(sendReply.getSeqNumber(), sendReply);
+//				// reply to all
+//				if (msgs != null) {
+//					// System.out.println("replying");
+//					for (TOMMessage msg : msgs) {
+//						msg.reply.setContent(sendReply.toBytes());
+//						rc.getServerCommunicationSystem().send(new int[] { msg.getSender() }, msg.reply);
+//					}
+//				}
+//				// remove entries for processed and save reply
+//				RequestWaiingToReachQuorumSize.get(req.getClient()).remove(sendReply.getSeqNumber());
+//				if (RequestWaiingToReachQuorumSize.get(req.getClient()).isEmpty()) {
+//					RequestWaiingToReachQuorumSize.remove(req.getClient(),
+//							RequestWaiingToReachQuorumSize.get(req.getClient()));
+//				}
+//				repliesTracker.get(req.getClient()).remove(sendReply.getSeqNumber());
+//				if (repliesTracker.get(req.getClient()).isEmpty()) {
+//					repliesTracker.remove(req.getClient(), repliesTracker.get(req.getClient()));
+//				}
+//
+//				if (!pendingRequests.isEmpty()) {
+//					System.out.println("other destination, queue empty, send");
+//					RequestTracker reqtracker = pendingRequests.poll();
+//					req = new Request(reqtracker.getRequest());
+//					repliesTracker.computeIfAbsent(req.getClient(), k -> new ConcurrentHashMap<>());
+//
+//					repliesTracker.get(req.getClient()).put(req.getSeqNumber(), reqtracker);
+//					reqtracker.start();
+//					for (Vertex v : reqtracker.getGroups().keySet()) {
+//						v.getProxy().invokeAsynchRequest(reqtracker.getRequest(), this, TOMMessageType.ORDERED_REQUEST);
+//					}
+//
+//				}
+//
+//			}
+		return null;
 		} else {
 
 			while (rc == null) {
@@ -239,6 +242,14 @@ public class ReplicaReplier implements Replier, Serializable, ReplyListener, FIF
 
 			// extract request from tom message
 			req = new Request(message.getContent());
+			if(req.getType() == RequestType.BATCH) {
+				List<Request> requests = new ArrayList<>();
+				Request[] reqs = Request.ArrayfromBytes(req.getValue());
+				 
+			}
+			else {
+				
+			}
 			req.setSender(groupId);
 
 			// already processes and answered request to other replicas, send what has
@@ -315,7 +326,7 @@ public class ReplicaReplier implements Replier, Serializable, ReplyListener, FIF
 						// can remove, later requests will receive answers directly from already
 						// processes replies
 						RequestWaiingToReachQuorumSize.get(req.getClient()).remove(req.getSeqNumber());
-						return;
+						return req.toBytes();
 					} else {
 						RequestTracker tracker = null;
 						// else, tracker for received replies and majority needed
@@ -323,76 +334,75 @@ public class ReplicaReplier implements Replier, Serializable, ReplyListener, FIF
 
 						if (addreq) {
 							tracker = new RequestTracker(toSend, req, message.getContent());
-							
+
 						} else {
 							tracker = new RequestTracker(toSend, null, message.getContent());
-		
+
 						}
-						//if pending empty send
+						// if pending empty send
 
-//						if (repliesTracker.size() < maxOutstanding) {
-							tracker.start();
-//							repliesTracker.computeIfAbsent(req.getClient(), k -> new ConcurrentHashMap<>());
-//
-//							System.out.println("other destination, queue empty, send");
-//
-//							repliesTracker.get(req.getClient()).put(req.getSeqNumber(),
-//									tracker);
-							List<Thread> threads = new ArrayList<>();
-							List<Request> answers = new ArrayList<>();
-							for (Vertex v : toSend.keySet()) {
-								threads.add( new Thread(
-										() -> answers.add(new Request(v.getProxy().invokeOrdered(message.getContent())))));
-								threads.get(threads.size()-1).start();
-								
-//								v.getProxy().invokeAsynchRequest(message.getContent(), this,
-//										TOMMessageType.ORDERED_REQUEST);
-							}
-							
-							for(Thread t : threads) {
-								try {
-									t.join();
-								} catch (InterruptedException e) {
-									// TODO Auto-generated catch block
-									e.printStackTrace();
-								}
-							}
-							
-							//merge replies
-							Request res = tracker.getMergedReplyFromList(answers);
-							
-							res.setSender(groupId);
-							// get all requests waiting for this answer
-							ConcurrentSet<TOMMessage> msgs2 = RequestWaiingToReachQuorumSize.get(res.getClient())
-									.get(res.getSeqNumber());
-							// add finished request result to map, for storage and eventual later
-							// re-submission
-							processedReplies.computeIfAbsent(res.getClient(), k -> new ConcurrentHashMap<>());
-							processedReplies.get(res.getClient()).put(res.getSeqNumber(), res);
-							// reply to all
-							if (msgs2 != null) {
-								// System.out.println("replying");
-								for (TOMMessage msg : msgs2) {
-									msg.reply.setContent(res.toBytes());
-									rc.getServerCommunicationSystem().send(new int[] { msg.getSender() }, msg.reply);
-								}
-							}
-							
-							
+						// if (repliesTracker.size() < maxOutstanding) {
+						tracker.start();
+						// repliesTracker.computeIfAbsent(req.getClient(), k -> new
+						// ConcurrentHashMap<>());
+						//
+						// System.out.println("other destination, queue empty, send");
+						//
+						// repliesTracker.get(req.getClient()).put(req.getSeqNumber(),
+						// tracker);
+						List<Thread> threads = new ArrayList<>();
+						List<Request> answers = new ArrayList<>();
+						for (Vertex v : toSend.keySet()) {
+							threads.add(new Thread(
+									() -> answers.add(new Request(v.getProxy().invokeOrdered(message.getContent())))));
+							threads.get(threads.size() - 1).start();
 
-//						}
-//						else {
-//							System.out.println("save to process later");
-//							pendingRequests.add(tracker);
-//						}
+							// v.getProxy().invokeAsynchRequest(message.getContent(), this,
+							// TOMMessageType.ORDERED_REQUEST);
+						}
+
+						for (Thread t : threads) {
+							try {
+								t.join();
+							} catch (InterruptedException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+						}
+
+						// merge replies
+						Request res = tracker.getMergedReplyFromList(answers);
+
+						res.setSender(groupId);
+						// get all requests waiting for this answer
+						ConcurrentSet<TOMMessage> msgs2 = RequestWaiingToReachQuorumSize.get(res.getClient())
+								.get(res.getSeqNumber());
+						// add finished request result to map, for storage and eventual later
+						// re-submission
+						processedReplies.computeIfAbsent(res.getClient(), k -> new ConcurrentHashMap<>());
+						processedReplies.get(res.getClient()).put(res.getSeqNumber(), res);
+						// reply to all
+						if (msgs2 != null) {
+							// System.out.println("replying");
+							for (TOMMessage msg : msgs2) {
+								msg.reply.setContent(res.toBytes());
+								rc.getServerCommunicationSystem().send(new int[] { msg.getSender() }, msg.reply);
+							}
+						}
+						return res.toBytes();
+
+						// }
+						// else {
+						// System.out.println("save to process later");
+						// pendingRequests.add(tracker);
+						// }
 					}
-
-					
 
 				}
 			}
 
 		}
+		return null;
 	}
 
 	/**
@@ -440,17 +450,55 @@ public class ReplicaReplier implements Replier, Serializable, ReplyListener, FIF
 		throw new UnsupportedOperationException("All ordered messages should be FIFO");
 	}
 
-//	 @Override
-//	 public byte[][] executeBatch(byte[][] command, MessageContext[] msgCtx) {
-//	  System.out.println("BATCH of size " +  command.length);
-//	
-//	 return command;
-//	 }
+	@Override
+	public byte[][] executeBatch(byte[][] command, MessageContext[] msgCtx) {
+		if (me == overlayTree.getRoot()) {
+			List<Request> reqs = new ArrayList<>();
 
-}
+			for (int i = 0; i < reqs.size(); i++) {
+				Request r = new Request(command[i]);
+				r.setSender(me.ID);
+				reqs.add(r);
+			}
 
-class Pending {
-	Request req;
-	boolean addreq = false;
+			// mainReq.setValue(Request.ArrayToBytes(reqs));
+
+			return batch(reqs);
+
+		} else {
+
+			return command;
+		}
+	}
+
+	public byte[][] batch(List<Request> tobatch) {
+		List<Thread> threads = new ArrayList<>();
+		Request mainReq = new Request(RequestType.BATCH, -1, Request.ArrayToBytes(tobatch), new int[0], sequencenumber++, me.ID,
+				me.ID, -11l);
+		byte[][] batchReplies = new byte[tobatch.size()][];
+		int i = 0;
+		for (Vertex connection : me.connections) {
+			final int ii = i;
+			threads.add(new Thread(() -> batchReplies[ii] = connection.getProxy().invokeOrdered(mainReq.toBytes())));
+			i++;
+
+		}
+
+		for (Thread t : threads) {
+			t.start();
+		}
+
+		for (Thread t : threads) {
+			try {
+				t.join();
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+
+		return batchReplies;
+
+	}
 
 }

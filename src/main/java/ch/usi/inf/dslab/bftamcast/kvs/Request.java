@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.util.List;
 
 import ch.usi.inf.dslab.bftamcast.RequestIf;
 
@@ -65,6 +66,7 @@ public class Request implements RequestIf, Serializable {
 		this.destIdentifier = destIdentifier;
 	}
 
+
 	public long getDestIdentifier() {
 		return destIdentifier;
 	}
@@ -75,12 +77,12 @@ public class Request implements RequestIf, Serializable {
 	 * @param reqs
 	 * @return
 	 */
-	public static byte[] ArrayToBytes(Request[] reqs) {
+	public static byte[] ArrayToBytes(List<Request> reqs) {
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
 
 		try {
 			ObjectOutputStream dos = new ObjectOutputStream(out);
-			dos.writeInt(reqs.length);
+			dos.writeInt(reqs.size());
 			for (Request r : reqs) {
 				dos.writeObject(r);
 			}

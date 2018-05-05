@@ -215,6 +215,10 @@ public class Tree implements Serializable {
 		// System.out.println(root);
 		return root.findVertexByID(id);
 	}
+	
+	public Vertex getRoot() {
+		return root;
+	}
 
 	// // generate all possible desitations
 	public static Set<Set<Vertex>> getAllPossibleDestinations(List<Vertex> vertices) {
