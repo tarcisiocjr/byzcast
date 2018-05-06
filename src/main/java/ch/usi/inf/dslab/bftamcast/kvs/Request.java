@@ -95,6 +95,8 @@ public class Request implements RequestIf, Serializable {
 		}
 		return out.toByteArray();
 	}
+	
+	
 
 	/**
 	 * convert an array of byte to an array of requests
