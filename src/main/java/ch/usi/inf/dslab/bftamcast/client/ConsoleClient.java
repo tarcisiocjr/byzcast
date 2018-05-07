@@ -177,37 +177,37 @@ public class ConsoleClient implements ReplyListener {
 			repliesTracker.remove(replyReq.getSeqNumber());
 			switch (replyReq.getType()) {
 			case PUT:
-				for (int i = 0; i < replyReq.getResult().length; i++) {
+				for (int i = 0; i < replyReq.getResult()[0].length; i++) {
 					System.out.println(
 
 							"previous value at replica " + replyReq.getDestination()[i] + " : "
-									+ (replyReq.getResult()[i] == null ? "NULL" : new String(replyReq.getResult()[i])));
+									+ (replyReq.getResult()[0][i] == null ? "NULL" : new String(replyReq.getResult()[0][i])));
 				}
 
 				break;
 			case GET:
-				for (int i = 0; i < replyReq.getResult().length; i++) {
+				for (int i = 0; i < replyReq.getResult()[0].length; i++) {
 					System.out.println(
 
 							"value at replica " + replyReq.getDestination()[i] + " : "
-									+ (replyReq.getResult()[i] == null ? "NULL" : new String(replyReq.getResult()[i])));
+									+ (replyReq.getResult()[0][i] == null ? "NULL" : new String(replyReq.getResult()[0][i])));
 				}
 
 				break;
 			case REMOVE:
-				for (int i = 0; i < replyReq.getResult().length; i++) {
+				for (int i = 0; i < replyReq.getResult()[0].length; i++) {
 					System.out.println(
 
 							"removed value at replica " + replyReq.getDestination()[i] + " : "
-									+ (replyReq.getResult()[i] == null ? "NULL" : new String(replyReq.getResult()[i])));
+									+ (replyReq.getResult()[0][i] == null ? "NULL" : new String(replyReq.getResult()[0][i])));
 				}
 				break;
 			case SIZE:
-				for (int i = 0; i < replyReq.getResult().length; i++) {
+				for (int i = 0; i < replyReq.getResult()[0].length; i++) {
 					System.out.println(
 
 							"map size at replica " + replyReq.getDestination()[i] + " : "
-									+ (replyReq.getResult()[i] == null ? "NULL" : new String(replyReq.getResult()[i])));
+									+ (replyReq.getResult()[0][i] == null ? "NULL" : new String(replyReq.getResult()[0][i])));
 				}
 
 				break;

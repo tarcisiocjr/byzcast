@@ -82,7 +82,7 @@ public class RequestTracker {
 //				System.out.println(tmp);
 //				System.out.println(tmp.getResult());
 //				System.out.println();
-				myreply.mergeReplies(tmp.getResult());
+				myreply.mergeReplies(tmp.getResult()[0]);
 			}
 		}
 		return myreply;
@@ -98,7 +98,7 @@ public class RequestTracker {
 //				System.out.println(tmp);
 //				System.out.println(tmp.getResult());
 //				System.out.println();
-				myreply.mergeReplies(reply.getResult());
+				myreply.mergeReplies(reply.getResult()[0]);
 			}
 		}
 		return myreply;

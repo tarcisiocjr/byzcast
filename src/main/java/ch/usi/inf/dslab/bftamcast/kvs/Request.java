@@ -26,11 +26,12 @@ public class Request implements RequestIf, Serializable {
 	private int client;
 	private int sender;
 	private byte[] value;
-	private byte[][] result;
+	private byte[][][] result;
 	private int[] destination;
-	private int[] destinationhandled;
 	private int seqNumber;
 	private long destIdentifier;
+	private Request[] batch;
+	private boolean isBatch = false;
 
 	/**
 	 * create a request object from a byte[]
@@ -50,22 +51,37 @@ public class Request implements RequestIf, Serializable {
 	 * @param seqNumber
 	 * @param sender
 	 */
-	public Request(RequestType type, int key, byte[] value, int[] destination, int seqNumber, int client, int sender, long destIdentifier) {
+	public Request(RequestType type, int key, byte[] value, int[] destination, int seqNumber, int client, int sender,
+			long destIdentifier) {
 		this.client = client;
 		this.sender = sender;
 		this.type = type;
 		this.key = key;
 		this.value = value;
 		this.destination = destination;
-		this.result = new byte[destination.length][];
-		this.destinationhandled = new int[destination.length];
-		for (int i = 0; i < destinationhandled.length; i++) {
-			destinationhandled[i] = -1;
-		}
+		this.result = new byte[1][destination.length][];
 		this.seqNumber = seqNumber;
 		this.destIdentifier = destIdentifier;
 	}
 
+//	public Request(RequestType type, int key, byte[] value, int[] destination, int seqNumber, int client, int sender,
+//			long destIdentifier, Request[] batch) {
+////		this.isBatch = true;
+//		this.batch = batch;
+//		this.client = client;
+//		this.sender = sender;
+//		this.type = type;
+//		this.key = key;
+//		this.value = value;
+//		this.destination = destination;
+//		this.result = new byte[batch.length][destination.length][];
+//		this.destinationhandled = new int[destination.length];
+//		for (int i = 0; i < destinationhandled.length; i++) {
+//			destinationhandled[i] = -1;
+//		}
+//		this.seqNumber = seqNumber;
+//		this.destIdentifier = destIdentifier;
+//	}
 
 	public long getDestIdentifier() {
 		return destIdentifier;
@@ -77,12 +93,13 @@ public class Request implements RequestIf, Serializable {
 	 * @param reqs
 	 * @return
 	 */
-	public static byte[] ArrayToBytes(List<Request> reqs) {
+
+	public static byte[] ArrayToBytes(Request[] reqs) {
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
 
 		try {
 			ObjectOutputStream dos = new ObjectOutputStream(out);
-			dos.writeInt(reqs.size());
+			dos.writeInt(reqs.length);
 			for (Request r : reqs) {
 				dos.writeObject(r);
 			}
@@ -95,8 +112,6 @@ public class Request implements RequestIf, Serializable {
 		}
 		return out.toByteArray();
 	}
-	
-	
 
 	/**
 	 * convert an array of byte to an array of requests
@@ -132,7 +147,6 @@ public class Request implements RequestIf, Serializable {
 		return type;
 	}
 
-
 	/**
 	 * set the result for a groupiD, at the same index of the groupID in
 	 * destinations
@@ -145,7 +159,7 @@ public class Request implements RequestIf, Serializable {
 		for (int i = 0; i < destination.length; i++) {
 			if (destination[i] == groupID) {
 				// set result
-				this.result[i] = eval;
+				this.result[0][i] = eval;
 			}
 		}
 	}
@@ -156,7 +170,7 @@ public class Request implements RequestIf, Serializable {
 		}
 		for (int i = 0; i < replies.length; i++) {
 			if (replies[i] != null) {
-				result[i] = replies[i];
+				this.result[0][i] = replies[i];
 			}
 		}
 	}
@@ -170,7 +184,7 @@ public class Request implements RequestIf, Serializable {
 	public byte[] getGroupResult(int groupID) {
 		for (int i = 0; i < destination.length; i++) {
 			if (destination[i] == groupID) {
-				return result[i];
+				return result[0][i];
 			}
 		}
 		return null;
@@ -199,7 +213,7 @@ public class Request implements RequestIf, Serializable {
 	 * 
 	 * @return
 	 */
-	public byte[][] getResult() {
+	public byte[][][] getResult() {
 		return result;
 	}
 
@@ -212,14 +226,7 @@ public class Request implements RequestIf, Serializable {
 		return destination;
 	}
 
-	public int[] getDestinationHandled() {
-		return destinationhandled;
-	}
-
-	public void setDestinationHandled(int[] dh) {
-		this.destinationhandled = dh;
-	}
-
+	
 	/**
 	 * Getter for sequence number field
 	 * 
@@ -264,7 +271,10 @@ public class Request implements RequestIf, Serializable {
 		DataOutputStream dos = new DataOutputStream(out);
 
 		try {
-			dos.writeUTF(this.type.name());
+			System.out.println("asfasdf   " + this.type.ordinal());
+
+			// dos.writeUTF(this.type.name());
+			dos.writeInt(this.type.ordinal());
 			dos.writeInt(this.key);
 			dos.writeLong(this.destIdentifier);
 			dos.writeInt(this.value == null ? 0 : this.value.length);
@@ -276,16 +286,34 @@ public class Request implements RequestIf, Serializable {
 			dos.writeInt(this.destination.length);
 			for (int dest : destination)
 				dos.writeInt(dest);
-			dos.writeInt(this.destinationhandled.length);
-			for (int dest : destinationhandled)
-				dos.writeInt(dest);
+			
 			dos.writeInt(this.result == null ? 0 : this.result.length);
 			if (result != null) {
-				for (byte[] groupRes : result) {
+				for (byte[][] groupRes : result) {
 					dos.writeInt(groupRes == null ? 0 : groupRes.length);
-					if (groupRes != null)
-						dos.write(groupRes);
+					if (groupRes != null) {
+						for (byte[] groupResres : groupRes) {
+							dos.writeInt(groupResres == null ? 0 : groupResres.length);
+							if (groupResres != null)
+								dos.write(groupResres);
+						}
+					}
+
 				}
+			}
+			dos.writeBoolean(isBatch);
+			System.out.println("isbatch = " + isBatch);
+			if (isBatch) {
+				dos.writeInt(this.batch == null ? 0 : this.batch.length);
+				if (batch != null) {
+					for (Request r : batch) {
+						byte[] reqbytes = r.toBytes();
+						dos.writeInt(reqbytes == null ? 0 : reqbytes.length);
+						if (reqbytes != null)
+							dos.write(reqbytes);
+					}
+				}
+
 			}
 
 		} catch (IOException e) {
@@ -302,10 +330,12 @@ public class Request implements RequestIf, Serializable {
 	public void fromBytes(byte[] b) {
 		ByteArrayInputStream in = new ByteArrayInputStream(b);
 		DataInputStream dis = new DataInputStream(in);
-		int destSize, vSize, resultSize, groupResultSize;
+		int destSize, vSize, resultSize, groupResultSize, groupResultSize2;
 
 		try {
-			this.type = RequestType.valueOf(dis.readUTF());
+			int a = dis.readInt();
+			System.out.println("asfasddsafooof   " + a);
+			this.type = RequestType.values()[a];
 			this.key = dis.readInt();
 			this.destIdentifier = dis.readLong();
 			vSize = dis.readInt();
@@ -322,21 +352,41 @@ public class Request implements RequestIf, Serializable {
 			for (int i = 0; i < destSize; i++) {
 				this.destination[i] = dis.readInt();
 			}
-			destSize = dis.readInt();
-			this.destinationhandled = new int[destSize];
-			for (int i = 0; i < destSize; i++) {
-				this.destinationhandled[i] = dis.readInt();
-			}
+
 			resultSize = dis.readInt();
 			if (resultSize > 0) {
-				this.result = new byte[resultSize][];
+				this.result = new byte[resultSize][][];
 				for (int i = 0; i < resultSize; i++) {
 					groupResultSize = dis.readInt();
 					if (groupResultSize > 0) {
-						this.result[i] = new byte[groupResultSize];
-						dis.read(this.result[i]);
+						this.result[i] = new byte[groupResultSize][];
+						for (int ii = 0; ii < groupResultSize; ii++) {
+							groupResultSize2 = dis.readInt();
+							if (groupResultSize2 > 0) {
+								this.result[i][ii] = new byte[groupResultSize2];
+								dis.read(this.result[i][ii]);
+							}
+						}
 					}
 				}
+			}
+			this.isBatch = dis.readBoolean();
+			System.out.println("isbatch = " + isBatch);
+			if (isBatch) {
+				System.out.println("BAAAATCH ");
+				resultSize = dis.readInt();
+				if (resultSize > 0) {
+					this.batch = new Request[resultSize];
+					for (int i = 0; i < resultSize; i++) {
+						groupResultSize = dis.readInt();
+						if (groupResultSize > 0) {
+							byte[] tmp = new byte[groupResultSize];
+							dis.read(tmp);
+							batch[i] = new Request(tmp);
+						}
+					}
+				}
+
 			}
 
 		} catch (IOException e) {
