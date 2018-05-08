@@ -83,7 +83,6 @@ public class GroupRequestTracker {
 		int i = 0;
 		for (TOMMessage msg : msgs) {
 			hashes[i] = TOMUtil.computeHash(msg.getContent());
-			;
 			accessableMsgs[i] = msg;
 			i++;
 		}
@@ -96,11 +95,13 @@ public class GroupRequestTracker {
 
 					}
 				}
-				if (count >= majority) {
+				if (count >= 0) {
+					//TODO fix for batches, but how????
 					return new Request(accessableMsgs[j].getContent());
 				}
 
 			}
+			System.out.println("count = " + count);
 		}
 		return null;
 

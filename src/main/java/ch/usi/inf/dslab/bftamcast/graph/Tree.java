@@ -40,7 +40,10 @@ public class Tree implements Serializable {
 	 *            none
 	 */
 	public static void main(String[] args) {
-		new Tree("config/tree.conf", 0);
+		System.out.println(getIdentifier(new int[] { 2, 3 }));
+		System.out.println(getIdentifier(new int[] { 0, 2, 3 }));
+		System.out.println(getIdentifier(new int[] { 1, 2, 3 }));
+
 	}
 
 	/**
@@ -116,6 +119,7 @@ public class Tree implements Serializable {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+
 		// Targets>>
 		Set<Set<Vertex>> allPossibleDestinations = getAllPossibleDestinations(vertices);
 
@@ -131,6 +135,16 @@ public class Tree implements Serializable {
 			long identifier = getIdentifier(destsids);
 			Vertex lcav = lca(destination);
 			lcaMap.put(identifier, lcav);
+			if (routingmap.get(identifier) != null) {
+				System.out.println("collisions!!!!");
+				System.out.println("collisions!!!!");
+
+				System.out.println("collisions!!!!");
+				System.out.println("collisions!!!!");
+				System.out.println("collisions!!!!");
+				System.out.println("collisions!!!!");
+				System.out.println("collisions!!!!");
+			}
 
 			routingmap.put(identifier, new HashMap<>());
 			for (Vertex vertex : vertices) {
@@ -215,7 +229,7 @@ public class Tree implements Serializable {
 		// System.out.println(root);
 		return root.findVertexByID(id);
 	}
-	
+
 	public Vertex getRoot() {
 		return root;
 	}
@@ -247,14 +261,21 @@ public class Tree implements Serializable {
 
 	}
 
-	public long getIdentifier(int[] destinations) {
+	public static long getIdentifier(int[] destinations) {
+
 		Arrays.sort(destinations);
-		long identifier = 0;
+		String d = "";
 		for (int i = 0; i < destinations.length; i++) {
-			// TODO modify this ensure no collisions
-			identifier += (100000 * i) + destinations[i];
+			System.out.print(destinations[i] + "  ");
+			d += destinations[i] + "-";
 		}
-		return identifier;
+		System.out.println();
+
+		long hash = 7;
+		for (int i = 0; i < d.length(); i++) {
+			hash = hash * 31 + d.charAt(i);
+		}
+		return hash;
 	}
 
 	public Vertex getLca(long destIdentifier) {

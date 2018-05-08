@@ -1,8 +1,6 @@
 
 package ch.usi.inf.dslab.bftamcast.server;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -11,6 +9,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.TreeMap;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -23,13 +23,10 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import bftsmart.communication.client.ReplyListener;
-import bftsmart.tom.AsynchServiceProxy;
 import bftsmart.tom.MessageContext;
 import bftsmart.tom.ReplicaContext;
 import bftsmart.tom.RequestContext;
 import bftsmart.tom.core.messages.TOMMessage;
-import bftsmart.tom.core.messages.TOMMessageType;
-import bftsmart.tom.server.BatchExecutable;
 import bftsmart.tom.server.FIFOExecutable;
 import bftsmart.tom.server.Replier;
 import ch.usi.inf.dslab.bftamcast.graph.Tree;
@@ -40,6 +37,7 @@ import ch.usi.inf.dslab.bftamcast.util.BatchTracker;
 import ch.usi.inf.dslab.bftamcast.util.BatchfromBatchTracker;
 import ch.usi.inf.dslab.bftamcast.util.GroupRequestTracker;
 import ch.usi.inf.dslab.bftamcast.util.RequestTracker;
+
 import io.netty.util.internal.ConcurrentSet;
 
 /**
@@ -50,7 +48,7 @@ import io.netty.util.internal.ConcurrentSet;
 // performance try to remove BatchExecutable to check perf.
 // public class ReplicaReplier implements Replier, FIFOExecutable,
 // BatchExecutable, Serializable, ReplyListener {
-public class ReplicaReplier implements Replier, Serializable, ReplyListener, FIFOExecutable {
+public class ReplicaReplier implements Replier, Serializable, ReplyListener, FIFOExecutable {// ,BatchExecutable{
 
 	private static final long serialVersionUID = 1L;
 	// keep the proxy of all groups and compute lca etc/
@@ -63,6 +61,7 @@ public class ReplicaReplier implements Replier, Serializable, ReplyListener, FIF
 	protected transient Condition contextSet;
 	protected transient ReplicaContext rc;
 	protected Request req;
+	long last;
 
 	// key store map
 	private Map<Integer, byte[]> table;
@@ -74,9 +73,9 @@ public class ReplicaReplier implements Replier, Serializable, ReplyListener, FIF
 	private transient ConcurrentMap<Integer, ConcurrentHashMap<Integer, ConcurrentSet<TOMMessage>>> RequestWaiingToReachQuorumSize;
 	// vertex in the overlay tree representing my group
 	private Vertex me;
+	private int cpunt = 0;
 	// pending requests waiting for slot
 	private transient Queue<RequestTracker> pendingRequests;
-	private List<BatchfromBatchTracker> batchespending = new ArrayList<>();
 	private Map<Long, Set<BatchTracker>> batches = new HashMap<>();
 
 	/**
@@ -87,7 +86,7 @@ public class ReplicaReplier implements Replier, Serializable, ReplyListener, FIF
 	 * @param treeConfig
 	 */
 	public ReplicaReplier(int RepID, int groupID, String treeConfig, int maxOutstanding) {
-
+		last = System.currentTimeMillis();
 		this.overlayTree = new Tree(treeConfig, UUID.randomUUID().hashCode());
 		this.groupId = groupID;
 		this.maxOutstanding = maxOutstanding;
@@ -119,7 +118,9 @@ public class ReplicaReplier implements Replier, Serializable, ReplyListener, FIF
 		// extract request from tom message
 
 		req = new Request(message.getContent());
+		System.out.println("destIdentifier "+req.getDestIdentifier());
 
+		System.out.println(req.getSender() + " fdsakjfhjk");
 		if (req.getType() == RequestType.BATCH) {
 
 			System.out.println("batch");
@@ -129,27 +130,31 @@ public class ReplicaReplier implements Replier, Serializable, ReplyListener, FIF
 				message.reply.setContent(processedReplies.get(req.getClient()).get(req.getSeqNumber()).toBytes());
 				rc.getServerCommunicationSystem().send(new int[] { message.getSender() }, message.reply);
 			}
-//			int majReplicasOfSender = me.getParent().getProxy().getViewManager().getCurrentViewF() + 1;
-			int majReplicasOfSender = 4;
+			 int majReplicasOfSender =
+			 4;//me.getParent().getProxy().getViewManager().getCurrentViewF() + 1;
 
 			// save message
 			ConcurrentSet<TOMMessage> msgs = saveRequest(message, req.getSeqNumber(), req.getClient());
+			System.out.println(req);
 
-			if (msgs.size() >= majReplicasOfSender) {
+			if (msgs.size() == majReplicasOfSender) {
 
 				System.out.println("maj batch");
 
 				Set<Vertex> toforwardto = new HashSet<>();
-				req = GroupRequestTracker.getMajreq(msgs, majReplicasOfSender);
+				req = GroupRequestTracker.getMajreq(msgs,
+						me.getParent().getProxy().getViewManager().getCurrentViewF() + 1);
 				req.setSender(groupId);
 
-				Request[] reqs = Request.ArrayfromBytes(req.getValue());
-				Request[] clones = Request.ArrayfromBytes(req.getValue());
+				Request[] reqs = req.batch;
+				System.out.println("BATCH SIZE        " + reqs.length);
+				Request[] clones = reqs.clone();
 				Request[] reply = new Request[reqs.length];
 				Map<Integer, Map<Integer, Integer>> repliesToSet = new HashMap<>();
 
 				int count = 0;
 				BatchfromBatchTracker b = new BatchfromBatchTracker();
+				Set<BatchTracker> tmpbatches = new HashSet<>();
 				for (int i = 0; i < reqs.length; i++) {
 					Request request = reqs[i];
 					Set<Vertex> involved = overlayTree.getRoute(request.getDestIdentifier(), me);
@@ -161,37 +166,42 @@ public class ReplicaReplier implements Replier, Serializable, ReplyListener, FIF
 						reply[i] = request;
 					} else if (!involved.isEmpty()) {
 						count++;
+						int tocount = involved.size();
+
 						boolean runned = involved.contains(me);
 						if (runned) {
+
 							execute(request);
-							involved.remove(me);
+							tocount--;
 						}
 
 						toforwardto.addAll(involved);
+						toforwardto.remove(me);
 						repliesToSet.computeIfAbsent(request.getClient(), k -> new HashMap<>());
 
 						repliesToSet.get(request.getClient()).put(request.getSeqNumber(), i);
 
 						BatchTracker bt = new BatchTracker(msgs, request, involved, clones[i],
 								request.getDestIdentifier(), request.getClient(), request.getSeqNumber(), runned, true,
-								involved.size(), b);
+								tocount, b);
 
 						batches.computeIfAbsent(request.getDestIdentifier(), k -> new ConcurrentSet<>());
 						batches.get(request.getDestIdentifier()).add(bt);
+						tmpbatches.add(bt);
+						cpunt++;
 
 					}
 
 				}
 				if (count != 0) {
 					System.out.println("reply batch     1");
-					b.set(msgs, reply, req.getClient(), req.getSeqNumber(), repliesToSet, count);
-					batchespending.add(b);
+					b.set(msgs, reply, req.getClient(), req.getSeqNumber(), repliesToSet, count, req, tmpbatches);
 				} else {
 					System.out.println("I am done");
-					
 
 					for (TOMMessage msg : msgs) {
-						msg.reply.setContent(Request.ArrayToBytes(reply));
+						req.batch = reply;
+						msg.reply.setContent(req.toBytes());
 						rc.getServerCommunicationSystem().send(new int[] { msg.getSender() }, msg.reply);
 					}
 
@@ -226,74 +236,111 @@ public class ReplicaReplier implements Replier, Serializable, ReplyListener, FIF
 				// add processed reply to client replies
 				processedReplies.get(req.getClient()).put(req.getSeqNumber(), req);
 			}
-			// another group contacted me, majority needed
+			// another client contacted me, otherwise would be a batch
 			else {
-				// majority of parent group replicas f+1
-				// int majReplicasOfSender = 0;
-				//
-				// // this group is not the lcs, so not contacted directly from client
-				// if (groupId != overlayTree.getLca(req.getDestIdentifier()).ID) {
-				// majReplicasOfSender =
-				// me.getParent().getProxy().getViewManager().getCurrentViewF() + 1;
-				// }
-				//
-				//
+				//already processed
+//				if (processedReplies.get(req.getClient()) != null
+//						&& processedReplies.get(req.getClient()).containsKey(req.getSeqNumber())) {
+//					System.out.println("cached answer send");
+//					message.reply.setContent(processedReplies.get(req.getClient()).get(req.getSeqNumber()).toBytes());
+//					rc.getServerCommunicationSystem().send(new int[] { message.getSender() }, message.reply);
+//				}
+//				// client contacted only me, execute and reply
+//				else
+					if (req.getDestination().length == 1) {
+					System.out.println("only destination, send");
 
-				// save message
-				ConcurrentSet<TOMMessage> msgs = saveRequest(message, req.getSeqNumber(), req.getClient());
-				// check if majority of parent contacted me, and request is the same
-				// -1 because the request used to compare other is already in msgs
-
-				// majority of replicas sent request and this replica is not already
-				// processing
-				// the request (not processing it more than once)
-				// count
-				// if (msgs.size() >= majReplicasOfSender &&
-				// (processedReplies.get(req.getClient()) != null
-				// && !processedReplies.get(req.getClient()).containsKey(req.getSeqNumber()))) {
-
-				// req = GroupRequestTracker.getMajreq(msgs, majReplicasOfSender);
-				req = GroupRequestTracker.getMajreq(msgs, 1);
-				req.setSender(groupId);
-				// System.out.println("asdflkhjadsfdka " + req);
-				boolean addreq = false;
-				// List<Vertex>
-				Set<Vertex> involved = overlayTree.getRoute(req.getDestIdentifier(), me);
-				if (involved.isEmpty()) {
-					return;
-					// TODO nothing, none of dests are in reach and you are not in dests
-					// should never happend, tocheck
-				}
-				if (involved.contains(me)) {
 					execute(req);
-					addreq = true;
-					involved.remove(me);
+
+					message.reply.setContent(req.toBytes());
+					rc.getServerCommunicationSystem().send(new int[] { message.getSender() }, message.reply);
+					// create entry for client replies if not already these
+					processedReplies.computeIfAbsent(req.getClient(), k -> new ConcurrentHashMap<>());
+					// add processed reply to client replies
+					processedReplies.get(req.getClient()).put(req.getSeqNumber(), req);
 				}
+				// another group contacted me, majority needed
+				else {
 
-				if (involved.isEmpty()) {
-					// should never happend, tocheck if not batchreq and only me means direct call
-					// form client, so should trigger req.getDestination().length == 1 above;
+					// save message
+//					ConcurrentSet<TOMMessage> msgs = saveRequest(message, req.getSeqNumber(), req.getClient());
+					// check if majority of parent contacted me, and request is the same
+					// -1 because the request used to compare other is already in msgs
 
-					// TODO reply
-				} else {
+					// majority of replicas sent request and this replica is not already
+					// processing
+					// the request (not processing it more than once)
+					// count
+					// if (msgs.size() >= majReplicasOfSender &&
+					// (processedReplies.get(req.getClient()) != null
+					// && !processedReplies.get(req.getClient()).containsKey(req.getSeqNumber()))) {
 
-					BatchTracker bt = new BatchTracker(msgs, req, involved, new Request(message.getContent()),
-							req.getDestIdentifier(), req.getClient(), req.getSeqNumber(), addreq, false,
-							involved.size(), null);
-					batches.computeIfAbsent(req.getDestIdentifier(), k -> new ConcurrentSet<>());
-					batches.get(req.getDestIdentifier()).add(bt);
-					// TODO add bt to Toprocess
+					// req = GroupRequestTracker.getMajreq(msgs, majReplicasOfSender);
+//					req = GroupRequestTracker.getMajreq(msgs, 1);
+					req.setSender(groupId);
+					// System.out.println("asdflkhjadsfdka " + req);
+					boolean addreq = false;
+					// List<Vertex>
+					Set<Vertex> involved = overlayTree.getRoute(req.getDestIdentifier(), me);
+					System.out.print("ivolved = ");
+					for (Vertex vertex : involved) {
+						System.out.print(vertex.ID + " ");
+					}
+					System.out.println();
+					if (involved.isEmpty()) {
+						return;
+						// TODO nothing, none of dests are in reach and you are not in dests
+						// should never happend, tocheck
+					}
+					int c = involved.size();
+					Set<Vertex> involvedtrack = new HashSet<>(involved);
+					if (involved.contains(me)) {
+						execute(req);
+						addreq = true;
+						involvedtrack.remove(me);
+						c--;
+					}
+
+					if (involved.isEmpty()) {
+						// should never happend, tocheck if not batchreq and only me means direct call
+						// form client, so should trigger req.getDestination().length == 1 above;
+
+						// TODO reply
+					} else {
+
+						cpunt++;
+						BatchTracker bt = new BatchTracker(message, req, involved, new Request(message.getContent()),
+								req.getDestIdentifier(), req.getClient(), req.getSeqNumber(), addreq, false, c, null);
+						batches.computeIfAbsent(req.getDestIdentifier(), k -> new ConcurrentSet<>());
+						batches.get(req.getDestIdentifier()).add(bt);
+
+					}
 
 				}
-
-				// }
 
 			}
 
 		}
-		// TODO call batch if enough msgs
+//		Timer timer = new Timer();
+//        timer.schedule(new TimerTask() {
+//
+//            @Override
+//            public void run() {
+//            	System.out.println("run timer");
+//    			batch(batches);
+//            }
+//        }, 50);
+//      
+    
 
-		batch(batches, batchespending);
+
+		
+
+//		if (cpunt >= 10) {
+			System.out.println("run count");
+			batch(batches);
+
+//		}
 
 	}
 
@@ -324,6 +371,7 @@ public class ReplicaReplier implements Replier, Serializable, ReplyListener, FIF
 	 * @param req
 	 */
 	protected void execute(Request req) {
+		System.out.println("executing");
 		byte[] resultBytes;
 		switch (req.getType()) {
 		case PUT:
@@ -403,49 +451,73 @@ public class ReplicaReplier implements Replier, Serializable, ReplyListener, FIF
 		throw new UnsupportedOperationException("All ordered messages should be FIFO");
 	}
 
-	public void batch(Map<Long, Set<BatchTracker>> batches, List<BatchfromBatchTracker> batchToReplyTo) {
+	public void batch(Map<Long, Set<BatchTracker>> batches) {
 		System.out.println("I am bathcing");
 		for (Vertex connection : me.getConnections()) {
 			List<Request> tobatch = new ArrayList<>();
-			Set<BatchTracker> trackers = new HashSet<>();
 
 			for (long identifier : batches.keySet()) {
 				Set<Vertex> sendTo = overlayTree.getRoute(identifier, me);
+				System.out.print("ivolved = ");
+				for (Vertex vertex : sendTo) {
+					System.out.print(vertex.ID + " ");
+				}
+				System.out.println();
 
 				if (sendTo.contains(connection)) {
 					for (BatchTracker b : batches.get(identifier)) {
-						if (!b.finished) {
+						if (!b.finished && !b.sent.contains(connection)) {
+							b.sent.add(connection);
 							tobatch.add(b.toforward);
-							trackers.add(b);
 						}
 					}
 				}
 			}
 
 			if (!tobatch.isEmpty()) {
-				System.out.println("I am bathcing and sending");
+				System.out.println("I am bathcing and sending to " + connection.ID);
 				Request[] bb = new Request[tobatch.size()];
 				tobatch.toArray(bb);
-				Request mainReq = new Request(RequestType.BATCH, -1, Request.ArrayToBytes(bb), new int[] {connection.ID},
-						sequencenumber++, me.ID, me.ID, overlayTree.getIdentifier( new int[] {connection.ID}));
-				byte[]  r= connection.getProxy().invokeOrdered(mainReq.toBytes());
+				Request mainReq = new Request(RequestType.BATCH, -1, null, new int[] { connection.ID },
+						sequencenumber++, me.ID, me.ID, overlayTree.getIdentifier(new int[] { connection.ID }), bb);
+				// TODO call async and do the rest in callback
+				byte[] r = connection.getProxy().invokeOrdered(mainReq.toBytes());
 				System.out.println(r);
+				//TODO check null
 				Request reply = new Request(r);
 
-				Request[] replies = Request.ArrayfromBytes(reply.getValue());
+				Request[] replies = reply.batch;
+				Set<BatchTracker> toremove = new HashSet<>();
 
 				for (Request rep : replies) {
 					for (BatchTracker b : batches.get(rep.getDestIdentifier())) {
 						if (b.clientID == rep.getClient() && b.seqN == rep.getSeqNumber()) {
 							b.handle(rep);
 							if (b.finished && !b.batch) {
+								toremove.add(b);
+								// create entry for client replies if not already these
+								processedReplies.computeIfAbsent(rep.getClient(), k -> new ConcurrentHashMap<>());
+								// add processed reply to client replies
+								processedReplies.get(rep.getClient()).put(rep.getSeqNumber(), rep);
+								cpunt--;
+								System.out.println("not a batch");
 								for (TOMMessage msg : b.toaswer) {
-									msg.reply.setContent(Request.ArrayToBytes(replies));
+									msg.reply.setContent(b.preprocess.toBytes());
 									rc.getServerCommunicationSystem().send(new int[] { msg.getSender() }, msg.reply);
 								}
 							} else if (b.finished) {
+								cpunt--;
+
+								System.out.println("a batch");
 								b.tracker.hanlde(b.preprocess);
 								if (b.tracker.finished) {
+									toremove.addAll(b.tracker.batches);
+									processedReplies.computeIfAbsent(b.tracker.og.getClient(),
+											k -> new ConcurrentHashMap<>());
+									// add processed reply to client replies
+									processedReplies.get(b.tracker.og.getClient()).put(b.tracker.og.getSeqNumber(),
+											b.tracker.og);
+
 									for (TOMMessage msg : b.tracker.originalBatch) {
 										rc.getServerCommunicationSystem().send(new int[] { msg.getSender() },
 												msg.reply);
@@ -456,9 +528,32 @@ public class ReplicaReplier implements Replier, Serializable, ReplyListener, FIF
 						}
 					}
 				}
+				// delete processed batches
+				for (BatchTracker batchTracker : toremove) {
+					batches.get(batchTracker.destIdentifies).remove(batchTracker);
+				}
 			}
+
 		}
 
 	}
+
+	// can not run if have to wait for maj, would always work only for root of tree
+	// (always contacted by client only)
+//	 @Override
+//	 public byte[][] executeBatch(byte[][] command, MessageContext[] msgCtx) {
+//	
+//	
+//	 Request[] reqs = new Request[command.length];
+//	
+//	 for (int i = 0; i < reqs.length; i++) {
+//	 reqs[i] = new Request(command[i]);
+//	 }
+//	
+//	 for (Request r : reqs) {
+//	
+//	 }
+//	 return null;
+//	 }
 
 }

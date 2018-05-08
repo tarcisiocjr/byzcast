@@ -10,6 +10,8 @@ import ch.usi.inf.dslab.bftamcast.kvs.Request;
 public class BatchfromBatchTracker {
 
 	public Set<TOMMessage> originalBatch;
+	public Set<BatchTracker> batches;
+	public Request og;
 	public Request[] replies;
 	public int clientID;
 	public int seqN;
@@ -23,24 +25,27 @@ public class BatchfromBatchTracker {
 	};
 
 	public BatchfromBatchTracker(Set<TOMMessage> originalBatch, Request[] replies, int clientID, int seqN,
-			Map<Integer, Map<Integer, Integer>> repliesToSet, int expectedUpdates) {
-		super();
+			Map<Integer, Map<Integer, Integer>> repliesToSet, int expectedUpdates, Request og,  Set<BatchTracker> batches) {
+		this.og=og;
 		this.originalBatch = originalBatch;
 		this.replies = replies;
 		this.clientID = clientID;
 		this.seqN = seqN;
 		this.repliesToSet = repliesToSet;
 		this.expectedUpdates = expectedUpdates;
+		this.batches = batches;
 	}
 
 	public void set(Set<TOMMessage> originalBatch, Request[] replies, int clientID, int seqN,
-			Map<Integer, Map<Integer, Integer>> repliesToSet, int expectedUpdates) {
+			Map<Integer, Map<Integer, Integer>> repliesToSet, int expectedUpdates, Request og, Set<BatchTracker> batches) {
+		this.og=og;
 		this.originalBatch = originalBatch;
 		this.replies = replies;
 		this.clientID = clientID;
 		this.seqN = seqN;
 		this.repliesToSet = repliesToSet;
 		this.expectedUpdates = expectedUpdates;
+		this.batches = batches;
 	}
 
 	public void hanlde(Request preprocess) {
@@ -51,13 +56,14 @@ public class BatchfromBatchTracker {
 			if (base == null) {
 				replies[i] = preprocess;
 			} else {
-//				base.mergeReplies(preprocess.getResult());
+				base.mergeReplies(preprocess.getResult());
 			}
 
 			finished = expectedUpdates == expectedUpdatescount;
 			if (finished) {
+				og.batch = replies;
 				for (TOMMessage msg : originalBatch) {
-					msg.reply.setContent(Request.ArrayToBytes(replies));
+					msg.reply.setContent(og.toBytes());
 				}
 			}
 		}

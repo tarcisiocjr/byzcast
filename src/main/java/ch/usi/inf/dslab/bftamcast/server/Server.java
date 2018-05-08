@@ -20,7 +20,7 @@ import ch.usi.inf.dslab.bftamcast.util.CLIParser;
  *
  */
 public class Server extends DefaultRecoverable {
-	private ReplicaReplier2 replier;
+	private ReplicaReplier replier;
 	private int id, groupId;
 
 	/**
@@ -49,7 +49,7 @@ public class Server extends DefaultRecoverable {
 	public Server(int id, int group, String treeConfigPath, int maxOutstanding) {
 		this.id = id;
 		this.groupId = group;
-		replier = new ReplicaReplier2(id, group, treeConfigPath, maxOutstanding);
+		replier = new ReplicaReplier(id, group, treeConfigPath, maxOutstanding);
 
 		try {
 			Thread.sleep(this.groupId * 4000 + this.id * 1000);
@@ -71,7 +71,7 @@ public class Server extends DefaultRecoverable {
 		ByteArrayInputStream bis = new ByteArrayInputStream(state);
 		try {
 			ObjectInput in = new ObjectInputStream(bis);
-			replier = (ReplicaReplier2) in.readObject();
+			replier = (ReplicaReplier) in.readObject();
 			id = in.readInt();
 			groupId = in.readInt();
 			in.close();

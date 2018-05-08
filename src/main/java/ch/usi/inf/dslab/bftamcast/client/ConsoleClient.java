@@ -78,6 +78,7 @@ public class ConsoleClient implements ReplyListener {
 				destinations = n;
 				value = console.readLine("Enter the value: ").getBytes();
 				destIdentifier = overlayTree.getIdentifier(destinations);
+				System.out.println("destIdentifier "+destIdentifier);
 				target = overlayTree.getLca(destIdentifier);
 
 				req = new Request(type, key, value, destinations, seqNumber, clientId, clientId, destIdentifier);
@@ -102,6 +103,7 @@ public class ConsoleClient implements ReplyListener {
 				}
 				destinations = n;
 				destIdentifier = overlayTree.getIdentifier(destinations);
+				System.out.println("destIdentifier "+destIdentifier);
 				target = overlayTree.getLca(destIdentifier);
 
 				req = new Request(type, key, value, destinations, seqNumber, clientId, clientId, destIdentifier);
@@ -125,6 +127,7 @@ public class ConsoleClient implements ReplyListener {
 				}
 				destinations = n;
 				destIdentifier = overlayTree.getIdentifier(destinations);
+				System.out.println("destIdentifier "+destIdentifier);
 				target = overlayTree.getLca(destIdentifier);
 
 				req = new Request(type, key, value, destinations, seqNumber, clientId, clientId, destIdentifier);
@@ -146,6 +149,7 @@ public class ConsoleClient implements ReplyListener {
 					destinations[i] = overlayTree.getDestinations().get(i);
 				}
 				destIdentifier = overlayTree.getIdentifier(destinations);
+				System.out.println("destIdentifier "+destIdentifier);
 				target = overlayTree.getLca(destIdentifier);
 
 				req = new Request(type, key, value, destinations, seqNumber, clientId, clientId, destIdentifier);
@@ -177,37 +181,37 @@ public class ConsoleClient implements ReplyListener {
 			repliesTracker.remove(replyReq.getSeqNumber());
 			switch (replyReq.getType()) {
 			case PUT:
-				for (int i = 0; i < replyReq.getResult()[0].length; i++) {
+				for (int i = 0; i < replyReq.getResult().length; i++) {
 					System.out.println(
 
 							"previous value at replica " + replyReq.getDestination()[i] + " : "
-									+ (replyReq.getResult()[0][i] == null ? "NULL" : new String(replyReq.getResult()[0][i])));
+									+ (replyReq.getResult()[i] == null ? "NULL" : new String(replyReq.getResult()[i])));
 				}
 
 				break;
 			case GET:
-				for (int i = 0; i < replyReq.getResult()[0].length; i++) {
+				for (int i = 0; i < replyReq.getResult().length; i++) {
 					System.out.println(
 
 							"value at replica " + replyReq.getDestination()[i] + " : "
-									+ (replyReq.getResult()[0][i] == null ? "NULL" : new String(replyReq.getResult()[0][i])));
+									+ (replyReq.getResult()[i] == null ? "NULL" : new String(replyReq.getResult()[i])));
 				}
 
 				break;
 			case REMOVE:
-				for (int i = 0; i < replyReq.getResult()[0].length; i++) {
+				for (int i = 0; i < replyReq.getResult().length; i++) {
 					System.out.println(
 
 							"removed value at replica " + replyReq.getDestination()[i] + " : "
-									+ (replyReq.getResult()[0][i] == null ? "NULL" : new String(replyReq.getResult()[0][i])));
+									+ (replyReq.getResult()[i] == null ? "NULL" : new String(replyReq.getResult()[i])));
 				}
 				break;
 			case SIZE:
-				for (int i = 0; i < replyReq.getResult()[0].length; i++) {
+				for (int i = 0; i < replyReq.getResult().length; i++) {
 					System.out.println(
 
 							"map size at replica " + replyReq.getDestination()[i] + " : "
-									+ (replyReq.getResult()[0][i] == null ? "NULL" : new String(replyReq.getResult()[0][i])));
+									+ (replyReq.getResult()[i] == null ? "NULL" : new String(replyReq.getResult()[i])));
 				}
 
 				break;
