@@ -78,10 +78,10 @@ public class ReplicaReplier implements Replier, Serializable, ReplyListener, FIF
 	private int cpunt = 0;
 	// pending requests waiting for slot
 	private transient Queue<RequestTracker> pendingRequests;
-	private Map<Long, Set<BatchTracker>> batches = new HashMap<>();
+	private ConcurrentMap<Long, Set<BatchTracker>> batches = new ConcurrentHashMap<>();
 	// since all batches have me as client and sender just track sequence number.
-	private Map<Integer, BatchTracker> batchesrepliesTracker = new HashMap<>();
-	private Map<Integer, GroupRequestTracker> batchrepttracker = new HashMap<>();
+	private ConcurrentMap<Integer, BatchTracker> batchesrepliesTracker = new ConcurrentHashMap<>();
+	private ConcurrentMap<Integer, GroupRequestTracker> batchrepttracker = new ConcurrentHashMap<>();
 
 	/**
 	 * Constructor
@@ -138,13 +138,13 @@ public class ReplicaReplier implements Replier, Serializable, ReplyListener, FIF
 				message.reply.setContent(processedReplies.get(req.getClient()).get(req.getSeqNumber()).toBytes());
 				rc.getServerCommunicationSystem().send(new int[] { message.getSender() }, message.reply);
 			}
-			int majReplicasOfSender = 4;// me.getParent().getProxy().getViewManager().getCurrentViewF() + 1;
+			int majReplicasOfSender = me.getParent().getProxy().getViewManager().getCurrentViewF() + 1;
 
 			// save message
 			ConcurrentSet<TOMMessage> msgs = saveRequest(message, req.getSeqNumber(), req.getClient());
 			System.out.println(req);
 
-			if (msgs.size() == majReplicasOfSender) {
+			if (msgs.size() >= majReplicasOfSender) {
 
 				System.out.println("maj batch");
 
@@ -204,6 +204,12 @@ public class ReplicaReplier implements Replier, Serializable, ReplyListener, FIF
 					System.out.println("reply batch     1");
 					b.set(msgs, reply, req.getClient(), req.getSeqNumber(), repliesToSet, count, req, tmpbatches);
 				} else {
+					processedReplies.computeIfAbsent(req.getClient(),
+							k -> new ConcurrentHashMap<>());
+					// add processed reply to client replies
+					processedReplies.get(req.getClient()).put(req.getSeqNumber(),
+							req);
+
 					System.out.println("I am done");
 
 					for (TOMMessage msg : msgs) {
@@ -339,13 +345,13 @@ public class ReplicaReplier implements Replier, Serializable, ReplyListener, FIF
 		 System.out.println("run timer");
 		 batch();
 		 }
-		 }, 300);
+		 }, 30);
 		
-		if (cpunt >= 10) {
-		 System.out.println("run count");
-		 batch();
-		
-		 }
+//		if (cpunt >= 10) {
+//		 System.out.println("run count");
+//		 batch();
+//		
+//		 }
 
 	}
 
@@ -425,11 +431,12 @@ public class ReplicaReplier implements Replier, Serializable, ReplyListener, FIF
 //		System.out.println(replyReq);
 		// get the tracker for that request
 		if(batchrepttracker.get(replyReq.getSeqNumber()) == null) {
+			System.out.println("NULLL");
 			return;
 		}
 		GroupRequestTracker tracker = batchrepttracker.get(replyReq.getSeqNumber());
 		// add the reply to tracker and if all involved groups reached their f+1 quota
-		if (tracker != null && tracker.addReply(reply)) {
+		if (tracker.addReply(reply)) {
 
 			System.out.println("finished");
 			// get reply with all groups replies
@@ -483,6 +490,8 @@ public class ReplicaReplier implements Replier, Serializable, ReplyListener, FIF
 			}
 			
 			batchrepttracker.remove(replyReq.getSeqNumber());
+		}else {
+			System.out.println("no majdsjkafhaksdjhf");
 		}
 
 		
