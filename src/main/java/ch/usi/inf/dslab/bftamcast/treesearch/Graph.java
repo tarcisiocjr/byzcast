@@ -140,10 +140,12 @@ public class Graph {
 
 		// testing generate tree
 
-		// int originalSize = vertices.size();
-		// for (int i = vertices.size()-1; i < 4; i++) {
-		// vertices.add(new Vertex(i, "", 100000, numerOfReplicas));
-		// }
+//		 int originalSize = vertices.size();
+		 int originalSize = 0;
+//		 for (int i = vertices.size()-1; i < 1; i++) {
+		 for (int i = 0; i < 9; i++) {
+		 vertices.add(new Vertex(i, "", 100000, numerOfReplicas));
+		 }
 		for (Vertex vertex1 : vertices) {
 			for (Vertex vertex2 : vertices) {
 				vertex1.setCapacity(Integer.MAX_VALUE);
@@ -202,6 +204,12 @@ public class Graph {
 		if (!trees.isEmpty()) {
 			printTree(trees.get(trees.size() - 1), -100);
 		}
+		
+		Runtime.getRuntime().exec("say finished");
+		Runtime.getRuntime().exec("say finished");
+		Runtime.getRuntime().exec("say finished");
+		Runtime.getRuntime().exec("say finished");
+		Runtime.getRuntime().exec("say finished");
 
 	}
 
@@ -267,11 +275,14 @@ public class Graph {
 		long score = compute_score(root, tree, loads, bestbestscore, vertices, prevscore, prevtree);
 		//
 
-		if (score >= bestbestscore) {
-			return;
-		}
+//		if (score >= bestbestscore) {
+//			return;
+//		}
 
 		if (tree.size() == numVertices - 1) {
+			if (score >= bestbestscore) {
+				return;
+			}
 			System.out.println("new best " + score);
 			// printTree(tree, iteration) ;
 			trees.add(new ArrayList<>(tree));

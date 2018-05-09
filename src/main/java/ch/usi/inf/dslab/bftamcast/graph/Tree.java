@@ -266,10 +266,10 @@ public class Tree implements Serializable {
 		Arrays.sort(destinations);
 		String d = "";
 		for (int i = 0; i < destinations.length; i++) {
-			System.out.print(destinations[i] + "  ");
+//			System.out.print(destinations[i] + "  ");
 			d += destinations[i] + "-";
 		}
-		System.out.println();
+//		System.out.println();
 
 		long hash = 7;
 		for (int i = 0; i < d.length(); i++) {

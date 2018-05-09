@@ -83,6 +83,7 @@ public class ClientThread implements Runnable, ReplyListener {
 		long destIdentifier = 0;
 
 		for (int i = 0; i < maxoustanding; i++) {
+			System.out.println("send");
 			int key = r.nextInt(Integer.MAX_VALUE);
 			destinations = (r.nextInt(100) >= globalPerc ? local : dests);
 			seqNumber++;
@@ -173,6 +174,7 @@ public class ClientThread implements Runnable, ReplyListener {
 			repliesTracker.remove(replyReq.getSeqNumber());
 
 			if (elapsed / 1e9 < runTime) {
+				System.out.println("send");
 				int key = r.nextInt(Integer.MAX_VALUE);
 				byte[] value = randomString(size).getBytes();
 				destinations = (r.nextInt(100) >= globalPerc ? local : dests);
