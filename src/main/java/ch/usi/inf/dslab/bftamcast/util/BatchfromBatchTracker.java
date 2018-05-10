@@ -48,9 +48,11 @@ public class BatchfromBatchTracker {
 		this.batches = batches;
 	}
 
-	public void hanlde(Request preprocess) {
+	public synchronized void hanlde(Request preprocess) {
 		if (!finished) {
 			expectedUpdatescount++;
+			System.out.println("expectedmergescount " + expectedUpdatescount + "   expectedmerges " +  expectedUpdates );
+
 			int i = repliesToSet.get(preprocess.getClient()).get(preprocess.getSeqNumber());
 			Request base = replies[i];
 			if (base == null) {

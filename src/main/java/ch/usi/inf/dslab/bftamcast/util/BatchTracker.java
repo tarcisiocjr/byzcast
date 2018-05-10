@@ -13,6 +13,7 @@ public class BatchTracker {
 	public Set<TOMMessage> toaswer;
 	public Set<Vertex> sent = new HashSet<>();
 	public Request preprocess;
+	public Boolean ready = false;
 	public Set<Vertex> toforwardto;
 	public Request toforward;
 	public long destIdentifies;
@@ -61,7 +62,7 @@ public class BatchTracker {
 		System.out.println("handling");
 		if (!finished) {
 			expectedmergescount++;
-			System.out.println("expectedmergescount " + expectedmergescount + "expectedmerges" +  expectedmerges);
+			System.out.println("expectedmergescount11 " + expectedmergescount + "   expectedmerges111 " +  expectedmerges);
 			if (base) {
 				preprocess.mergeReplies(rep.getResult());
 			} else {

@@ -384,7 +384,7 @@ public class Request implements RequestIf, Serializable {
 	@Override
 	public String toString() {
 		StringBuffer buf = new StringBuffer();
-		buf.append("RequestIf '" + this.type + "', key " + this.key + ", seq. number" + this.seqNumber + ", client "
+		buf.append("RequestIf '" + this.type + "', key " + this.key + ", seq. number  " + this.seqNumber + ", client "
 				+ this.client + " to groups ( ");
 		for (int dest : this.destination)
 			buf.append(dest + " ");

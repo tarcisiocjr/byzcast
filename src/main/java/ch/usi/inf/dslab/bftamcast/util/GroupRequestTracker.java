@@ -22,22 +22,24 @@ public class GroupRequestTracker {
 
 	public GroupRequestTracker(int majority) {
 		
-		System.out.println("MAJORITY ==== "+ majority);
+//		System.out.println("MAJORITY ==== "+ majority);
 		this.majority = majority;
 		this.replies = new ConcurrentSet<>();
 		this.startTime = System.nanoTime();
 	}
 
-	public boolean addReply(TOMMessage reply) {
+	 public synchronized boolean addReply(TOMMessage reply) {
 
 		this.replies.add(reply);
 
-		if (replies.size() >= majority) {
+		System.out.println("addreply, reply size = " + replies.size());
+		if (replies.size() >= majority  && !majreached) {
 			endTime = System.nanoTime();
 			majreached = true;
 			majorityReply = getMajreq(replies, majority);
 			return true;
 		}
+		
 		return false;
 	}
 
@@ -103,7 +105,7 @@ public class GroupRequestTracker {
 				}
 
 			}
-			System.out.println("count = " + count);
+//			System.out.println("count = " + count);
 		}
 		return null;
 

@@ -174,7 +174,7 @@ public class ClientThread implements Runnable, ReplyListener {
 			repliesTracker.remove(replyReq.getSeqNumber());
 
 			if (elapsed / 1e9 < runTime) {
-				System.out.println("send");
+//				System.out.println("send");
 				int key = r.nextInt(Integer.MAX_VALUE);
 				byte[] value = randomString(size).getBytes();
 				destinations = (r.nextInt(100) >= globalPerc ? local : dests);
