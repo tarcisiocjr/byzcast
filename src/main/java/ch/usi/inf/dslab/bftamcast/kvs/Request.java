@@ -294,7 +294,11 @@ public class Request implements RequestIf, Serializable {
 				dos.writeInt(this.batch == null ? 0 : this.batch.length);
 				if (batch != null) {
 					for (Request r : batch) {
-						byte[] reqbytes = r.toBytes();
+						byte[] reqbytes = null;
+						if(r != null) {
+							reqbytes = r.toBytes();
+						}
+						
 						dos.writeInt(reqbytes == null ? 0 : reqbytes.length);
 						if (reqbytes != null)
 							dos.write(reqbytes);

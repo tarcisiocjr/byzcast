@@ -21,6 +21,8 @@ public class GroupRequestTracker {
 	private long startTime, endTime;
 
 	public GroupRequestTracker(int majority) {
+		
+		System.out.println("MAJORITY ==== "+ majority);
 		this.majority = majority;
 		this.replies = new ConcurrentSet<>();
 		this.startTime = System.nanoTime();

@@ -16,6 +16,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -28,7 +29,6 @@ import bftsmart.tom.ReplicaContext;
 import bftsmart.tom.RequestContext;
 import bftsmart.tom.core.messages.TOMMessage;
 import bftsmart.tom.core.messages.TOMMessageType;
-import bftsmart.tom.server.BatchExecutable;
 import bftsmart.tom.server.FIFOExecutable;
 import bftsmart.tom.server.Replier;
 import ch.usi.inf.dslab.bftamcast.graph.Tree;
@@ -39,7 +39,6 @@ import ch.usi.inf.dslab.bftamcast.util.BatchTracker;
 import ch.usi.inf.dslab.bftamcast.util.BatchfromBatchTracker;
 import ch.usi.inf.dslab.bftamcast.util.GroupRequestTracker;
 import ch.usi.inf.dslab.bftamcast.util.RequestTracker;
-
 import io.netty.util.internal.ConcurrentSet;
 
 /**
@@ -56,7 +55,7 @@ public class ReplicaReplier implements Replier, Serializable, ReplyListener, FIF
 	// keep the proxy of all groups and compute lca etc/
 	private Tree overlayTree;
 	private int batchsize = 10;
-	private int sequencenumber = 0;
+	private AtomicInteger sequencenumber = new AtomicInteger(0);
 	private List<Request> toprocess = new ArrayList<>();
 	private int groupId, maxOutstanding;
 	protected transient Lock replyLock;
@@ -563,7 +562,7 @@ public class ReplicaReplier implements Replier, Serializable, ReplyListener, FIF
 				Request[] bb = new Request[tobatch.size()];
 				tobatch.toArray(bb);
 				Request mainReq = new Request(RequestType.BATCH, -1, null, new int[] { connection.ID },
-						sequencenumber++, me.ID, me.ID, overlayTree.getIdentifier(new int[] { connection.ID }), bb);
+						sequencenumber.incrementAndGet(), me.ID, me.ID, overlayTree.getIdentifier(new int[] { connection.ID }), bb);
 				// TODO call async and do the rest in callback
 				batchrepttracker.put(mainReq.getSeqNumber(), new GroupRequestTracker(connection.getProxy().getViewManager().getCurrentViewF()+1));
 				connection.getProxy().invokeAsynchRequest(mainReq.toBytes(), this, TOMMessageType.ORDERED_REQUEST);

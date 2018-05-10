@@ -34,9 +34,9 @@ public class Graph {
 
 	// instead have a sorter for each destination combo
 	public static void main(String[] args) throws Exception {
-		for (int i = 0; i < 400; i++) {
+//		for (int i = 0; i < 400; i++) {
 			new Graph("config/load.conf");
-		}
+//		}
 		
 	}
 
@@ -193,12 +193,12 @@ public class Graph {
 
 		}
 
-//		for (Set<Vertex> destination : allPossibleDests) {
-//			if ( destination.contains(vertices.get(r.nextInt(vertices.size()))) ) {
-//				toremove.add(destination);
-//			}
-//		}
-//		allPossibleDests.removeAll(toremove);
+		for (Set<Vertex> destination : allPossibleDests) {
+			if ( destination.contains(vertices.get(r.nextInt(vertices.size()))) ) {
+				toremove.add(destination);
+			}
+		}
+		allPossibleDests.removeAll(toremove);
 		System.out.println("sets dest size = " + loads.size());
 		for (Set<Vertex> destination : allPossibleDests) {
 			loads.add(new Load(r.nextInt(70), destination));
