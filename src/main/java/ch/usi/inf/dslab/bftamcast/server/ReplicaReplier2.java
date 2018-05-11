@@ -408,7 +408,7 @@ public class ReplicaReplier2 implements Replier, FIFOExecutable, Serializable, R
 				if (msgs.size() >= majReplicasOfSender && (repliesTracker.get(req.getClient()) == null
 						|| !repliesTracker.get(req.getClient()).containsKey(req.getSeqNumber()))) {
 
-					req = GroupRequestTracker.getMajreq(msgs, majReplicasOfSender);
+					req = GroupRequestTracker.getMajreq2(msgs, majReplicasOfSender);
 					req.setSender(groupId);
 					// System.out.println("asdflkhjadsfdka " + req);
 					boolean addreq = false;
