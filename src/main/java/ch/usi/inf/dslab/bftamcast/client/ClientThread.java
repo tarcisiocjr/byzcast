@@ -79,10 +79,11 @@ public class ClientThread implements Runnable, ReplyListener {
 		System.out.println("global perc = " + globalPerc);
 
 		byte[] value = randomString(size).getBytes();
-		local = new int[] { dests[r.nextInt(dests.length)] };
+		
 		long destIdentifier = 0;
 
 		for (int i = 0; i < maxoustanding; i++) {
+			local = new int[] { dests[r.nextInt(dests.length)] };
 			System.out.println("send");
 			int key = r.nextInt(Integer.MAX_VALUE);
 			destinations = (r.nextInt(100) >= globalPerc ? local : dests);
@@ -174,6 +175,7 @@ public class ClientThread implements Runnable, ReplyListener {
 			repliesTracker.remove(replyReq.getSeqNumber());
 
 			if (elapsed / 1e9 < runTime) {
+				local = new int[] { dests[r.nextInt(dests.length)] };
 //				System.out.println("send");
 				int key = r.nextInt(Integer.MAX_VALUE);
 				byte[] value = randomString(size).getBytes();
