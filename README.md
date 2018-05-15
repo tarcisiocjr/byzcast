@@ -1,7 +1,9 @@
-# ByzCast
+#README
 This branch was used to experiment with replicas not contacted directly by a client to reply to the client directly.
 The code is from an old commit and is not maintained.
 But might be usefull if in the future someone wants to work in this direction.
+
+# ByzCast
 **ByzCast** is a proof of concept of a partial-genuine byzantine atomic multicast protocol using as base to implementation the library **[BFT-SMaRt][1]**. 
 The idea behind this project is simple: we use multiple groups of instances of BFT-SMART and the data are partitioned between these groups. 
 Messages addressed only to one group are routed locally and messages addressed to multiple groups are forwarded to a global group. 
