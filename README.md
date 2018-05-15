@@ -1,3 +1,7 @@
+#README
+This branch is the work in the direction of batching with async comunication and no auxiliary replicas.
+At the moment is not working proerly and stop processing after a while.
+
 # ByzCast
 
 **ByzCast** is a proof of concept of a partial-genuine byzantine atomic multicast protocol using as base to implementation the library **[BFT-SMaRt][1]**. 
