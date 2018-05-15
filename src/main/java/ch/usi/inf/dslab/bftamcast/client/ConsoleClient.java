@@ -78,7 +78,6 @@ public class ConsoleClient implements ReplyListener {
 				destinations = n;
 				value = console.readLine("Enter the value: ").getBytes();
 				destIdentifier = overlayTree.getIdentifier(destinations);
-				System.out.println("destIdentifier "+destIdentifier);
 				target = overlayTree.getLca(destIdentifier);
 
 				req = new Request(type, key, value, destinations, seqNumber, clientId, clientId, destIdentifier);
@@ -103,7 +102,6 @@ public class ConsoleClient implements ReplyListener {
 				}
 				destinations = n;
 				destIdentifier = overlayTree.getIdentifier(destinations);
-				System.out.println("destIdentifier "+destIdentifier);
 				target = overlayTree.getLca(destIdentifier);
 
 				req = new Request(type, key, value, destinations, seqNumber, clientId, clientId, destIdentifier);
@@ -127,7 +125,6 @@ public class ConsoleClient implements ReplyListener {
 				}
 				destinations = n;
 				destIdentifier = overlayTree.getIdentifier(destinations);
-				System.out.println("destIdentifier "+destIdentifier);
 				target = overlayTree.getLca(destIdentifier);
 
 				req = new Request(type, key, value, destinations, seqNumber, clientId, clientId, destIdentifier);
@@ -149,7 +146,6 @@ public class ConsoleClient implements ReplyListener {
 					destinations[i] = overlayTree.getDestinations().get(i);
 				}
 				destIdentifier = overlayTree.getIdentifier(destinations);
-				System.out.println("destIdentifier "+destIdentifier);
 				target = overlayTree.getLca(destIdentifier);
 
 				req = new Request(type, key, value, destinations, seqNumber, clientId, clientId, destIdentifier);

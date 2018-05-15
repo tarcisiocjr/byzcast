@@ -63,6 +63,7 @@ public class TreeDirect implements Serializable {
 			String line = null;
 			while ((line = rd.readLine()) != null) {
 				if (!line.startsWith("#") && !line.isEmpty()) {
+					// TODO instead of reading nodes and then tree, read nodes and specs (througput
 					// etc and build optimal tree)
 					StringTokenizer str = new StringTokenizer(line, " ");
 					// vertex declaration (group)

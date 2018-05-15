@@ -5,7 +5,6 @@ import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.locks.ReentrantLock;
 
 import bftsmart.communication.client.ReplyListener;
 import bftsmart.tom.AsynchServiceProxy;
@@ -41,7 +40,6 @@ public class ClientThread implements Runnable, ReplyListener {
 	private Tree overlayTree;
 	private long now;
 	private int maxoustanding;
-	private AtomicInteger out = new AtomicInteger(0);
 	private int[] dests, destinations, local;
 	Random r = new Random();
 
@@ -79,12 +77,10 @@ public class ClientThread implements Runnable, ReplyListener {
 		System.out.println("global perc = " + globalPerc);
 
 		byte[] value = randomString(size).getBytes();
-		
+		local = new int[] { dests[r.nextInt(dests.length)] };
 		long destIdentifier = 0;
 
 		for (int i = 0; i < maxoustanding; i++) {
-			local = new int[] { dests[r.nextInt(dests.length)] };
-			System.out.println("send");
 			int key = r.nextInt(Integer.MAX_VALUE);
 			destinations = (r.nextInt(100) >= globalPerc ? local : dests);
 			seqNumber++;
@@ -175,8 +171,6 @@ public class ClientThread implements Runnable, ReplyListener {
 			repliesTracker.remove(replyReq.getSeqNumber());
 
 			if (elapsed / 1e9 < runTime) {
-				local = new int[] { dests[r.nextInt(dests.length)] };
-//				System.out.println("send");
 				int key = r.nextInt(Integer.MAX_VALUE);
 				byte[] value = randomString(size).getBytes();
 				destinations = (r.nextInt(100) >= globalPerc ? local : dests);

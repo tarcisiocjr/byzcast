@@ -8,6 +8,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -33,32 +34,14 @@ public class Vertex implements Serializable {
 	private transient AsynchServiceProxy proxy;
 	public boolean colored = false;
 
-	public List<Vertex> connections = new ArrayList<>();
+	public Set<Vertex> connections = new HashSet<>();
 	// private Set<Set<Vertex>> possibleConnections = new HashSet<>();
 	public Vertex parent;
-	public List<Edge> outgoingEdges = new ArrayList<>();
-	public List<Integer> inReach = new ArrayList<>();
+	public Set<Edge> outgoingEdges = new HashSet<>();
+	public Set<Integer> inReach = new HashSet<>();
 	public int inLatency = 0;
 	public int level = -1, inDegree = 0;
-
-	public Vertex(Vertex v) {
-		confPath = v.confPath;
-		ID = v.ID;
-		replicas = v.replicas;
-		proxyID = v.proxyID;
-		capacity = v.capacity;
-		resCapacity = v.resCapacity;
-		proxy = v.proxy;
-
-		connections = new ArrayList<>(v.connections);
-		parent = v.parent;
-		outgoingEdges = new ArrayList<>(v.outgoingEdges);
-		inReach = new ArrayList<>(v.inReach);
-		inLatency = v.inLatency;
-		level = v.level;
-		inDegree = v.inDegree;
-
-	}
+	
 
 	public Vertex(int ID, String conf, double capacity, int replicas, int proxyID) {
 		this.ID = ID;
@@ -221,7 +204,7 @@ public class Vertex implements Serializable {
 	/**
 	 * @return the connections
 	 */
-	public List<Vertex> getConnections() {
+	public Set<Vertex> getConnections() {
 		return connections;
 	}
 
@@ -250,7 +233,7 @@ public class Vertex implements Serializable {
 	/**
 	 * @return the outgoingEdges
 	 */
-	public List<Edge> getOutgoingEdges() {
+	public Set<Edge> getOutgoingEdges() {
 		return outgoingEdges;
 	}
 
@@ -258,14 +241,14 @@ public class Vertex implements Serializable {
 	 * @param outgoingEdges
 	 *            the outgoingEdges to set
 	 */
-	public void setOutgoingEdges(List<Edge> outgoingEdges) {
+	public void setOutgoingEdges(Set<Edge> outgoingEdges) {
 		this.outgoingEdges = outgoingEdges;
 	}
 
 	/**
 	 * @return the inReach
 	 */
-	public List<Integer> getInReach() {
+	public Set<Integer> getInReach() {
 		return inReach;
 	}
 
@@ -273,7 +256,7 @@ public class Vertex implements Serializable {
 	 * @param inReach
 	 *            the inReach to set
 	 */
-	public void setInReach(List<Integer> inReach) {
+	public void setInReach(Set<Integer> inReach) {
 		this.inReach = inReach;
 	}
 
@@ -399,26 +382,7 @@ public class Vertex implements Serializable {
 		}
 		return ret;
 	}
-
-	public void copysett(Vertex v) {
-		confPath = v.confPath;
-		ID = v.ID;
-		replicas = v.replicas;
-		proxyID = v.proxyID;
-		capacity = v.capacity;
-		resCapacity = v.resCapacity;
-		proxy = v.proxy;
-
-		connections = new ArrayList<>(v.connections);
-		parent = v.parent;
-		outgoingEdges = new ArrayList<>(v.outgoingEdges);
-		inReach = new ArrayList<>(v.inReach);
-		inLatency = v.inLatency;
-		level = v.level;
-		inDegree = v.inDegree;
-
-	}
-
+	
 	public String getConfPath() {
 		return confPath;
 	}

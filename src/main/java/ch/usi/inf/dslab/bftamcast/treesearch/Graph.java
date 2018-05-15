@@ -34,10 +34,10 @@ public class Graph {
 
 	// instead have a sorter for each destination combo
 	public static void main(String[] args) throws Exception {
-//		for (int i = 0; i < 400; i++) {
-			new Graph("config/load.conf");
-//		}
-		
+		// for (int i = 0; i < 400; i++) {
+		new Graph("config/load.conf");
+		// }
+
 	}
 
 	public Graph(String configFile) throws Exception {
@@ -145,12 +145,12 @@ public class Graph {
 		// testing generate tree
 
 		// int originalSize = vertices.size();
-		int originalSize = 0;
-		// for (int i = vertices.size()-1; i < 1; i++) {
-		for (int i = 0; i < 6; i++) {
-			vertices.add(new Vertex(i, "", 100000, numerOfReplicas));
-		}
-		int lodad = Integer.MAX_VALUE;
+		// int originalSize = 0;
+		// // for (int i = vertices.size()-1; i < 1; i++) {
+		// for (int i = 0; i < 6; i++) {
+		// vertices.add(new Vertex(i, "", 100000, numerOfReplicas));
+		// }
+		int lodad = 200;
 		for (Vertex vertex1 : vertices) {
 			for (Vertex vertex2 : vertices) {
 				// vertex1.setCapacity(Integer.MAX_VALUE);
@@ -168,13 +168,15 @@ public class Graph {
 				}
 			}
 		}
-		System.out.println("done generating test");
+		// System.out.println("done generating test");
 
 		// generate all possible destinations, not all might be specified, and assign
 		// base load (1m/s)ß
-		int baseload = 1;
-		// generate all dests and add not specified ones
+		int baseload = 0;
+		// // generate all dests and add not specified ones
 		List<Set<Vertex>> allPossibleDests = getAllPossibleDestinations(vertices);
+		System.out.println("all sets dest size = " + allPossibleDests.size());
+
 		System.out.println("done generating dests");
 		Random r = new Random();
 		// for(List<Vertex> f : allDests) {
@@ -186,29 +188,27 @@ public class Graph {
 		Set<Set<Vertex>> toremove = new HashSet<>();
 		for (Load load : loads) {
 			for (Set<Vertex> destination : allPossibleDests) {
-				if (destination.containsAll(load.destinations)) {
+				if (destination.containsAll(load.destinations) && load.destinations.containsAll(destination)) {
 					toremove.add(destination);
 				}
 			}
 
 		}
 
-		for (Set<Vertex> destination : allPossibleDests) {
-			if ( destination.contains(vertices.get(r.nextInt(vertices.size()))) ) {
-				toremove.add(destination);
-			}
-		}
 		allPossibleDests.removeAll(toremove);
-		System.out.println("sets dest size = " + loads.size());
+		// System.out.println("sets dest size = " + loads.size());
 		for (Set<Vertex> destination : allPossibleDests) {
-			loads.add(new Load(r.nextInt(70), destination));
-//			loads.add(new Load(baseload, destination));
+			// loads.add(new Load(r.nextInt(70), destination));
+			loads.add(new Load(baseload, destination));
 		}
 		System.out.println("sets dest size = " + loads.size());
 		System.out.println("vert size = " + vertices.size());
 		System.out.println("edges size = " + edges.size());
 
 		loads.sort(new Load(0, null));
+		// for (Load load : loads) {
+		// System.out.println(load.load + " " + load.destinationsIDS.toString());
+		// }
 
 		System.out.println("max load size = " + loads.get(0).load);
 
@@ -219,13 +219,6 @@ public class Graph {
 		if (!trees.isEmpty()) {
 			printTree(trees.get(trees.size() - 1), r.nextInt());
 		}
-
-//		Runtime.getRuntime().exec("say finished");
-//		Runtime.getRuntime().exec("say finished");
-//		Runtime.getRuntime().exec("say finished");
-//		Runtime.getRuntime().exec("say finished");
-//		Runtime.getRuntime().exec("say finished");
-
 	}
 
 	public void generateTrees(List<Vertex> vertices, List<List<Edge>> trees, List<Load> loads) {
@@ -250,7 +243,7 @@ public class Graph {
 			for (Vertex vertex : vertices) {
 				vertex.reset();
 			}
-			iteration = 0;
+			// iteration = 0;
 			List<Vertex> visited = new ArrayList<>();
 			Set<Set<Vertex>> cleanSet = new HashSet<>();
 			for (Set<Vertex> set : possibleChilds) {
@@ -295,19 +288,12 @@ public class Graph {
 		}
 
 		if (tree.size() == numVertices - 1) {
-			// if (score >= bestbestscore) {
-			// return;
-			// }
-//			printTree(tree, iteration);
-			System.out.println("new best " + score);
-			// printTree(tree, iteration) ;
+
+			System.out.println("new best " + score + "   " +  iteration);
+//			 printTree(tree, score) ;
 			trees.add(new ArrayList<>(tree));
+
 			bestbestscore = score;
-			// if (System.nanoTime() - time >= 1 * 1e9) {
-			// System.out.println(myFormat.format((((((double) trees.size()) /
-			// numberOfTrees) * 100))) + "%");
-			// time = System.nanoTime();
-			// }
 			return;
 		}
 
@@ -350,12 +336,22 @@ public class Graph {
 					List<Vertex> newFringe = new ArrayList<>(keptFringe);
 					newFringe.remove(visiting);
 					newFringe.addAll(childs);
-					List<Vertex> copy = copyVertices(vertices);
-
+					List<Double> oldcapacity = new ArrayList<>();
+					
+					for(Vertex v: vertices) {
+						oldcapacity.add(v.resCapacity);
+					}
+					
 					generateTreesRec(root, newTree, newVisited, trees, numVertices, newPossibleChilds, newFringe, loads,
 							score, tree);
 
-					resetVertices(copy, vertices);
+					int index = 0;
+					for(Vertex v: vertices) {
+						v.resCapacity = oldcapacity.get(index);
+						v.inReach.clear();
+						v.connections.removeAll(childs);
+						index++;
+					}
 
 				}
 
@@ -363,40 +359,20 @@ public class Graph {
 		}
 	}
 
-	public List<Vertex> copyVertices(List<Vertex> vertices) {
-		List<Vertex> copy = new ArrayList<>();
-		for (Vertex vertex : vertices) {
-			copy.add(new Vertex(vertex));
-
-		}
-
-		return copy;
-	}
-
-	public void resetVertices(List<Vertex> source, List<Vertex> destination) {
-		for (int i = 0; i < source.size(); i++) {
-			destination.get(i).copysett(source.get(i));
-		}
-
-	}
 
 	public static long compute_score(Vertex root, List<Edge> tree, List<Load> loads, long minscore,
 			List<Vertex> vertices, long prevscore, List<Edge> prevtree) {
-		long score = prevscore;
-		// System.out.println(root.resCapacity);
+		 long score = prevscore;
 
-		// for (Vertex vertex : vertices) {
-		// vertex.reset();
-		// }
 
 		List<Vertex> treevertices = new ArrayList<>();
 		treevertices.add(root);
 		List<Vertex> prevtreevertices = new ArrayList<>();
-		prevtreevertices.add(root);
+		 prevtreevertices.add(root);
 
 		for (Edge edge : tree) {
-			if (prevtreevertices.contains(edge.to)) {
-				prevtreevertices.add(edge.to);
+			if (prevtree.contains(edge)) {
+				 prevtreevertices.add(edge.to);
 			}
 			treevertices.add(edge.to);
 			edge.from.addConnections(edge.to);
@@ -409,7 +385,7 @@ public class Graph {
 			// compute only if current tree contains all groups and not computed for
 			// previous tree
 			if (treevertices.containsAll(load.destinations) && !prevtreevertices.containsAll(load.destinations)) {
-				// find lca and lca heigh in tree
+				// find lca and lca height in tree
 				Vertex lca = lca(load.destinations, root);
 				int lcaH = lca.getLevel();
 
@@ -428,13 +404,11 @@ public class Graph {
 				// can remove since returns when saturated
 				if (!saturated) {
 					for (Vertex v : load.destinations) {
-						
+
 						int penalty = computepenalty(lca, load.destinations);
-						
 
 						// compute score for load on destination set
-						long val = (v.latecyToLCA(lca)
-								+ penalty * ((v.getLevel() - lcaH) +1) * (load.load / load.destinations.size()));
+						long val = (penalty * (load.load));
 						// System.out.println(val);
 						score += val;
 						// if already worst stop computing
@@ -509,7 +483,7 @@ public class Graph {
 		return ancestor;
 	}
 
-	public static void printTree(List<Edge> tree, int id) {
+	public static void printTree(List<Edge> tree, long id) {
 		if (tree != null) {
 			PrintWriter writer;
 			try {
@@ -523,7 +497,7 @@ public class Graph {
 				}
 
 				ggq += "}";
-				writer = new PrintWriter("graphs/graph_totassl" + id + ".dot", "UTF-8");
+				writer = new PrintWriter("graphs/graph_totassl" + id + "--" + iteration + ".dot", "UTF-8");
 				writer.println(ggq);
 				writer.close();
 
@@ -549,26 +523,24 @@ public class Graph {
 			return 0;
 		}
 		int penalty = 1;
-		if(!destinations.contains(lca)) {
-			penalty ++;
+		if (!destinations.contains(lca)) {
+			penalty++;
 		}
 		Set<Vertex> tosend = new HashSet<>();
-		for(Vertex v : lca.connections) {
-			if(tosend.contains(v)) {
-				break;
-			}
-			for(Vertex v2 : destinations) {
-				if(v.inReach(v2.getID())) {
-					tosend.add(v);
-					break;
+		for (Vertex v : lca.connections) {
+			if (!tosend.contains(v)) {
+
+				for (Vertex v2 : destinations) {
+					if (v.inReach(v2.getID())) {
+						tosend.add(v);
+					}
 				}
 			}
 		}
-		
-		for(Vertex v : tosend) {
+
+		for (Vertex v : tosend) {
 			penalty += computepenalty(v, destinations);
 		}
-		
 
 		return penalty;
 	}

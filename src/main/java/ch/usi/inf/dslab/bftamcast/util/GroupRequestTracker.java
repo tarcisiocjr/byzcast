@@ -1,7 +1,6 @@
 package ch.usi.inf.dslab.bftamcast.util;
 
 import java.util.Arrays;
-import java.util.List;
 import java.util.Set;
 
 import bftsmart.tom.core.messages.TOMMessage;
@@ -22,25 +21,21 @@ public class GroupRequestTracker {
 	private long startTime, endTime;
 
 	public GroupRequestTracker(int majority) {
-		
-//		System.out.println("MAJORITY ==== "+ majority);
 		this.majority = majority;
 		this.replies = new ConcurrentSet<>();
 		this.startTime = System.nanoTime();
 	}
 
-	 public synchronized boolean addReply(TOMMessage reply) {
+	public boolean addReply(TOMMessage reply) {
 
 		this.replies.add(reply);
 
-//		System.out.println("addreply, reply size = " + replies.size());
-		if (replies.size() >= majority  && !majreached) {
+		if (replies.size() >= majority) {
 			endTime = System.nanoTime();
 			majreached = true;
-			majorityReply = getMajreq2(replies, majority);
+			majorityReply = getMajreq(replies, majority);
 			return true;
 		}
-		
 		return false;
 	}
 
@@ -80,7 +75,7 @@ public class GroupRequestTracker {
 		return majority;
 	}
 
-	public static Request getMajreq2(Set<TOMMessage> msgs, int majority) {
+	public static Request getMajreq(Set<TOMMessage> msgs, int majority) {
 		// System.out.println("msg size " + msgs.size() ) ;
 		// System.out.println("maj size " + majority) ;
 		byte[][] hashes = new byte[msgs.size()][];
@@ -88,6 +83,7 @@ public class GroupRequestTracker {
 		int i = 0;
 		for (TOMMessage msg : msgs) {
 			hashes[i] = TOMUtil.computeHash(msg.getContent());
+			;
 			accessableMsgs[i] = msg;
 			i++;
 		}
@@ -100,48 +96,13 @@ public class GroupRequestTracker {
 
 					}
 				}
-				if (count >= 0) {
-					//TODO fix for batches, but how????
+				if (count >= majority) {
 					return new Request(accessableMsgs[j].getContent());
 				}
 
 			}
-//			System.out.println("count = " + count);
 		}
 		return null;
-
-	}
-	public static Request getMajreq(List<Request> msgs, int majority) {
-		// System.out.println("msg size " + msgs.size() ) ;
-		// System.out.println("maj size " + majority) ;
-//		byte[][] hashes = new byte[msgs.size()][];
-//		TOMMessage[] accessableMsgs = new TOMMessage[msgs.size()];
-//		int i = 0;
-//		for (TOMMessage msg : msgs) {
-//			hashes[i] = TOMUtil.computeHash(msg.getContent());
-//			accessableMsgs[i] = msg;
-//			i++;
-//		}
-//		for (int j = 0; j < hashes.length; j++) {
-//			int count = 1;
-//			for (int k = 0; k < hashes.length; k++) {
-//				if (k != j) {
-//					if (Arrays.equals(hashes[j], hashes[k])) {
-//						count++;
-//
-//					}
-//				}
-//				if (count >= 0) {
-//					//TODO fix for batches, but how????
-//					return new Request(accessableMsgs[j].getContent());
-//				}
-//
-//			}
-////			System.out.println("count = " + count);
-//		}
-//		return null;
-		//TODO fix properly
-		return msgs.iterator().next();
 
 	}
 

@@ -3,7 +3,6 @@
  */
 package ch.usi.inf.dslab.bftamcast.util;
 
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -20,34 +19,15 @@ public class RequestTracker {
 	private ConcurrentMap<Integer, GroupRequestTracker> tracker;
 	private TOMMessage recivedRequest;
 	private Request myreply;
-	private Map<Vertex, Integer> groups;
-	private  byte[] requestsent;
-	private long start;
-	
-	public RequestTracker(Map<Vertex, Integer> groups, Request myreply, byte[] requestsent) {
+
+	public RequestTracker(Map<Vertex, Integer> groups, Request myreply) {
 		this.myreply = myreply;
 		tracker = new ConcurrentHashMap<>();
-		this.groups = groups;
-		this.requestsent = requestsent;
 		for (Vertex groupId : groups.keySet()) {
 
 			tracker.put(groupId.getID(), new GroupRequestTracker(groups.get(groupId)));
 
 		}
-	}
-	
-	public void start() {
-		this.start = System.nanoTime();
-	}
-	
-	public long getElapsed() {
-		return System.nanoTime() - start;
-	}
-	public  Map<Vertex, Integer> getGroups(){
-		return groups;
-	}
-	public byte[] getRequest() {
-		return   requestsent;
 	}
 
 	public boolean addReply(TOMMessage req, int senderId) {
@@ -83,22 +63,6 @@ public class RequestTracker {
 //				System.out.println(tmp.getResult());
 //				System.out.println();
 				myreply.mergeReplies(tmp.getResult());
-			}
-		}
-		return myreply;
-	}
-	
-	public Request getMergedReplyFromList(List<Request> replies) {
-		for (Request reply : replies) {
-			if (myreply == null) {
-				myreply = reply;
-			} else {
-				// myreply.setResult(tmp.getGroupResult(groupID), groupID);
-//				System.out.println(myreply);
-//				System.out.println(tmp);
-//				System.out.println(tmp.getResult());
-//				System.out.println();
-				myreply.mergeReplies(reply.getResult());
 			}
 		}
 		return myreply;
