@@ -1,5 +1,5 @@
 
-package ch.usi.inf.dslab.bftamcast.direct.server;
+package ch.usi.inf.dslab.bftamcast.server;
 
 import java.io.Serializable;
 import java.util.HashMap;
@@ -23,9 +23,9 @@ import bftsmart.tom.core.messages.TOMMessageType;
 import bftsmart.tom.server.BatchExecutable;
 import bftsmart.tom.server.FIFOExecutable;
 import bftsmart.tom.server.Replier;
-import ch.usi.inf.dslab.bftamcast.direct.graph.TreeDirect;
-import ch.usi.inf.dslab.bftamcast.direct.graph.VertexDirect;
-import ch.usi.inf.dslab.bftamcast.direct.kvs.RequestDirect;
+import ch.usi.inf.dslab.bftamcast.graph.TreeDirect;
+import ch.usi.inf.dslab.bftamcast.graph.VertexDirect;
+import ch.usi.inf.dslab.bftamcast.kvs.RequestDirect;
 import io.netty.util.internal.ConcurrentSet;
 
 /**

@@ -1,7 +1,7 @@
 /**
  * 
  */
-package ch.usi.inf.dslab.bftamcast.direct.graph;
+package ch.usi.inf.dslab.bftamcast.graph;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -10,7 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.StringTokenizer;
 
-import ch.usi.inf.dslab.bftamcast.direct.client.ConsoleClientDirect;
+import ch.usi.inf.dslab.bftamcast.client.ConsoleClientDirect;
 
 /**
  * @author Christian Vuerich - christian.vuerich@usi.ch

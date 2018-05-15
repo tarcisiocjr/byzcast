@@ -1,15 +1,15 @@
 /**
  * 
  */
-package ch.usi.inf.dslab.bftamcast.direct.util;
+package ch.usi.inf.dslab.bftamcast.util;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import bftsmart.tom.core.messages.TOMMessage;
-import ch.usi.inf.dslab.bftamcast.direct.graph.VertexDirect;
-import ch.usi.inf.dslab.bftamcast.direct.kvs.RequestDirect;
+import ch.usi.inf.dslab.bftamcast.graph.VertexDirect;
+import ch.usi.inf.dslab.bftamcast.kvs.RequestDirect;
 
 /**
  * @author Christian Vuerich - christian.vuerich@usi.ch Tracker for replies for

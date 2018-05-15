@@ -1,7 +1,6 @@
-package ch.usi.inf.dslab.bftamcast.direct.kvs;
+package ch.usi.inf.dslab.bftamcast.kvs;
 
 import ch.usi.inf.dslab.bftamcast.RequestIf;
-import ch.usi.inf.dslab.bftamcast.kvs.RequestType;
 
 import java.io.*;
 import java.util.Arrays;

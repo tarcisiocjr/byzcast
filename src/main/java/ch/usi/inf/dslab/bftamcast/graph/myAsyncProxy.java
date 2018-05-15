@@ -1,14 +1,14 @@
 /**
  * 
  */
-package ch.usi.inf.dslab.bftamcast.direct.graph;
+package ch.usi.inf.dslab.bftamcast.graph;
 
 import java.util.Comparator;
 
 import bftsmart.tom.AsynchServiceProxy;
 import bftsmart.tom.core.messages.TOMMessage;
 import bftsmart.tom.util.Extractor;
-import ch.usi.inf.dslab.bftamcast.direct.client.ConsoleClientDirect;
+import ch.usi.inf.dslab.bftamcast.client.ConsoleClientDirect;
 
 /**
  * @author Christian Vuerich - christian.vuerich@usi.ch

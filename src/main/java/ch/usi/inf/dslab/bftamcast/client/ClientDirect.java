@@ -1,4 +1,4 @@
-package ch.usi.inf.dslab.bftamcast.direct.client;
+package ch.usi.inf.dslab.bftamcast.client;
 
 import ch.usi.inf.dslab.bftamcast.util.CLIParser;
 
