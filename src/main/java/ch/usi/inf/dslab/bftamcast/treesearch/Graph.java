@@ -168,39 +168,40 @@ public class Graph {
 				}
 			}
 		}
-		// System.out.println("done generating test");
-
-		// generate all possible destinations, not all might be specified, and assign
-		// base load (1m/s)ß
-		int baseload = 0;
-		// // generate all dests and add not specified ones
-		List<Set<Vertex>> allPossibleDests = getAllPossibleDestinations(vertices);
-		System.out.println("all sets dest size = " + allPossibleDests.size());
-
-		System.out.println("done generating dests");
+//		// System.out.println("done generating test");
+//
+//		// generate all possible destinations, not all might be specified, and assign
+//		// base load (1m/s)ß
+//		int baseload = 0;
+//		// // generate all dests and add not specified ones
+//		List<Set<Vertex>> allPossibleDests = getAllPossibleDestinations(vertices);
+//		System.out.println("all sets dest size = " + allPossibleDests.size());
+//
+//		System.out.println("done generating dests");
+//		Random r = new Random();
+//		// for(List<Vertex> f : allDests) {
+//		// for (Vertex v : f) {
+//		// System.out.print(v.ID+ " ,");
+//		// }
+//		// System.out.println();
+//		// }
+//		Set<Set<Vertex>> toremove = new HashSet<>();
+//		for (Load load : loads) {
+//			for (Set<Vertex> destination : allPossibleDests) {
+//				if (destination.containsAll(load.destinations) && load.destinations.containsAll(destination)) {
+//					toremove.add(destination);
+//				}
+//			}
+//
+//		}
+//
+//		allPossibleDests.removeAll(toremove);
+//		// System.out.println("sets dest size = " + loads.size());
+//		for (Set<Vertex> destination : allPossibleDests) {
+//			// loads.add(new Load(r.nextInt(70), destination));
+//			loads.add(new Load(baseload, destination));
+//		}
 		Random r = new Random();
-		// for(List<Vertex> f : allDests) {
-		// for (Vertex v : f) {
-		// System.out.print(v.ID+ " ,");
-		// }
-		// System.out.println();
-		// }
-		Set<Set<Vertex>> toremove = new HashSet<>();
-		for (Load load : loads) {
-			for (Set<Vertex> destination : allPossibleDests) {
-				if (destination.containsAll(load.destinations) && load.destinations.containsAll(destination)) {
-					toremove.add(destination);
-				}
-			}
-
-		}
-
-		allPossibleDests.removeAll(toremove);
-		// System.out.println("sets dest size = " + loads.size());
-		for (Set<Vertex> destination : allPossibleDests) {
-			// loads.add(new Load(r.nextInt(70), destination));
-			loads.add(new Load(baseload, destination));
-		}
 		System.out.println("sets dest size = " + loads.size());
 		System.out.println("vert size = " + vertices.size());
 		System.out.println("edges size = " + edges.size());
@@ -283,7 +284,7 @@ public class Graph {
 		long score = compute_score(root, tree, loads, bestbestscore, vertices, prevscore, prevtree);
 		//
 
-		if (score >= bestbestscore) {
+		if (score >= bestbestscore ||  score < 0) {
 			return;
 		}
 
