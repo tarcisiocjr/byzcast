@@ -24,11 +24,11 @@ public class RequestTracker {
 	private  byte[] requestsent;
 	private long start;
 	
-	public RequestTracker(Map<Vertex, Integer> groups, Request myreply, byte[] requestsent) {
+	public RequestTracker(Map<Vertex, Integer> groups, Request myreply) {
 		this.myreply = myreply;
 		tracker = new ConcurrentHashMap<>();
 		this.groups = groups;
-		this.requestsent = requestsent;
+//		this.requestsent = requestsent;
 		for (Vertex groupId : groups.keySet()) {
 
 			tracker.put(groupId.getID(), new GroupRequestTracker(groups.get(groupId)));
@@ -70,7 +70,7 @@ public class RequestTracker {
 		return recivedRequest;
 	}
 
-	public Request getMergedReply() {
+	public synchronized Request getMergedReply() {
 		Request tmp;
 		for (Integer groupID : tracker.keySet()) {
 			tmp = tracker.get(groupID).getMajorityReply();
@@ -91,7 +91,7 @@ public class RequestTracker {
 		return myreply;
 	}
 	
-	public Request getMergedReplyFromList(List<Request> replies) {
+	public synchronized Request getMergedReplyFromList(List<Request> replies) {
 		for (Request reply : replies) {
 			if (myreply == null) {
 				myreply = reply;
