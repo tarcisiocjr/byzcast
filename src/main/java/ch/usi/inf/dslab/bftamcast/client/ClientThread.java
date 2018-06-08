@@ -95,10 +95,10 @@ public class ClientThread implements Runnable, ReplyListener {
 			// System.out.println("increment");
 
 			AsynchServiceProxy prox = lca.getProxy();
-			prox.invokeAsynchRequest(req.toBytes(), this, TOMMessageType.ORDERED_REQUEST);
+			int id = prox.invokeAsynchRequest(req.toBytes(), this, TOMMessageType.ORDERED_REQUEST);
 			// TODO needed to cancel requests, but will check later for performance
 			// prox.cleanAsynchRequest(requestId); when received reply
-			repliesTracker.put(seqNumber, new GroupRequestTracker(prox.getViewManager().getCurrentViewF() + 1));
+			repliesTracker.put(seqNumber, new GroupRequestTracker(prox.getViewManager().getCurrentViewF() + 1, id));
 
 		}
 
@@ -142,7 +142,7 @@ public class ClientThread implements Runnable, ReplyListener {
 			}
 			printed = true;
 			return;
-		}
+		};
 
 		// convert reply to request object
 		Request replyReq = new Request(reply.getContent());
@@ -150,6 +150,7 @@ public class ClientThread implements Runnable, ReplyListener {
 		GroupRequestTracker tracker = repliesTracker.get(replyReq.getSeqNumber());
 
 		if (tracker != null && tracker.addReply(reply)) {
+			overlayTree.getLca(overlayTree.getIdentifier(tracker.getMajorityReply().getDestination())).getProxy().cleanAsynchRequest(tracker.getID());
 			try {
 				if (replyReq.getDestination().length > 1)
 					globalStats.store(tracker.getElapsedTime() / 1000000);
@@ -187,10 +188,11 @@ public class ClientThread implements Runnable, ReplyListener {
 				// System.out.println("increment");
 
 				AsynchServiceProxy prox = lca.getProxy();
-				prox.invokeAsynchRequest(req.toBytes(), this, TOMMessageType.ORDERED_REQUEST);
+				int id = prox.invokeAsynchRequest(req.toBytes(), this, TOMMessageType.ORDERED_REQUEST);
 				// TODO needed to cancel requests, but will check later for performance
 				// prox.cleanAsynchRequest(requestId); when received reply
-				repliesTracker.put(seqNumber, new GroupRequestTracker(prox.getViewManager().getCurrentViewF() + 1));
+				repliesTracker.put(seqNumber, new GroupRequestTracker(prox.getViewManager().getCurrentViewF() + 1, id));
+
 			}
 
 		}

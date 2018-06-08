@@ -185,8 +185,10 @@ public class ReplicaReplier implements Replier, FIFOExecutable, Serializable, Re
 					}
 				}
 
+				RequestTracker a = repliesTracker.get(req.getClient()).get(req.getSeqNumber());
 				for (Vertex v : toSend.keySet()) {
-					v.getProxy().invokeAsynchRequest(request.getContent(), this, TOMMessageType.ORDERED_REQUEST);
+					int i  = v.getProxy().invokeAsynchRequest(request.getContent(), this, TOMMessageType.ORDERED_REQUEST);
+					a.addID(i, v.getID());
 				}
 			}
 		}
@@ -301,6 +303,7 @@ public class ReplicaReplier implements Replier, FIFOExecutable, Serializable, Re
 				if (tracker != null && tracker.addReply(reply, replyReq.getSender())) {
 					// get reply with all groups replies
 					Request sendReply = tracker.getMergedReply();
+					tracker.clean();
 					sendReply.setSender(groupId);
 					// get all requests waiting for this answer
 					ConcurrentSet<TOMMessage> msgs = globalReplies.get(sendReply.getClient()).get(sendReply.getSeqNumber());

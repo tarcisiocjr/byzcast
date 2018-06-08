@@ -110,11 +110,12 @@ public class Vertex implements Serializable {
 
 	public void updateLoad(int load, Set<Vertex> destinations, int replicas, List<Vertex> updated) {
 		updated.add(this);
-		List<Vertex> toUpdate = new ArrayList<>();
+		Set<Vertex> toUpdate = new HashSet<>();
 		for (Vertex v : connections) {
 			for (Vertex d : destinations) {
-				if (!toUpdate.contains(v) && v.inReach(d.ID)) {
+				if (v.inReach(d.ID)) {
 					toUpdate.add(v);
+					break;
 				}
 			}
 		}
@@ -123,7 +124,7 @@ public class Vertex implements Serializable {
 			replies += v.replicas;
 		}
 
-		resCapacity -= load * (replicas * replies);
+		resCapacity -= (load * replicas + load * replies);
 		for (Vertex v : toUpdate) {
 			v.updateLoad(load, destinations, this.replicas, updated);
 		}

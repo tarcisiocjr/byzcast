@@ -36,6 +36,10 @@ public class RequestTracker {
 		}
 	}
 	
+	public void addID(int id, int gid) {
+		tracker.get(gid).setID(id);
+	}
+	
 	public void start() {
 		this.start = System.nanoTime();
 	}
@@ -105,6 +109,14 @@ public class RequestTracker {
 			}
 		}
 		return myreply;
+	}
+
+	public void clean() {
+		// TODO Auto-generated method stub
+		for(Vertex v : groups.keySet()) {
+			v.getProxy().cleanAsynchRequest(tracker.get(v.getID()).getID());
+		}
+		
 	}
 
 }

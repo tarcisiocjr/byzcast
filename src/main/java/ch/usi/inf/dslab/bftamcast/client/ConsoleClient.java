@@ -29,6 +29,7 @@ import ch.usi.inf.dslab.bftamcast.util.GroupRequestTracker;
 public class ConsoleClient implements ReplyListener {
 	final Map<Integer, GroupRequestTracker> repliesTracker = new HashMap<>();
 	private static Scanner scanner;
+	static Tree overlayTree;
 
 	public static void main(String[] args) {
 		int seqNumber = 0;
@@ -37,7 +38,7 @@ public class ConsoleClient implements ReplyListener {
 		Random r = new Random();
 		int clientId = p.getId() == 0 ? r.nextInt(Integer.MAX_VALUE) : p.getId();
 		String treeConfigPath = p.getTreeConfig();
-		Tree overlayTree = new Tree(treeConfigPath, UUID.randomUUID().hashCode());
+		overlayTree = new Tree(treeConfigPath, UUID.randomUUID().hashCode());
 		Request req;
 
 		Console console = System.console();
@@ -83,9 +84,10 @@ public class ConsoleClient implements ReplyListener {
 				req = new Request(type, key, value, destinations, seqNumber, clientId, clientId, destIdentifier);
 
 				System.out.println("id ==    " + target.getID());
+				
+				int a=target.getProxy().invokeAsynchRequest(req.toBytes(), c, TOMMessageType.ORDERED_REQUEST);
 				c.repliesTracker.put(seqNumber,
-						new GroupRequestTracker(target.getProxy().getViewManager().getCurrentViewF() + 1));
-				target.getProxy().invokeAsynchRequest(req.toBytes(), c, TOMMessageType.ORDERED_REQUEST);
+						new GroupRequestTracker(target.getProxy().getViewManager().getCurrentViewF() + 1,a));
 				System.out.println("sent");
 				break;
 			case 2:
@@ -107,9 +109,10 @@ public class ConsoleClient implements ReplyListener {
 				req = new Request(type, key, value, destinations, seqNumber, clientId, clientId, destIdentifier);
 
 				System.out.println("id ==    " + target.getID());
+				int b = target.getProxy().invokeAsynchRequest(req.toBytes(), c, TOMMessageType.ORDERED_REQUEST);
 				c.repliesTracker.put(seqNumber,
-						new GroupRequestTracker(target.getProxy().getViewManager().getCurrentViewF() + 1));
-				target.getProxy().invokeAsynchRequest(req.toBytes(), c, TOMMessageType.ORDERED_REQUEST);
+						new GroupRequestTracker(target.getProxy().getViewManager().getCurrentViewF() + 1,b));
+				
 				break;
 			case 3:
 				System.out.println("Removing value in the map");
@@ -130,9 +133,10 @@ public class ConsoleClient implements ReplyListener {
 				req = new Request(type, key, value, destinations, seqNumber, clientId, clientId, destIdentifier);
 
 				System.out.println("id ==    " + target.getID());
+				
+				int cs = target.getProxy().invokeAsynchRequest(req.toBytes(), c, TOMMessageType.ORDERED_REQUEST);
 				c.repliesTracker.put(seqNumber,
-						new GroupRequestTracker(target.getProxy().getViewManager().getCurrentViewF() + 1));
-				target.getProxy().invokeAsynchRequest(req.toBytes(), c, TOMMessageType.ORDERED_REQUEST);
+						new GroupRequestTracker(target.getProxy().getViewManager().getCurrentViewF() + 1,cs));
 				break;
 			case 4:
 				System.out.println("Getting the map size");
@@ -151,9 +155,10 @@ public class ConsoleClient implements ReplyListener {
 				req = new Request(type, key, value, destinations, seqNumber, clientId, clientId, destIdentifier);
 
 				System.out.println("id ==    " + target.getID());
+				
+				int d = target.getProxy().invokeAsynchRequest(req.toBytes(), c, TOMMessageType.ORDERED_REQUEST);
 				c.repliesTracker.put(seqNumber,
-						new GroupRequestTracker(target.getProxy().getViewManager().getCurrentViewF() + 1));
-				target.getProxy().invokeAsynchRequest(req.toBytes(), c, TOMMessageType.ORDERED_REQUEST);
+						new GroupRequestTracker(target.getProxy().getViewManager().getCurrentViewF() + 1,d));
 				break;
 			default:
 				System.err.println("Invalid option...");
@@ -172,6 +177,8 @@ public class ConsoleClient implements ReplyListener {
 		GroupRequestTracker tracker = repliesTracker.get(replyReq.getSeqNumber());
 		if (tracker != null && tracker.addReply(reply)) {
 			replyReq = tracker.getMajorityReply();
+			overlayTree.getLca(overlayTree.getIdentifier(replyReq.getDestination())).getProxy().cleanAsynchRequest(tracker.getID());
+
 			System.out.println("finish, sent up req # " + replyReq.getSeqNumber());
 
 			repliesTracker.remove(replyReq.getSeqNumber());

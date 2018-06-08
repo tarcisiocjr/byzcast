@@ -13,6 +13,7 @@ import io.netty.util.internal.ConcurrentSet;
  *         from a single group
  */
 public class GroupRequestTracker {
+	private int id;
 	private ConcurrentSet<TOMMessage> replies;
 	private int majority;
 	private boolean majreached = false;
@@ -20,6 +21,15 @@ public class GroupRequestTracker {
 
 	private long startTime, endTime;
 
+	public int getID() {
+		return id;
+	}
+	public GroupRequestTracker(int majority, int id) {
+		this.id = id;
+		this.majority = majority;
+		this.replies = new ConcurrentSet<>();
+		this.startTime = System.nanoTime();
+	}
 	public GroupRequestTracker(int majority) {
 		this.majority = majority;
 		this.replies = new ConcurrentSet<>();
@@ -104,6 +114,10 @@ public class GroupRequestTracker {
 		}
 		return null;
 
+	}
+	public void setID(int id2) {
+		this.id = id2;
+		
 	}
 
 }

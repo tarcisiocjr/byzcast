@@ -29,7 +29,7 @@ import ch.usi.inf.dslab.bftamcast.graph.Vertex;
  * @author Christian Vuerich - christian.vuerich@usi.ch
  *
  */
-public class Graph {
+public class GraphBoth {
 	public List<Vertex> vertices = new ArrayList<>();
 	public List<Edge> edges = new ArrayList<>();
 	public List<Load> loads = new ArrayList<>();
@@ -40,16 +40,16 @@ public class Graph {
 	// instead have a sorter for each destination combo
 	public static void main(String[] args) throws Exception {
 		// for (int i = 0; i < 400; i++) {
-//		if(args.length!=1) {
-//			System.out.println("pass number of vertices as param");
-//		}
-		verticn = 0;
-		new Graph("config/load.conf");
+		if(args.length!=1) {
+			System.out.println("pass number of vertices as param");
+		}
+		verticn = 4;
+		new GraphBoth("config/load.conf");
 		// }
 
 	}
 
-	public Graph(String configFile) throws Exception {
+	public GraphBoth(String configFile) throws Exception {
 
 		// parse edges, vertices, load and constrains
 		FileReader fr;
@@ -159,22 +159,22 @@ public class Graph {
 	    System.out.println(formatter.format(date));  
 		int originalSize = 0;
 		// for (int i = vertices.size()-1; i < 1; i++) {
-//		vertices.clear();
-//		edges.clear();
-//		loads.clear();
-//		Integer capacity = 1785;
-//		System.out.println("capacity = "+capacity);
-//		int baseload = 1;
-//		int vertic = verticn;
-//		for (int i = 0; i < vertic; i++) {
-//			vertices.add(new Vertex(i, "", 100000, numerOfReplicas));
-//		}
+		vertices.clear();
+		edges.clear();
+		loads.clear();
+		Integer capacity = 2000;
+		System.out.println("capacity = "+capacity);
+		int baseload = 1;
+		int vertic = verticn;
+		for (int i = 0; i < vertic; i++) {
+			vertices.add(new Vertex(i, "", 100000, numerOfReplicas));
+		}
 		for (Vertex vertex1 : vertices) {
 			for (Vertex vertex2 : vertices) {
-//				vertex1.setCapacity(capacity);
-//				vertex1.setResCapacity(capacity);
-//				vertex2.setCapacity(capacity);
-//				vertex2.setResCapacity(capacity);
+				vertex1.setCapacity(capacity);
+				vertex1.setResCapacity(capacity);
+				vertex2.setCapacity(capacity);
+				vertex2.setResCapacity(capacity);
 				if (vertex1 != vertex2) {
 					Edge edge = new Edge(vertex1, vertex2, 100);
 					vertex1.addEdge(edge);
@@ -188,28 +188,28 @@ public class Graph {
 		// base load (1m/s)ß
 
 		// // generate all dests and add not specified ones
-//		List<Set<Vertex>> allPossibleDests = getAllPossibleDestinations(vertices);
-//		System.out.println("all sets dest size = " + allPossibleDests.size());
-//
-//		System.out.println("done generating dests");
+		List<Set<Vertex>> allPossibleDests = getAllPossibleDestinations(vertices);
+		System.out.println("all sets dest size = " + allPossibleDests.size());
+
+		System.out.println("done generating dests");
 		Random r = new Random();
-//
-//		Set<Set<Vertex>> toremove = new HashSet<>();
-//		for (Load load : loads) {
-//			for (Set<Vertex> destination : allPossibleDests) {
-//				if (destination.containsAll(load.destinations) && load.destinations.containsAll(destination)) {
-//					toremove.add(destination);
-//				}
-//			}
-//
-//		}
-//
-//		allPossibleDests.removeAll(toremove);
-//		// System.out.println("sets dest size = " + loads.size());
-//		for (Set<Vertex> destination : allPossibleDests) {
-//			// loads.add(new Load(r.nextInt(70), destination));
-//			loads.add(new Load(baseload, destination));
-//		}
+
+		Set<Set<Vertex>> toremove = new HashSet<>();
+		for (Load load : loads) {
+			for (Set<Vertex> destination : allPossibleDests) {
+				if (destination.containsAll(load.destinations) && load.destinations.containsAll(destination)) {
+					toremove.add(destination);
+				}
+			}
+
+		}
+
+		allPossibleDests.removeAll(toremove);
+		// System.out.println("sets dest size = " + loads.size());
+		for (Set<Vertex> destination : allPossibleDests) {
+			// loads.add(new Load(r.nextInt(70), destination));
+			loads.add(new Load(baseload, destination));
+		}
 		System.out.println("sets dest size = " + loads.size());
 		System.out.println("vert size = " + vertices.size());
 		System.out.println("edges size = " + edges.size());
@@ -279,7 +279,7 @@ public class Graph {
 
 	}
 
-	public static int iteration = 0;
+	public static long iteration = 0;
 	public static long time = 0;
 	public static double numberOfTrees = 0;
 	public static DecimalFormat myFormat = new DecimalFormat("0.00000000");
@@ -304,7 +304,7 @@ public class Graph {
 			
 		
 			
-			System.out.println("new best " + score + "   " + iteration);
+//			System.out.println("new best " + score + "   " + iteration);
 			// printTree(tree, score) ;
 			trees.add(new ArrayList<>(tree));
 
