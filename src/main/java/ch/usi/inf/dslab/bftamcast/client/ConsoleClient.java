@@ -12,6 +12,7 @@ import bftsmart.communication.client.ReplyListener;
 import bftsmart.tom.RequestContext;
 import bftsmart.tom.core.messages.TOMMessage;
 import bftsmart.tom.core.messages.TOMMessageType;
+import ch.usi.inf.dslab.bftamcast.OverlayTree;
 import ch.usi.inf.dslab.bftamcast.graph.Tree;
 import ch.usi.inf.dslab.bftamcast.graph.Vertex;
 
@@ -29,7 +30,7 @@ import ch.usi.inf.dslab.bftamcast.util.GroupRequestTracker;
 public class ConsoleClient implements ReplyListener {
 	final Map<Integer, GroupRequestTracker> repliesTracker = new HashMap<>();
 	private static Scanner scanner;
-	static Tree overlayTree;
+	static OverlayTree overlayTree;
 
 	public static void main(String[] args) {
 		int seqNumber = 0;

@@ -23,6 +23,7 @@ import bftsmart.tom.core.messages.TOMMessage;
 import bftsmart.tom.core.messages.TOMMessageType;
 import bftsmart.tom.server.FIFOExecutable;
 import bftsmart.tom.server.Replier;
+import ch.usi.inf.dslab.bftamcast.OverlayTree;
 import ch.usi.inf.dslab.bftamcast.graph.Tree;
 import ch.usi.inf.dslab.bftamcast.graph.Vertex;
 import ch.usi.inf.dslab.bftamcast.kvs.Request;
@@ -42,7 +43,7 @@ public class ReplicaReplier implements Replier, FIFOExecutable, Serializable, Re
 
 	private static final long serialVersionUID = 1L;
 	// keep the proxy of all groups and compute lca etc/
-	private Tree overlayTree;
+	private OverlayTree overlayTree;
 	private int groupId, maxOutstanding;
 	protected transient Lock replyLock;
 	protected transient Condition contextSet;
@@ -326,7 +327,7 @@ public class ReplicaReplier implements Replier, FIFOExecutable, Serializable, Re
 				}
 	}
 
-	public Tree getOverlayTree() {
+	public OverlayTree getOverlayTree() {
 		return overlayTree;
 	}
 

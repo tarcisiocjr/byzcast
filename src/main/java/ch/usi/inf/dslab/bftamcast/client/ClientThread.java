@@ -11,6 +11,7 @@ import bftsmart.tom.AsynchServiceProxy;
 import bftsmart.tom.RequestContext;
 import bftsmart.tom.core.messages.TOMMessage;
 import bftsmart.tom.core.messages.TOMMessageType;
+import ch.usi.inf.dslab.bftamcast.OverlayTree;
 import ch.usi.inf.dslab.bftamcast.graph.Tree;
 import ch.usi.inf.dslab.bftamcast.graph.Vertex;
 import ch.usi.inf.dslab.bftamcast.kvs.Request;
@@ -37,7 +38,7 @@ public class ClientThread implements Runnable, ReplyListener {
 	// final ConcurrentMap<Integer, GroupRequestTracker> repliesTracker;
 	final Map<Integer, GroupRequestTracker> repliesTracker;
 	long startTime, delta = 0, elapsed = 0;
-	private Tree overlayTree;
+	private OverlayTree overlayTree;
 	private long now;
 	private int maxoustanding;
 	private int[] dests, destinations, local;
