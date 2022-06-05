@@ -1,0 +1,10 @@
+---
+experiment:
+  children:
+    server: 
+      apt076.apt.emulab.net:
+        ansible_host: apt076.apt.emulab.net
+
+  vars:
+    ansible_user: jeffSD
+    ansible_ssh_private_key_file: "~/.ssh/id_rsa"

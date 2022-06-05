@@ -1,0 +1,23 @@
+---
+  - name: clone ByzCast on all hosts
+    git:
+      repo: https://github.com/jefnvo/byzcast-tcc
+      dest: /users/jeffSD/byzcast/
+      clone: yes
+      update: no
+  - name: change folder permissions
+      file: 
+        dest: /users/jeffSD/byzcast/
+        owner: jeffSD 
+        group: jeffSD 
+        mode: 0644 
+        recurse: yes
+  - name: Running mvn clean
+    shell: "mvn clean install"
+      args:
+        chdir: /users/jeffSD/byzcast/
+    register: mvn_result
+  - name: create experiment in all machines
+      shell: python3 /users/jeffSD/byzcast/teste/create-experiments.py
+      args:
+        chdir: /users/jeffSD/byzcast/teste/

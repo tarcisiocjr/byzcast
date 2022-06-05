@@ -1,0 +1,5 @@
+---
+- name: Configure byzcast on all servers
+  hosts: servers
+  roles: 
+    - generate_experiment
