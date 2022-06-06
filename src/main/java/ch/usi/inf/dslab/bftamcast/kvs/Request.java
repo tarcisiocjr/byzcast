@@ -7,7 +7,7 @@ import java.io.*;
 /**
  * @author Paulo Coelho - paulo.coelho@usi.ch
  */
-public class Request implements RequestIf, Serializable {
+public class Request implements RequestIf, Comparable, Serializable {
     private RequestType type;
     private int key;
     private byte[] value;
@@ -165,6 +165,24 @@ public class Request implements RequestIf, Serializable {
             buf.append(dest + " ");
         buf.append(')');
         return buf.toString();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        return (o != null && ((Request) o).seqNumber == seqNumber);
+    }
+
+
+    @Override
+    public int compareTo(Object o) {
+        if (o == null)
+            return 1;
+        return seqNumber - ((Request) o).seqNumber;
+    }
+
+    @Override
+    public Request clone() {
+        return new Request(type,  key, value.clone(), destination.clone(),  seqNumber);
     }
 
 }

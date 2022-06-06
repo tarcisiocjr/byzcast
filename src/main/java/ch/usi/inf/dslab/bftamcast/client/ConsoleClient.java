@@ -22,10 +22,10 @@ public class ConsoleClient {
         Random r = new Random();
         int idGroup = p.getGroup();
         int idClient = p.getId() == 0 ? r.nextInt(Integer.MAX_VALUE) : p.getId();
-        String globalConfigPath = p.getGlobalConfig();
+        String[] globalConfigPaths = p.getGlobalConfig();
         String[] localConfigPaths = p.getLocalConfigs();
         int numGroups = localConfigPaths == null ? 1 : localConfigPaths.length;
-        ProxyIf proxy = new Proxy(idClient + 1000 * idGroup, globalConfigPath, localConfigPaths);
+        ProxyIf proxy = new Proxy(idClient + 1000 * idGroup, globalConfigPaths, localConfigPaths);
         Request req = new Request();
         int[] dest;
         byte[] result;
@@ -50,7 +50,12 @@ public class ConsoleClient {
                     req.setDestination(new int[]{req.getKey() % numGroups});
                     req.setValue(console.readLine("Enter the value: ").getBytes());
                     result = proxy.atomicMulticast(req);
-                    System.out.println("previous value: " + (result == null ? "NULL" : new String(result)));
+                    if(result != null) {
+                        req.fromBytes(result);
+                        System.out.println("previous value: " + (req.getValue() == null ? "NULL" : new String(req.getValue())));
+                    }
+                    else
+                        System.err.println("Empty response from server.");
                     break;
                 case 2:
                     System.out.println("Reading value from the map");
@@ -59,7 +64,12 @@ public class ConsoleClient {
                     req.setValue(null);
                     req.setDestination(new int[]{req.getKey() % numGroups});
                     result = proxy.atomicMulticast(req);
-                    System.out.println("value: " + (result == null ? "NULL" : new String(result)));
+                    if(result != null) {
+                        req.fromBytes(result);
+                        System.out.println("value: " + (req.getValue() == null ? "NULL" : new String(req.getValue())));
+                    }
+                    else
+                        System.err.println("Empty response from server.");
                     break;
                 case 3:
                     System.out.println("Removing value in the map");
@@ -67,24 +77,41 @@ public class ConsoleClient {
                     req.setKey(Integer.parseInt(console.readLine("Enter the key: ")));
                     req.setDestination(new int[]{req.getKey() % numGroups});
                     result = proxy.atomicMulticast(req);
-                    System.out.println("removed value: " + (result == null ? "NULL" : new String(result)));
+                    if(result != null) {
+                        req.fromBytes(result);
+                        System.out.println("removed value: " + (req.getValue() == null ? "NONE" : new String(req.getValue())));
+                    }
+                    else
+                        System.err.println("Empty response from server.");
                     break;
                 case 4:
                     System.out.println("Getting the map size");
                     req.setType(RequestType.SIZE);
                     req.setKey(0);
                     req.setValue(null);
-                    dest = new int[numGroups];
-                    for (int i = 0; i < dest.length; i++)
-                        dest[i] = i;
+
+                    dest = new int[2];
+                    dest[0] = Integer.parseInt(console.readLine("Enter first dest group: "));
+                    dest[1] = Integer.parseInt(console.readLine("Enter second dest group: "));
+
+                    //dest = new int[numGroups];
+                    //for (int i = 0; i < dest.length; i++)
+                    //    dest[i] = i;
 
                     req.setDestination(dest);
                     result = proxy.atomicMulticast(req);
-                    System.out.println("result size = " + result.length);
-                    for (int i = 0; i < dest.length; i++)
-                        System.out.println("Map size (group " + i + "): " + (result == null ? "NULL" : ByteBuffer.wrap(Arrays.copyOfRange(result, i * 4, i * 4 + 4)).getInt()));
-
-
+                    if (result != null) {
+                        req.fromBytes(result);
+                        result = req.getValue();
+                        if (result != null) {
+                            System.out.println("result size = " + result.length);
+                            for (int i = 0; i < dest.length; i++)
+                                System.out.println("Map size (group " + dest[i] + "): " + ByteBuffer.wrap(Arrays.copyOfRange(result, i * 4, i * 4 + 4)).getInt());
+                            break;
+                        }
+                        System.err.println("ERROR: empty value.");
+                    } else
+                        System.err.println("ERROR: empty response.");
                     break;
                 default:
                     System.err.println("Invalid option...");

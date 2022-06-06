@@ -11,6 +11,7 @@ import java.util.Vector;
  */
 public class Stats {
     private Vector<Long> values;
+    private Vector<Boolean> isGlobal;
     private int accCount, limit;
 
     /**
@@ -18,6 +19,7 @@ public class Stats {
      */
     public Stats() {
         values = new Vector<>();
+        isGlobal = new Vector<>();
         accCount = 0;
     }
 
@@ -29,8 +31,9 @@ public class Stats {
         values.clear();
     }
 
-    public void store(long value) {
+    public void store(long value, boolean isGlobal) {
         values.add(value);
+        this.isGlobal.add(isGlobal);
         accCount++;
     }
 
@@ -107,10 +110,13 @@ public class Stats {
         int order = 0;
         try {
             FileWriter fw = new FileWriter(f);
-            fw.write("ORDER\tLATENCY\tABS\n");
+            fw.write("ORDER\tLATENCY\tABS\tTYPE\n");
+            for (int i = 0; i < values.size(); i++) {
+                abs += values.get(i);
+                fw.write(++order + "\t" + values.get(i) + "\t" + abs + "\t" + (isGlobal.get(i) ? "global" : "local") + "\n");
+            }
             for (long value : values) {
-                abs += value;
-                fw.write(++order + "\t" + value + "\t" + abs + "\n");
+
             }
             fw.write("\n");
             fw.write(toString(discardPercent));

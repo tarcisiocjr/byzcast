@@ -67,7 +67,7 @@ public class ServerGlobal extends DefaultRecoverable {
 
     public static void main(String[] args) {
         CLIParser p = CLIParser.getGlobalServerParser(args);
-        new ServerGlobal(p.getId(), p.getGlobalConfig(), p.getLocalConfigs());
+        new ServerGlobal(p.getId(), p.getGlobalConfig()[0], p.getLocalConfigs());
     }
 
     @Override

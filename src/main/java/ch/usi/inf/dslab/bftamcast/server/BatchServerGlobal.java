@@ -24,6 +24,7 @@ package ch.usi.inf.dslab.bftamcast.server;
 import bftsmart.tom.MessageContext;
 import bftsmart.tom.ServiceProxy;
 import bftsmart.tom.ServiceReplica;
+import bftsmart.tom.server.Replier;
 import bftsmart.tom.server.defaultservices.DefaultRecoverable;
 import bftsmart.tom.server.defaultservices.DefaultReplier;
 import ch.usi.inf.dslab.bftamcast.kvs.Request;
@@ -31,87 +32,155 @@ import ch.usi.inf.dslab.bftamcast.kvs.RequestType;
 import ch.usi.inf.dslab.bftamcast.util.CLIParser;
 
 import java.io.*;
+import java.util.Arrays;
 
 /**
  * @author Paulo Coelho - paulo.coelho@usi.ch
  */
 public class BatchServerGlobal extends DefaultRecoverable {
+    private static final int snDelta = 20;
     private final int[] allDest;
-    private int id;
+    private int id, groupId;
     private int seqNumber, innerSeqNumber;
-    private ServiceProxy[] proxiesToLocal;
+    private ServiceProxy[] proxies;
     private Thread[] invokeThreads;
     private byte[][] invokeReplies;
+    private Replier rep;
 
-    private BatchServerGlobal(int serverGlobalId, String configPath, String[] localConfigPaths) {
+    private BatchServerGlobal(int serverGlobalId, int groupId, String[] configPaths, String[] localConfigPaths) {
         int clientId = 80000 + serverGlobalId;
+        int sleepTime = 0;
+        String[] configs = null; // path for groups to connect
+        String myConfig = null;  // my config path
+
         id = serverGlobalId;
-        proxiesToLocal = new ServiceProxy[localConfigPaths.length];
-        invokeThreads = new Thread[localConfigPaths.length];
-        invokeReplies = new byte[localConfigPaths.length][];
-        allDest = new int[localConfigPaths.length];
-        innerSeqNumber = seqNumber = 1;
+        this.groupId = groupId;
+        innerSeqNumber = seqNumber = groupId;
+
+        if (configPaths.length == 1) {
+            System.out.println("******UNIQUE GLOBAL GROUP******");
+            proxies = new ServiceProxy[localConfigPaths.length];
+            sleepTime = 7000 + this.id * 1500;
+            configs = localConfigPaths;
+            myConfig = configPaths[0];
+            rep = new DefaultReplier();
+        } else if (configPaths.length == (localConfigPaths.length / 2 + 1)) {
+            System.out.println("******2-LEVEL GLOBAL GROUPS******");
+            if (groupId == 0) {
+                System.out.println("-.-.-.-TOP LEVEL-.-.-.-");
+                proxies = new ServiceProxy[configPaths.length - 1];
+                sleepTime = 14000 + this.id * 1500;
+                configs = Arrays.copyOfRange(configPaths, 1, configPaths.length);
+                myConfig = configPaths[groupId];
+                rep = new DefaultReplier();
+
+            } else {
+                System.out.println("-.-.-.-INTERMEDIATE LEVEL-.-.-.-");
+                clientId += groupId * 10000;
+                proxies = new ServiceProxy[2];
+                sleepTime = 7000 + this.id * 1500;
+                configs = new String[]{
+                        localConfigPaths[2 * groupId - 2],
+                        localConfigPaths[2 * groupId - 1]
+                };
+                myConfig = configPaths[groupId];
+                rep = new GlobalBatchReplier(this);
+            }
+
+        } else {
+            System.err.println("INCOMPATIBLE NUMBER OF GLOBAL GROUPS.");
+            System.exit(1);
+        }
+
+        invokeThreads = new Thread[proxies.length];
+        invokeReplies = new byte[proxies.length][];
+        allDest = new int[proxies.length];
         try {
-            Thread.sleep(localConfigPaths.length * 4000 + this.id * 1000);
+            Thread.sleep(sleepTime);
+            for (int i = 0; i < configs.length; i++) {
+                System.out.println("Connected to Group with config '" + configs[i] + "'  as ID: " + clientId);
+                proxies[i] = new ServiceProxy(clientId, configs[i]);
+                proxies[i].setInvokeTimeout(100);
+                allDest[i] = i;
+            }
+            new ServiceReplica(id, myConfig, this, this, null, rep);
         } catch (InterruptedException e) {
             System.err.println("Error starting server " + this.id);
             e.printStackTrace();
             System.exit(-1);
         }
-
-        for (int i = 0; i < localConfigPaths.length; i++) {
-            System.out.println("Connected to Local Group " + i + ", config '" + localConfigPaths[i] + "'  as ID: " + clientId);
-            proxiesToLocal[i] = new ServiceProxy(clientId, localConfigPaths[i]);
-            allDest[i] = i;
-        }
-        new ServiceReplica(id, configPath, this, this, null, new DefaultReplier());
     }
 
     public static void main(String[] args) {
         CLIParser p = CLIParser.getGlobalServerParser(args);
-        new BatchServerGlobal(p.getId(), p.getGlobalConfig(), p.getLocalConfigs());
+        new BatchServerGlobal(p.getId(), p.getGroup(), p.getGlobalConfig(), p.getLocalConfigs());
     }
+
+    int getGroupId() {
+        return groupId;
+    }
+
+    int getNextSeqNumber() {
+        seqNumber += snDelta;
+        return seqNumber;
+    }
+
+    int getNextInnerSeqNumber() {
+        innerSeqNumber += snDelta;
+        return innerSeqNumber;
+    }
+
 
     @Override
     public byte[][] appExecuteBatch(byte[][] command, MessageContext[] mcs) {
-        //System.out.println("batch size = " + command.length);
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        byte[][] replies = new byte[command.length][];
-        Request mainReq = new Request(), auxReq = new Request();
-        Request[] reqs = new Request[command.length];
-
-        try {
-            mainReq.setType(RequestType.BATCH);
-            mainReq.setDestination(allDest);
-            mainReq.setSeqNumber(seqNumber++);
-            //System.out.println("batch size = " + command.length + ", seq. number = " + mainReq.getSeqNumber());
+        if (groupId == 0) {
+            Request[] reqs = new Request[command.length];
+            byte[][] replies = new byte[reqs.length][];
 
             for (int i = 0; i < reqs.length; i++) {
                 reqs[i] = new Request();
                 reqs[i].fromBytes(command[i]);
-                reqs[i].setSeqNumber(innerSeqNumber++);
+                reqs[i].setSeqNumber(getNextInnerSeqNumber());
+                //System.out.println("adding to batch: " + reqs[i]);
             }
+            reqs = send(reqs);
+            for (int i = 0; i < reqs.length; i++)
+                replies[i] = reqs[i].toBytes();
+            return replies;
+        } else {
+            ((GlobalBatchReplier) rep).setBatchSize(command.length);
+            return command;
+        }
+    }
 
+    public Request[] send(Request[] reqs) {
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        Request mainReq = new Request(), auxReq = new Request();
+
+        try {
+            mainReq.setType(RequestType.BATCH);
+            mainReq.setDestination(allDest);
+            mainReq.setSeqNumber(getNextSeqNumber());
             mainReq.setValue(Request.ArrayToBytes(reqs));
+
             for (int dest : allDest) {
-                invokeThreads[dest] = new Thread(() -> invokeReplies[dest] = proxiesToLocal[dest].invokeOrdered(mainReq.toBytes()));
+                invokeThreads[dest] = new Thread(() -> invokeReplies[dest] = proxies[dest].invokeOrdered(mainReq.toBytes()));
                 invokeThreads[dest].start();
             }
 
-            //reset values
-            for (int i = 0; i < command.length; i++)
+            for (int i = 0; i < reqs.length; i++)
                 reqs[i].setValue(null);
-
 
             for (int dest : allDest) {
                 invokeThreads[dest].join();
                 auxReq.fromBytes(invokeReplies[dest]);
                 Request[] temp = Request.ArrayfromBytes(auxReq.getValue());
-                //System.out.println("reply from group " + dest + ": req = " + auxReq + ", reply size = " + temp.length);
+                //System.out.println("reply from " + dest + ": req = " + auxReq + ", reply size = " + temp.length);
                 for (int i = 0; i < temp.length; i++) {
                     bos.reset();
-                    if (temp[i].getType() != RequestType.NOP) { // message was addressed to group dest
-                        if (reqs[i].getValue() == null) { //set value initially to false
+                    //System.out.println("\t" + temp[i]);
+                    if (temp[i].getValue() != null) { // message was addressed to group dest
+                        if (reqs[i].getValue() == null) {
                             reqs[i].setValue(temp[i].getValue());
                         } else {
                             bos.write(reqs[i].getValue());
@@ -119,21 +188,18 @@ public class BatchServerGlobal extends DefaultRecoverable {
                             bos.close();
                             reqs[i].setValue(bos.toByteArray());
                         }
+                        //} else {
+                        //System.out.println("NULL VALUE!!!!");
                     }
                 }
                 auxReq.setValue(null);
             }
-
-            for (int i = 0; i < command.length; i++)
-                replies[i] = reqs[i].toBytes();
-
         } catch (InterruptedException | IOException | ArrayIndexOutOfBoundsException e) {
             e.printStackTrace();
             System.exit(20);
         }
 
-        return replies;
-
+        return reqs;
     }
 
     // TreeMap to byte array
