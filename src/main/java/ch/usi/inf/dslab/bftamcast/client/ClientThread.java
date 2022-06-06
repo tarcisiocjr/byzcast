@@ -55,18 +55,21 @@ public class ClientThread implements Runnable {
             all[i] = i;
         */
         int[][] allDests = {{0, 1}, {0, 2}, {0, 3}, {1, 2}, {1, 3}, {2, 3}};
-        int[] percentage = {40, 45, 50, 55, 60, 101};
+        //int[] percentage = {50, 50, 50, 50, 50, 101}; // 100%
+        //int[] percentage = {46, 48, 50, 52, 54, 101}; // 90%
+        int[] percentage = {40, 45, 50, 55, 60, 101}; // 80%
+        //int[] percentage = {25, 37, 50, 63, 75, 101}; // 50 %
+        //int[] percentage = {17, 34, 50, 67, 84, 101}; // no-locality
         int[] count = {0, 0, 0, 0, 0, 0};
 
+        int index = 0, rn = r.nextInt(100);
+        while (rn > percentage[index]) index++;
         req.setValue(randomString(size).getBytes());
         while (elapsed / 1e9 < runTime) {
             try {
                 if (r.nextInt(100) >= globalPerc || numOfGroups == 1) {
                     req.setDestination(local);
                 } else {
-                    int index = 0, rn = r.nextInt(100);
-                    while (rn > percentage[index]) index++;
-
                     req.setDestination(allDests[index]);
                     count[index]++;
                 }
