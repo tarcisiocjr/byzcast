@@ -5,7 +5,7 @@ import copy
 ipRangeControl = [1,13]
 nodes = 13
 netAddress = "10.10.1."
-localGroups = 2
+localGroups = 0
 globalGroups = 1
 clients = 1
 faultTolerance = 1
