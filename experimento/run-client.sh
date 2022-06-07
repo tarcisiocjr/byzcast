@@ -15,7 +15,7 @@ if [ "$IP" = "" ]; then
   exit 1
 fi
 
-echo "Using IP '$IP'" 
+echo "Using IP '$IP'"
 
 G_ID=`cat zones.txt | grep $IP |cut -f 5`
 
@@ -29,9 +29,10 @@ for i in `ls -d group*`; do
   fi
 done
 
-if [ "$LOCALGROUPS" = "-lcs " ]; then
+if [ "$GLOBALGROUPS" = "" ]; then
   echo "Single group configuration"
   G_ID=0
+  GLOBALGROUPS="${LOCALGROUPS:5}"
   LOCALGROUPS=""
 fi
 
