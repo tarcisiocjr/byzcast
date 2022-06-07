@@ -1,0 +1,6 @@
+---
+  - name: execute client nodes
+    shell: 
+      cmd: /users/jeffSD/byzcast/experimento/run-client.sh >> /users/jeffSD/log.txt
+      chdir: /users/jeffSD/byzcast/experimento/
+    

@@ -1,0 +1,32 @@
+---
+  - name: clean all hosts before clone
+    file:
+      path: /users/jeffSD/byzcast
+      state: absent
+
+  - name: clone ByzCast on all hosts
+    git:
+      repo: https://github.com/jefnvo/byzcast-tcc
+      dest: /users/jeffSD/byzcast/
+      clone: yes
+      update: no
+  - name: Recursively change ownership of a directory
+    file:
+      path: /users/jeffSD/byzcast/
+      state: directory
+      recurse: yes
+      owner: jeffSD
+      mode: u=rwx,g=rwx,o=r
+
+  - name: Build protocol
+    shell: 
+      cmd: mvn clean install
+      chdir: /users/jeffSD/byzcast/
+    register: mvn_result
+
+  - name: create experiment in all machines
+    shell: 
+      cmd: python3 /users/jeffSD/byzcast/experimento/create-experiments.py
+      chdir: /users/jeffSD/byzcast/experimento/
+
+  

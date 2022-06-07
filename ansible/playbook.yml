@@ -1,0 +1,13 @@
+---
+- name: Configure byzcast on all servers
+  hosts: all
+  roles: 
+    - setup_nodes
+- name: Run byzcast server on servers nodes
+  hosts: servers
+  roles:
+    - run_servers
+- name: Run byzcast client on clients nodes
+  hosts: clients
+  roles:
+    - run_clients

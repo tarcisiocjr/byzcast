@@ -1,0 +1,17 @@
+all:
+  hosts:
+  children:
+    servers:
+      hosts:
+        apt109.apt.emulab.net:
+        apt117.apt.emulab.net:
+        apt120.apt.emulab.net:
+        apt119.apt.emulab.net:
+    clients:
+      hosts:
+        apt116.apt.emulab.net:
+
+
+  vars:
+    ansible_user: jeffSD
+    ansible_ssh_private_key_file: "~/.ssh/id_rsa"
