@@ -52,7 +52,7 @@ def createFilesOnFolder(folderName):
         for i in range(3 * faultTolerance + 1):
             if ipRangeControl[1] != 1:
                 port +=1003
-                f.write(str(i)+"\t"+str(netAddress)+str(ipRangeControl[0])+"\t"+str(port)+"\n")
+                f.write(str(i)+" "+str(netAddress)+str(ipRangeControl[0])+" "+str(port)+"\n")
                 ipRangeControl[0] += 1
                 ipRangeControl[1] -= 1 
 
