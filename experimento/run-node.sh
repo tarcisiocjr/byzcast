@@ -1,4 +1,6 @@
 #!/bin/bash
+exec >> ~/log.txt
+exec 2>&1
 
 IP=`ifconfig enp8s0d1 | grep "inet " | awk  '{print $2}'| awk '{print $1}'`
 
