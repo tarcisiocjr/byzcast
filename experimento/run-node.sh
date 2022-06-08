@@ -13,7 +13,7 @@ LOCALGROUPS=""
 GLOBALGROUPS=""
 for i in `ls -d group*`; do
   echo $i
-  if [ "${i:0:7}" != "group-g" ]; then
+  if [ "${i:0:7}" != "group-g0" ]; then
     LOCALGROUPS=$LOCALGROUPS"$i "
   else
     GLOBALGROUPS=$GLOBALGROUPS"$i "
