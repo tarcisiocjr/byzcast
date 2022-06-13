@@ -22,4 +22,7 @@ REG1	AZ1	10.10.1.21	server	2
 REG2	AZ1	10.10.1.22	server	2
 REG3	AZ1	10.10.1.23	server	2
 REG4	AZ1	10.10.1.24	server	2
-REG1	AZ1	10.10.1.25	client	0
+REG1	AZ1	10.10.1.25	server	3
+REG2	AZ1	10.10.1.26	server	3
+REG3	AZ1	10.10.1.27	server	3
+REG4	AZ1	10.10.1.28	server	3

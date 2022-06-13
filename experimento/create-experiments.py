@@ -2,10 +2,10 @@ import os
 import shutil
 import copy
 
-ipRangeControl = [1,25]
-nodes = 24
+ipRangeControl = [1,28]
+nodes = 28
 netAddress = "10.10.1."
-localGroups = 3
+localGroups = 4
 globalGroups = 3
 clients = 1
 faultTolerance = 1
