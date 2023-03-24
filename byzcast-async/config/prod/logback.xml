@@ -1,0 +1,32 @@
+<configuration>
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <logger name="ch.usi.inf.dslab.byzcast.client" level="OFF"  additivity="false">
+        <appender-ref ref="STDOUT" />
+    </logger>
+
+<!--   <logger name="ch.usi.inf.dslab.byzcast.util.TreeConfiguration" level="OFF">-->
+<!--        <appender-ref ref="STDOUT" />-->
+<!--    </logger>-->
+
+<!--    <logger name="ch.usi.inf.dslab.byzcast.async.BatchReplicaReplier" level="OFF">-->
+<!--        <appender-ref ref="STDOUT" />-->
+<!--    </logger>-->
+
+
+<!--    <logger name="ch.usi.inf.dslab.byzcast.async.BatchReplica" level="OFF">-->
+<!--        <appender-ref ref="STDOUT" />-->
+<!--    </logger>-->
+
+<!--    <logger name="io.netty" level="OFF">-->
+<!--    <appender-ref ref="STDOUT"/>-->
+<!--    </logger>-->
+
+    <root level="OFF">
+        <appender-ref ref="STDOUT" />
+    </root>
+</configuration>

@@ -9,40 +9,26 @@ After the global consensus the message is forwarded to the corresponding local(s
 
 ## Installation
 
-This project requires Java Runtime Environment 1.8 and Maven. 
+This project requires Java Runtime Environment 11 and Maven. 
 To compile:
    
-    mvn package
+``make build-async`` to build the asynchronous version with models
+
+``make build-sync`` to build the original version
 
 
 ## Usage
 
-Sample scripts to run both server and client side can be found in the ``script`` folder.
+``make dev-async``
 
-### History
+``make dev-sync``
 
-This project started as a simple proof of concept that is possible to construct a partial-genuine atomic multicast protocol using the classic approach in broadcast consensus protocols currently available, 
-in this case [BFT-SMaRt][1] library, a replication library written in Java designed to tolerate Byzantine fault that implements state machine replication.
+You need TMUX to run the project with windows and panes index setted to 1. In your tmux.conf:
 
-The basic idea behind this PoC started by deploying 
+``set -g base-index 1``
 
-![alt text](1.png "Title")
+``setw -g pane-base-index 1``
 
-And this is the second version
- 
-![alt text](2.png "Title")
-
-## Credits
-
-TODO: Write credits.
-
-## Contributing
-
-1. Fork it
-2. Create your feature branch: `git checkout -b my-new-feature`
-3. Commit your changes: `git commit -am 'Add some feature'`
-4. Push to the branch: `git push origin my-new-feature`
-5. Submit a pull request
 
 ## License
 

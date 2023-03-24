@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>ch.usi.inf.dslab.byzcast</groupId>
+	<artifactId>byzcast</artifactId>
+	<version>1.1-SNAPSHOT</version>
+    <name>byzcast</name>
+	<packaging>pom</packaging>
+
+	<description>byzcast</description>
+	<url>https://github.com/tarcisiocjr/byzcast/tree/fresh-start/</url>
+	<organization>
+		<name>Università della Svizzera italiana</name>
+		<url>https://www.inf.usi.ch/en</url>
+	</organization>
+
+	<issueManagement>
+		<system>github</system>
+		<url>https://github.com/tarcisiocjr/byzcast/issues</url>
+	</issueManagement>
+
+	<modules>
+		<module>bft-smart</module>
+		<module>byzcast-async</module>
+	</modules>
+
+	<properties>
+		<current.version>${project.version}</current.version>
+		<default.namespace>ch.usi.inf.dslab.byzcast</default.namespace>
+		<compiler.plugin.version>3.8.0</compiler.plugin.version>
+		<source.version>1.9</source.version>
+		<target.version>1.9</target.version>
+		<!-- <jetty.version>9.2.10.v20150310</jetty.version> -->
+		<netty.version>4.1.67.Final</netty.version>
+		<!-- <bouncycastle.version>1.59</bouncycastle.version> -->
+		<!-- <log4j.legacy.version>1.2.17</log4j.legacy.version> -->
+		<!-- <log4j.version>2.2.cs.3</log4j.version> -->
+		<!-- <slf4j.version>1.7.5</slf4j.version> -->
+		<logback.version>1.1.2</logback.version>
+		<slf4j-api.version>1.7.7</slf4j-api.version>
+		<pit.threads>4</pit.threads>
+		<pit.timeoutFactor>3</pit.timeoutFactor>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+		<test.reuseForks>false</test.reuseForks>
+		<test.forkCount>1</test.forkCount>
+	</properties>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>${compiler.plugin.version}</version>
+				<configuration>
+					<source>${source.version}</source>
+					<target>${target.version}</target>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+</project>

@@ -1,30 +1,18 @@
-# Yes, a Makefile. Because I am old.
+build-async: kill
+	cd byzcast-async && mvn clean && mvn package -DskipTests
 
-all: build down up
+build-sync: kill
+	cd byzcast-sync && mvn clean && mvn package -DskipTests
 
-build:
-	ant
+clean:
+	find . -name "currentView" -exec rm -rf {} \;
+	sleep 1s
 
-up:
-	docker-compose up -d --build --no-deps
+kill: clean
+	tmux list-sessions | grep -v attached | cut -d: -f1 |  xargs -t -n1 tmux kill-session -t | true
 
-down:
-	docker-compose down --remove-orphans
+dev-sync: clean
+	./dev-sync.sh
 
-log:
-	docker-compose logs -f
-
-proxy:
-	docker-compose -f docker-compose.proxy.yml up -d --build --no-dep group_0_proxy_0
-
-console:
-	docker exec -it bftswarm_group_0_proxy_0_1 bash
-
-dist:
-	rm -rf dist ; ant dist
-
-deploy:
-	rm -rf dist ; ant dist ; rsync -av --progress --exclude=".*" --exclude="/src/" --exclude="/tmp/" . dslab.inf.usi.ch:~/bftswarm/ --delete
-
-count:
-	@find src -name \*.java | xargs wc -l | sort -n
+dev-async: clean
+	./dev-async.sh

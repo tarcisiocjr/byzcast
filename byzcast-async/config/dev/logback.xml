@@ -1,0 +1,68 @@
+<configuration>
+    <!-- Logging to console -->
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36}.%M\(%line\) - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- Logging to console wih minimal output -->
+    <appender name="MIN-STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+      <encoder>
+        <pattern> -- %msg%n</pattern>
+      </encoder>
+    </appender>
+
+    <logger name="bftsmart" level="OFF" additivity="false">
+      <appender-ref ref="MIN-STDOUT" />
+<!--       <appender-ref ref="STDOUT" />-->
+    </logger>
+
+    <logger name="bftsmart.communication.ServerCommunicationSystem" level="OFF" additivity="false">
+<!--      <appender-ref ref="MIN-STDOUT" />-->
+       <appender-ref ref="STDOUT" />
+    </logger>
+
+    <logger name="bftsmart.tom.core.messages.TOMMessage" level="OFF" additivity="false">
+<!--      <appender-ref ref="MIN-STDOUT" />-->
+       <appender-ref ref="STDOUT" />
+    </logger>
+
+    <logger name="bftsmart.tom.ServiceReplica" level="OFF" additivity="false">
+      <appender-ref ref="MIN-STDOUT" />
+<!--       <appender-ref ref="STDOUT" />-->
+    </logger>
+
+    <logger name="bftsmart.tom.ServiceProxy" level="OFF" additivity="false">
+        <appender-ref ref="STDOUT" />
+    </logger>
+
+    <logger name="ch.usi.inf.dslab.byzcast.client" level="OFF" additivity="false">
+        <appender-ref ref="STDOUT" />
+    </logger>
+
+    <logger name="ch.usi.inf.dslab.byzcast.client.ClientThread" level="OFF" additivity="false">
+        <appender-ref ref="STDOUT" />
+    </logger>
+
+   <logger name="ch.usi.inf.dslab.byzcast.util.TreeConfiguration" level="off" additivity="false">
+        <appender-ref ref="STDOUT" />
+    </logger>
+
+
+    <logger name="ch.usi.inf.dslab.byzcast.async.Replica" level="OFF" additivity="false">
+        <appender-ref ref="STDOUT" />
+    </logger>
+
+    <logger name="ch.usi.inf.dslab.byzcast.async.ReplicaReplier" level="OFF" additivity="false">
+        <appender-ref ref="STDOUT" />
+    </logger>
+
+    <logger name="io.netty" level="OFF">
+    <appender-ref ref="STDOUT"/>
+    </logger>
+
+    <root level="off">
+        <appender-ref ref="STDOUT" />
+    </root>
+</configuration>
